@@ -1,0 +1,7 @@
+# Người duyệt bắt buộc cho từng phần của repo. Quy tắc khớp sau cùng được áp dụng,
+# nên file ở thư mục gốc (README, .gitignore, chính file này) do nhóm trưởng duyệt.
+
+*           @nvvinh-dev
+
+/backend/   @nvvinh-dev @broccoli2609
+/frontend/  @QuangGiang06 @SupiCri
