@@ -1,0 +1,89 @@
+# ================================
+# Visual Studio / .NET
+# ================================
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ================================
+# .NET
+# ================================
+[Bb]uild/
+[Bb]uildLog.*
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+artifacts/
+
+# ================================
+# Node / Next.js
+# ================================
+node_modules/
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# ================================
+# Environment / Secrets
+# ================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ================================
+# Logs
+# ================================
+*.log
+logs/
+
+# ================================
+# OS
+# ================================
+.DS_Store
+Thumbs.db
+
+# ================================
+# IDE
+# ================================
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ================================
+# Test / Coverage
+# ================================
+coverage/
+TestResults/
+
+# ================================
+# Temporary files
+# ================================
+*.tmp
+*.temp
+*.swp
+Logs/
+# ================================
+# Tài liệu nội bộ — KHÔNG đẩy lên GitHub
+# (DECISIONS.md, docs/ và các bản audit được gửi riêng cho thành viên,
+#  chúng không ảnh hưởng tới việc build hay chạy phần mềm)
+# ================================
+docs/
+DECISIONS.md
+*.docx
+
+# Thư mục làm việc của Postman (không phải mã nguồn)
+.postman/
+postman/
+
+# Chỉ mục CodeGraph (dữ liệu công cụ cục bộ, không phải mã nguồn)
+.codegraph/

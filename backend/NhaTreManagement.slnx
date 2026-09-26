@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="NhaTre.API/NhaTre.API.csproj" />
+  <Project Path="NhaTre.Application/NhaTre.Application.csproj" />
+  <Project Path="NhaTre.Domain/NhaTre.Domain.csproj" />
+  <Project Path="NhaTre.Infrastructure/NhaTre.Infrastructure.csproj" />
+</Solution>
