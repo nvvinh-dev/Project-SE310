@@ -32,4 +32,4 @@ Phụ huynh.
 | Vinh (nhóm trưởng) | [@nvvinh-dev](https://github.com/nvvinh-dev) |
 | Giang | [@QuangGiang06](https://github.com/QuangGiang06) |
 | Đức | [@broccoli2609](https://github.com/broccoli2609) |
-| Kiệt | [@SupiCri](https://github.com/SupiCri) |
+| Kiệt | [@Ender-Via](https://github.com/Ender-Via) |
