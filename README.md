@@ -113,9 +113,15 @@ mã 429, chờ hết phút đó rồi thử lại.
 
 ## Quy trình làm việc
 
-- `develop` là nhánh tích hợp và là nhánh mặc định. Không commit thẳng lên `develop`: mỗi việc
-  làm trên một nhánh `feature/<tên-việc>` rồi mở pull request vào `develop`. Không ai tự mở
-  pull request vào `main`.
+- `develop` là nhánh tích hợp và là nhánh mặc định. Không commit thẳng lên `develop`, không ai
+  tự mở pull request vào `main`.
+- Mỗi nhóm việc làm trên một nhánh có sẵn, dùng suốt cả module, mỗi nhánh chỉ một người làm:
+  - Frontend, chia theo vai trò: `feature/fe-teacher`, `feature/fe-medical`,
+    `feature/fe-accounting`, `feature/fe-parent`, `feature/fe-admin`.
+  - Dashboard (cả backend lẫn giao diện): `feature/dashboard`.
+
+  Thẻ Trello nào làm trên nhánh nào có trong `docs/onboarding/team-workflow.md`. Làm xong thì mở
+  pull request vào `develop`.
 - Pull request phải được người review trong `.github/CODEOWNERS` duyệt: backend do Vinh hoặc
   Đức, frontend do Giang hoặc Kiệt. Không tự duyệt PR của mình; người còn lại duyệt. Mô tả
   pull request ghi rõ làm gì, thêm endpoint nào, mã FR tương ứng và đã test thế nào.
