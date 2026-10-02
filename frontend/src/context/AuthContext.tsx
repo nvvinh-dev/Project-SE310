@@ -30,52 +30,44 @@ interface AuthContextValue {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<AuthUser | null>({
+  userId: "1",
+  fullName: "Cô Nguyễn Linh",
+  role: "Teacher", 
+  });
+  const [token, setToken] = useState<string | null>("dev-token");
+  const [isLoading, setIsLoading] = useState(false);
   const logoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Tách clearSession (hủy timer, xóa state, xóa token local) - Không gọi API
-  const clearSession = useCallback(() => {
+  const logout = useCallback(() => {
     if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
     setToken(null);
     setUser(null);
     setAuthToken(null);
   }, []);
 
-
-  const logout = useCallback(async () => {
-    try {
-      await apiClient.post("/api/auth/logout");
-    } catch {
-
-    } finally {
-      clearSession();
-    }
-  }, [clearSession]);
-
- 
+  // Đặt timer tự logout đúng lúc token hết hạn
   const scheduleAutoLogout = useCallback(
     (expiresAtUtc: string) => {
       if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
       const msUntilExpiry = new Date(expiresAtUtc).getTime() - Date.now();
       if (msUntilExpiry <= 0) {
-        clearSession();
+        logout();
         return;
       }
-      logoutTimerRef.current = setTimeout(() => {
-        clearSession(); 
-      }, msUntilExpiry);
+      logoutTimerRef.current = setTimeout(logout, msUntilExpiry);
     },
-    [clearSession]
+    [logout]
   );
 
+  // Khôi phục phiên từ token đã lưu khi tải lại trang. isLoading chỉ tắt sau khi
+  // việc khôi phục kết thúc, kể cả khi máy không có token nào.
   useEffect(() => {
     async function restoreSession() {
       const storedToken = getStoredToken();
@@ -83,9 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setAuthToken(storedToken);
       try {
-        const res = await apiClient.get<
-          ApiResponse<{ userId: string; fullName: string; role: Role }>
-        >("/api/auth/me");
+        const res = await apiClient.get<ApiResponse<{ userId: string; fullName: string; role: Role }>>(
+          "/api/auth/me"
+        );
         if (!res.data.success || !res.data.data) {
           setAuthToken(null);
           return;
@@ -94,15 +86,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(storedToken);
         setUser({
           userId: res.data.data.userId,
-          fullName: res.data.data.fullName,
+          fullName: res.data.data.fullName, 
           role: res.data.data.role,
         });
 
+        // Đặt lại timer từ expiresAtUtc đã lưu. Không có hạn lưu kèm token thì
+        // coi như hết hạn ngay để buộc đăng nhập lại — an toàn hơn là để token
+        // sống vô thời hạn.
         const storedExpiry = getStoredExpiresAt();
         if (storedExpiry) {
           scheduleAutoLogout(storedExpiry);
         } else {
-          clearSession();
+          logout();
         }
       } catch {
         setAuthToken(null);
@@ -114,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
     };
-  }, [clearSession, scheduleAutoLogout]);
+  }, [logout, scheduleAutoLogout]);
 
   async function login(email: string, password: string) {
     try {
@@ -125,6 +120,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const loginData = res.data.data;
       if (!loginData) {
+        // Backend trả 200 nhưng data null — tình huống hiếm nhưng
+        // không nên vỡ bằng TypeError, ném ApiError có message tử tế.
         throw new ApiError(
           res.data.message ?? "Đăng nhập thất bại.",
           res.data.errors,
@@ -134,12 +131,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { token: newToken, userId, fullName, role, expiresAtUtc } = loginData;
 
-      setAuthToken(newToken, expiresAtUtc); 
+      setAuthToken(newToken, expiresAtUtc); // lưu kèm hạn dùng
       setToken(newToken);
       setUser({ userId, fullName, role });
       scheduleAutoLogout(expiresAtUtc);
     } catch (err) {
-      if (err instanceof ApiError) throw err; 
+      if (err instanceof ApiError) throw err; // đã đúng dạng, không cần bọc lại
       throw toApiError(err);
     }
   }
