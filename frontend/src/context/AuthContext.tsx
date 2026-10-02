@@ -41,36 +41,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const logoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const logout = useCallback(async () => {
+  // Tách clearSession (hủy timer, xóa state, xóa token local) - Không gọi API
+  const clearSession = useCallback(() => {
     if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
+    setToken(null);
+    setUser(null);
+    setAuthToken(null);
+  }, []);
+
+
+  const logout = useCallback(async () => {
     try {
       await apiClient.post("/api/auth/logout");
     } catch {
-      // API chưa có hoặc lỗi mạng — bỏ qua để khối finally vẫn dọn sạch phiên
-    } finally {
-      setToken(null);
-      setUser(null);
-      setAuthToken(null);
-    }
-  }, []);
 
-  // Đặt timer tự logout đúng lúc token hết hạn
+    } finally {
+      clearSession();
+    }
+  }, [clearSession]);
+
+ 
   const scheduleAutoLogout = useCallback(
     (expiresAtUtc: string) => {
       if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
       const msUntilExpiry = new Date(expiresAtUtc).getTime() - Date.now();
       if (msUntilExpiry <= 0) {
-        logout();
+        clearSession();
         return;
       }
       logoutTimerRef.current = setTimeout(() => {
-        void logout();
+        clearSession(); 
       }, msUntilExpiry);
     },
-    [logout]
+    [clearSession]
   );
 
-  // Khôi phục phiên từ token đã lưu khi tải lại trang.
   useEffect(() => {
     async function restoreSession() {
       const storedToken = getStoredToken();
@@ -97,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (storedExpiry) {
           scheduleAutoLogout(storedExpiry);
         } else {
-          await logout();
+          clearSession();
         }
       } catch {
         setAuthToken(null);
@@ -109,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       if (logoutTimerRef.current) clearTimeout(logoutTimerRef.current);
     };
-  }, [logout, scheduleAutoLogout]);
+  }, [clearSession, scheduleAutoLogout]);
 
   async function login(email: string, password: string) {
     try {
@@ -129,12 +134,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { token: newToken, userId, fullName, role, expiresAtUtc } = loginData;
 
-      setAuthToken(newToken, expiresAtUtc);
+      setAuthToken(newToken, expiresAtUtc); 
       setToken(newToken);
       setUser({ userId, fullName, role });
       scheduleAutoLogout(expiresAtUtc);
     } catch (err) {
-      if (err instanceof ApiError) throw err;
+      if (err instanceof ApiError) throw err; 
       throw toApiError(err);
     }
   }
