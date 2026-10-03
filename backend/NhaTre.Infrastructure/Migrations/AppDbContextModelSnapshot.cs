@@ -96,7 +96,10 @@ namespace NhaTre.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_attendances_child_id_attendance_date");
 
-                    b.ToTable("attendances", (string)null);
+                    b.ToTable("attendances", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Attendance_Status", "status IN ('Present', 'AbsentExcused', 'AbsentUnexcused')");
+                        });
                 });
 
             modelBuilder.Entity("NhaTre.Domain.Entities.Child", b =>
@@ -190,7 +193,10 @@ namespace NhaTre.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_classes_name");
 
-                    b.ToTable("classes", (string)null);
+                    b.ToTable("classes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Class_AgeRange", "min_age_months <= max_age_months");
+                        });
                 });
 
             modelBuilder.Entity("NhaTre.Domain.Entities.GrowthMeasurement", b =>
@@ -234,6 +240,10 @@ namespace NhaTre.Infrastructure.Migrations
                     b.ToTable("growth_measurements", null, t =>
                         {
                             t.HasCheckConstraint("CK_GrowthMeasurement_HeightOrWeight", "height_cm IS NOT NULL OR weight_kg IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_GrowthMeasurement_HeightRange", "height_cm IS NULL OR (height_cm > 0 AND height_cm <= 200)");
+
+                            t.HasCheckConstraint("CK_GrowthMeasurement_WeightRange", "weight_kg IS NULL OR (weight_kg > 0 AND weight_kg <= 100)");
                         });
                 });
 
@@ -314,6 +324,11 @@ namespace NhaTre.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("child_id");
 
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
                     b.Property<DateTime>("IssuedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("issued_at");
@@ -332,6 +347,9 @@ namespace NhaTre.Infrastructure.Migrations
 
                     b.HasIndex("ChildId")
                         .HasDatabaseName("ix_invoices_child_id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_invoices_status");
 
                     b.HasIndex("TuitionFeeId")
                         .HasDatabaseName("ix_invoices_tuition_fee_id");
@@ -450,9 +468,20 @@ namespace NhaTre.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("attendance_id");
 
-                    b.Property<Guid?>("PickupPersonId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("pickup_person_id");
+                    b.Property<string>("ConfirmedByName")
+                        .HasColumnType("text")
+                        .HasColumnName("confirmed_by_name");
+
+                    b.Property<string>("PickerFullName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("picker_full_name");
+
+                    b.Property<string>("PickupMethod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("pickup_method");
 
                     b.Property<DateTime>("PickupTime")
                         .HasColumnType("timestamp with time zone")
@@ -469,13 +498,15 @@ namespace NhaTre.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_pickups_attendance_id");
 
-                    b.HasIndex("PickupPersonId")
-                        .HasDatabaseName("ix_pickups_pickup_person_id");
-
                     b.HasIndex("RecordedByTeacherId")
                         .HasDatabaseName("ix_pickups_recorded_by_teacher_id");
 
-                    b.ToTable("pickups", (string)null);
+                    b.ToTable("pickups", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Pickup_ConfirmedByName", "(pickup_method = 'PhoneConfirmed' AND confirmed_by_name IS NOT NULL AND confirmed_by_name <> '') OR (pickup_method <> 'PhoneConfirmed' AND confirmed_by_name IS NULL)");
+
+                            t.HasCheckConstraint("CK_Pickup_Method", "pickup_method IN ('Primary', 'Backup', 'PhoneConfirmed')");
+                        });
                 });
 
             modelBuilder.Entity("NhaTre.Domain.Entities.QuickHealthStatus", b =>
@@ -522,7 +553,12 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasIndex("RecordedByTeacherId")
                         .HasDatabaseName("ix_quick_health_statuses_recorded_by_teacher_id");
 
-                    b.ToTable("quick_health_statuses", (string)null);
+                    b.ToTable("quick_health_statuses", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_QuickHealthStatus_Mood", "mood IN ('Happy', 'Normal', 'Tired', 'Fussy')");
+
+                            t.HasCheckConstraint("CK_QuickHealthStatus_TemperatureRange", "temperature_celsius IS NULL OR temperature_celsius BETWEEN 30 AND 45");
+                        });
                 });
 
             modelBuilder.Entity("NhaTre.Domain.Entities.RegisteredPickupPerson", b =>
@@ -536,18 +572,61 @@ namespace NhaTre.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("child_id");
 
-                    b.Property<string>("FullName")
+                    b.Property<string>("CitizenIdNumber")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("citizen_id_number");
+
+                    b.Property<DateTime>("ConsentConfirmedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("consent_confirmed_at");
+
+                    b.Property<Guid>("ConsentConfirmedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("consent_confirmed_by_user_id");
+
+                    b.Property<string>("FacePhotoReference")
                         .IsRequired()
                         .HasColumnType("text")
+                        .HasColumnName("face_photo_reference");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("full_name");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("phone_number");
+
+                    b.Property<short>("Priority")
+                        .HasColumnType("smallint")
+                        .HasColumnName("priority");
+
+                    b.Property<string>("Relationship")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("relationship");
 
                     b.HasKey("Id")
                         .HasName("pk_registered_pickup_persons");
 
-                    b.HasIndex("ChildId")
-                        .HasDatabaseName("ix_registered_pickup_persons_child_id");
+                    b.HasIndex("ConsentConfirmedByUserId")
+                        .HasDatabaseName("ix_registered_pickup_persons_consent_confirmed_by_user_id");
 
-                    b.ToTable("registered_pickup_persons", (string)null);
+                    b.HasIndex("ChildId", "Priority")
+                        .IsUnique()
+                        .HasDatabaseName("ix_registered_pickup_persons_child_id_priority");
+
+                    b.ToTable("registered_pickup_persons", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RegisteredPickupPerson_Priority", "priority IN (1, 2)");
+                        });
                 });
 
             modelBuilder.Entity("NhaTre.Domain.Entities.Role", b =>
@@ -598,6 +677,62 @@ namespace NhaTre.Infrastructure.Migrations
                         {
                             Id = (short)5,
                             Name = "Phụ huynh"
+                        });
+                });
+
+            modelBuilder.Entity("NhaTre.Domain.Entities.SecurityEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("Detail")
+                        .HasColumnType("text")
+                        .HasColumnName("detail");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("event_type");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("text")
+                        .HasColumnName("ip_address");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("TargetReference")
+                        .HasColumnType("text")
+                        .HasColumnName("target_reference");
+
+                    b.Property<Guid?>("TargetUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_security_events");
+
+                    b.HasIndex("ActorUserId")
+                        .HasDatabaseName("ix_security_events_actor_user_id");
+
+                    b.HasIndex("OccurredAt")
+                        .HasDatabaseName("ix_security_events_occurred_at");
+
+                    b.HasIndex("TargetUserId")
+                        .HasDatabaseName("ix_security_events_target_user_id");
+
+                    b.ToTable("security_events", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SecurityEvent_EventType", "event_type IN ('login_succeeded', 'login_failed', 'logout', 'role_changed', 'account_activation_changed', 'password_reset_by_admin', 'invoice_marked_paid', 'guardian_link_changed')");
                         });
                 });
 
@@ -686,6 +821,12 @@ namespace NhaTre.Infrastructure.Migrations
                         .HasColumnType("smallint")
                         .HasColumnName("role_id");
 
+                    b.Property<int>("TokenVersion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("token_version");
+
                     b.HasKey("Id")
                         .HasName("pk_users");
 
@@ -725,7 +866,7 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasOne("NhaTre.Domain.Entities.Class", "Class")
                         .WithMany("ActivityPhotos")
                         .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_activity_photos_classes_class_id");
 
@@ -746,7 +887,7 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasOne("NhaTre.Domain.Entities.Child", "Child")
                         .WithMany("Attendances")
                         .HasForeignKey("ChildId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_attendances_children_child_id");
 
@@ -777,14 +918,14 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasOne("NhaTre.Domain.Entities.Child", "Child")
                         .WithMany("ChildGuardians")
                         .HasForeignKey("ChildId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_child_guardians_children_child_id");
 
                     b.HasOne("NhaTre.Domain.Entities.User", "GuardianUser")
                         .WithMany("ChildGuardians")
                         .HasForeignKey("GuardianUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_child_guardians_users_guardian_user_id");
 
@@ -809,7 +950,7 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasOne("NhaTre.Domain.Entities.Child", "Child")
                         .WithMany("GrowthMeasurements")
                         .HasForeignKey("ChildId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_growth_measurements_children_child_id");
 
@@ -830,7 +971,7 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasOne("NhaTre.Domain.Entities.Child", "Child")
                         .WithMany("Incidents")
                         .HasForeignKey("ChildId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_incidents_children_child_id");
 
@@ -851,7 +992,7 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasOne("NhaTre.Domain.Entities.Incident", "Incident")
                         .WithMany("IncidentPhotos")
                         .HasForeignKey("IncidentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_incident_photos_incidents_incident_id");
 
@@ -863,7 +1004,7 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasOne("NhaTre.Domain.Entities.Child", "Child")
                         .WithMany("Invoices")
                         .HasForeignKey("ChildId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_invoices_children_child_id");
 
@@ -882,7 +1023,7 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasOne("NhaTre.Domain.Entities.WeeklyMenu", "WeeklyMenu")
                         .WithMany("MenuEntries")
                         .HasForeignKey("WeeklyMenuId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_menu_entries_weekly_menus_weekly_menu_id");
 
@@ -894,7 +1035,7 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasOne("NhaTre.Domain.Entities.User", "RecipientUser")
                         .WithMany("Notifications")
                         .HasForeignKey("RecipientUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_notifications_users_recipient_user_id");
 
@@ -906,7 +1047,7 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasOne("NhaTre.Domain.Entities.Invoice", "Invoice")
                         .WithMany("Payments")
                         .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_payments_invoices_invoice_id");
 
@@ -918,15 +1059,9 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasOne("NhaTre.Domain.Entities.Attendance", "Attendance")
                         .WithOne("Pickup")
                         .HasForeignKey("NhaTre.Domain.Entities.Pickup", "AttendanceId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_pickups_attendances_attendance_id");
-
-                    b.HasOne("NhaTre.Domain.Entities.RegisteredPickupPerson", "PickupPerson")
-                        .WithMany("Pickups")
-                        .HasForeignKey("PickupPersonId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_pickups_registered_pickup_persons_pickup_person_id");
 
                     b.HasOne("NhaTre.Domain.Entities.Teacher", "RecordedByTeacher")
                         .WithMany("Pickups")
@@ -937,8 +1072,6 @@ namespace NhaTre.Infrastructure.Migrations
 
                     b.Navigation("Attendance");
 
-                    b.Navigation("PickupPerson");
-
                     b.Navigation("RecordedByTeacher");
                 });
 
@@ -947,7 +1080,7 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasOne("NhaTre.Domain.Entities.Child", "Child")
                         .WithMany("QuickHealthStatuses")
                         .HasForeignKey("ChildId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_quick_health_statuses_children_child_id");
 
@@ -968,11 +1101,33 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasOne("NhaTre.Domain.Entities.Child", "Child")
                         .WithMany("RegisteredPickupPersons")
                         .HasForeignKey("ChildId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_registered_pickup_persons_children_child_id");
 
+                    b.HasOne("NhaTre.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("ConsentConfirmedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_registered_pickup_persons_users_consent_confirmed_by_user_id");
+
                     b.Navigation("Child");
+                });
+
+            modelBuilder.Entity("NhaTre.Domain.Entities.SecurityEvent", b =>
+                {
+                    b.HasOne("NhaTre.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_security_events_users_actor_user_id");
+
+                    b.HasOne("NhaTre.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("TargetUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_security_events_users_target_user_id");
                 });
 
             modelBuilder.Entity("NhaTre.Domain.Entities.Teacher", b =>
@@ -980,7 +1135,7 @@ namespace NhaTre.Infrastructure.Migrations
                     b.HasOne("NhaTre.Domain.Entities.User", "User")
                         .WithOne("Teacher")
                         .HasForeignKey("NhaTre.Domain.Entities.Teacher", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_teachers_users_user_id");
 
@@ -1036,11 +1191,6 @@ namespace NhaTre.Infrastructure.Migrations
             modelBuilder.Entity("NhaTre.Domain.Entities.Invoice", b =>
                 {
                     b.Navigation("Payments");
-                });
-
-            modelBuilder.Entity("NhaTre.Domain.Entities.RegisteredPickupPerson", b =>
-                {
-                    b.Navigation("Pickups");
                 });
 
             modelBuilder.Entity("NhaTre.Domain.Entities.Role", b =>

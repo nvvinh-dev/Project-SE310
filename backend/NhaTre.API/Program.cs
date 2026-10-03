@@ -8,12 +8,15 @@ using NhaTre.Infrastructure.Services;
 using NhaTre.Application.Services;
 using NhaTre.Infrastructure.Persistence.Repositories;
 using NhaTre.API.Middleware;
+using NhaTre.API.Services;
 using Serilog;
 using FluentValidation;
 using NhaTre.Application.Validators.Auth;
 using NhaTre.Application.DTOs.Auth;
 using NhaTre.Application.Validators.Children;
 using NhaTre.Application.DTOs.Children;
+using NhaTre.Application.Validators.Tuition;
+using NhaTre.Application.DTOs.Tuition;
 using NhaTre.Application.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -117,6 +120,15 @@ builder.Services.AddScoped<IChildService, ChildService>();
 builder.Services.AddScoped<IValidator<ChildProfileRequest>, ChildProfileRequestValidator>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IRequestContext, HttpRequestContext>();
+builder.Services.AddScoped<ISecurityEventRepository, SecurityEventRepository>();
+builder.Services.AddScoped<ISecurityEventService, SecurityEventService>(); // D50
+builder.Services.AddScoped<ITuitionRepository, TuitionRepository>();
+builder.Services.AddScoped<ITuitionService, TuitionService>();
+builder.Services.AddScoped<IValidator<TuitionFeeRequest>, TuitionFeeRequestValidator>();
+builder.Services.AddScoped<IValidator<InvoiceRequest>, InvoiceRequestValidator>();
+builder.Services.AddHttpClient<IFileStorageService, SupabaseFileStorageService>(); // D22, D53: Supabase:Url và Supabase:ServiceKey đọc lúc gọi, không chặn khởi động
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 var jwtSection = builder.Configuration.GetSection("Jwt");
@@ -231,6 +243,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+app.UseMiddleware<SecurityHeadersMiddleware>(); // D55: đứng đầu pipeline để mọi response đều mang header, kể cả 307/429/500
 app.UseExceptionHandler();
 
 // D38: bọc nốt các response do framework sinh ra mà KHÔNG có body — 404 (route không
