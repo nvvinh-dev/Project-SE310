@@ -36,9 +36,13 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<AuthUser | null>({
+  userId: "1",
+  fullName: "Cô Nguyễn Linh",
+  role: "Teacher", 
+  });
+  const [token, setToken] = useState<string | null>("dev-token");
+  const [isLoading, setIsLoading] = useState(false);
   const logoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const logout = useCallback(() => {
