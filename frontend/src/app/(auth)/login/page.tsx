@@ -16,7 +16,8 @@ export default function LoginPage() {
   const router = useRouter();
 
   const [apiError, setApiError] = useState<string | null>(null);
-  const [cooldown, setCooldown] = useState<number>(0);
+  const [apiErrors, setApiErrors] = useState<string[] | null>(null);
+  const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
 
   const {
     register,
@@ -37,38 +38,46 @@ export default function LoginPage() {
     }
   }, [user, isLoading, router]);
 
-  // Bộ đếm ngược 60 giây khi gặp lỗi HTTP 429 (Rate Limit - D54)
+  // Bộ đếm ngược thời gian chờ khi gặp lỗi HTTP 429 (D54)
   useEffect(() => {
-    if (cooldown <= 0) return;
+    if (cooldownSeconds <= 0) return;
 
     const timer = setInterval(() => {
-      setCooldown((prev) => Math.max(0, prev - 1));
+      setCooldownSeconds((prev) => {
+        if (prev <= 1) {
+          setApiError(null);
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [cooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cooldownSeconds]);
 
   async function onSubmit(data: LoginFormValues) {
-    if (cooldown > 0) return;
+    if (cooldownSeconds > 0) return;
     setApiError(null);
+    setApiErrors(null);
 
     try {
-      await login(data.email.trim(), data.password);
+      await login(data.email, data.password);
       router.replace("/");
     } catch (err: unknown) {
       const error = err instanceof ApiError ? err : toApiError(err);
 
       if (error.status === 429) {
-        setCooldown(60);
-        setApiError(
-          "Bạn đã gửi yêu cầu quá nhiều lần. Vui lòng đợi 60 giây trước khi thử lại."
-        );
+        setCooldownSeconds(60);
+        setApiError(error.message);
+        setApiErrors(null);
       } else {
-        const message =
-          error.errors && error.errors.length > 0
-            ? error.errors.join(", ")
-            : error.message || "Đăng nhập thất bại. Vui lòng thử lại.";
-        setApiError(message);
+        if (error.errors && error.errors.length > 0) {
+          setApiErrors(error.errors);
+          setApiError(null);
+        } else {
+          setApiError(error.message);
+          setApiErrors(null);
+        }
       }
     }
   }
@@ -81,7 +90,7 @@ export default function LoginPage() {
     );
   }
 
-  const isButtonDisabled = isSubmitting || cooldown > 0;
+  const isButtonDisabled = isSubmitting || cooldownSeconds > 0;
 
   return (
     <main className="flex min-h-screen items-center justify-center p-4 bg-background">
@@ -97,22 +106,18 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Thông báo lỗi Rate Limit 429 */}
-        {cooldown > 0 && (
-          <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            <p className="font-medium">Quá nhiều lần thử đăng nhập</p>
-            <p className="mt-1 text-xs">
-              Vui lòng đợi <strong>{cooldown}s</strong> trước khi gửi lại yêu cầu.
-            </p>
-          </div>
-        )}
-
-        {/* Thông báo lỗi từ server (401, 400, 500...) */}
-        {apiError && cooldown === 0 && (
+        {/* Thông báo lỗi từ server: có errors thì hiện danh sách từng dòng, không có thì hiện một thông báo duy nhất từ message (onboarding §4.0.2, §5.6) */}
+        {apiErrors && apiErrors.length > 0 ? (
+          <ul className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600 list-disc list-inside space-y-1">
+            {apiErrors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        ) : apiError ? (
           <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">
             {apiError}
           </div>
-        )}
+        ) : null}
 
         {/* Ô nhập Email */}
         <div>
@@ -127,8 +132,15 @@ export default function LoginPage() {
             type="email"
             autoComplete="email"
             disabled={isButtonDisabled}
+            aria-invalid={errors.email ? "true" : "false"}
+            aria-describedby={errors.email ? "email-error" : undefined}
             {...register("email", {
+              setValueAs: (v: string) => (typeof v === "string" ? v.trim() : v),
               required: "Vui lòng nhập email",
+              maxLength: {
+                value: 254,
+                message: "Email không được vượt quá 254 ký tự",
+              },
               pattern: {
                 value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                 message: "Email không đúng định dạng",
@@ -142,7 +154,9 @@ export default function LoginPage() {
             placeholder="nhanvien@truong.edu.vn"
           />
           {errors.email && (
-            <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
+            <p id="email-error" className="mt-1 text-xs text-red-600">
+              {errors.email.message}
+            </p>
           )}
         </div>
 
@@ -159,6 +173,8 @@ export default function LoginPage() {
             type="password"
             autoComplete="current-password"
             disabled={isButtonDisabled}
+            aria-invalid={errors.password ? "true" : "false"}
+            aria-describedby={errors.password ? "password-error" : undefined}
             {...register("password", {
               required: "Vui lòng nhập mật khẩu",
             })}
@@ -170,7 +186,7 @@ export default function LoginPage() {
             placeholder="••••••••"
           />
           {errors.password && (
-            <p className="mt-1 text-xs text-red-600">
+            <p id="password-error" className="mt-1 text-xs text-red-600">
               {errors.password.message}
             </p>
           )}
@@ -184,8 +200,8 @@ export default function LoginPage() {
         >
           {isSubmitting
             ? "Đang đăng nhập..."
-            : cooldown > 0
-            ? `Thử lại sau (${cooldown}s)`
+            : cooldownSeconds > 0
+            ? `Thử lại sau (${cooldownSeconds}s)`
             : "Đăng nhập"}
         </button>
       </form>
