@@ -17,6 +17,7 @@ export default function LoginPage() {
 
   const [apiError, setApiError] = useState<string | null>(null);
   const [apiErrors, setApiErrors] = useState<string[] | null>(null);
+  const [rateLimitError, setRateLimitError] = useState<string | null>(null);
   const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
 
   const {
@@ -43,13 +44,7 @@ export default function LoginPage() {
     if (cooldownSeconds <= 0) return;
 
     const timer = setInterval(() => {
-      setCooldownSeconds((prev) => {
-        if (prev <= 1) {
-          setApiError(null);
-          return 0;
-        }
-        return prev - 1;
-      });
+      setCooldownSeconds((prev) => Math.max(0, prev - 1));
     }, 1000);
 
     return () => clearInterval(timer);
@@ -59,6 +54,7 @@ export default function LoginPage() {
     if (cooldownSeconds > 0) return;
     setApiError(null);
     setApiErrors(null);
+    setRateLimitError(null);
 
     try {
       await login(data.email, data.password);
@@ -67,10 +63,12 @@ export default function LoginPage() {
       const error = err instanceof ApiError ? err : toApiError(err);
 
       if (error.status === 429) {
+        setRateLimitError(error.message);
         setCooldownSeconds(60);
-        setApiError(error.message);
+        setApiError(null);
         setApiErrors(null);
       } else {
+        setRateLimitError(null);
         if (error.errors && error.errors.length > 0) {
           setApiErrors(error.errors);
           setApiError(null);
@@ -91,6 +89,7 @@ export default function LoginPage() {
   }
 
   const isButtonDisabled = isSubmitting || cooldownSeconds > 0;
+  const activeErrorMessage = cooldownSeconds > 0 ? rateLimitError : apiError;
 
   return (
     <main className="flex min-h-screen items-center justify-center p-4 bg-background">
@@ -113,9 +112,9 @@ export default function LoginPage() {
               <li key={i}>{err}</li>
             ))}
           </ul>
-        ) : apiError ? (
+        ) : activeErrorMessage ? (
           <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-            {apiError}
+            {activeErrorMessage}
           </div>
         ) : null}
 
