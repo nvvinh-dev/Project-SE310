@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import UnderConstruction from "@/components/UnderConstruction";
 
 export default function AccountantRoot() {
-  redirect("/accountant/tuition");
+  return <UnderConstruction pageTitle="Tổng quan" />;
 }

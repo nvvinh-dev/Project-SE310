@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import UnderConstruction from "@/components/UnderConstruction";
 
 export default function ParentRoot() {
-  redirect("/parent/attendance");
+  return <UnderConstruction pageTitle="Tổng quan" />;
 }
