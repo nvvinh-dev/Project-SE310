@@ -5,7 +5,7 @@ import { Icons } from "./Icons";
 import { Button } from "./Button";
 
 // ==========================================
-// 1. BASE TABLE WRAPPER & SUBCOMPONENTS
+// 1. CÁC THÀNH PHẦN BẢNG CƠ BẢN (TABLE)
 // ==========================================
 export interface TableProps extends React.TableHTMLAttributes<HTMLTableElement> {
   containerClassName?: string;
@@ -67,7 +67,7 @@ export function TableCell({ className = "", children, ...props }: React.TdHTMLAt
 }
 
 // ==========================================
-// 2. TABLE SKELETON / LOADING STATE (AC-NFR-04)
+// 2. TRẠNG THÁI ĐANG TẢI CỦA BẢNG (AC-NFR-04)
 // ==========================================
 export interface TableLoadingProps {
   colSpan: number;
@@ -94,7 +94,7 @@ export function TableLoading({ colSpan, rowCount = 5 }: TableLoadingProps) {
 }
 
 // ==========================================
-// 3. TABLE EMPTY STATE (AC-NFR-04)
+// 3. TRẠNG THÁI RỖNG CỦA BẢNG (AC-NFR-04)
 // ==========================================
 export interface TableEmptyProps {
   colSpan: number;
@@ -132,7 +132,7 @@ export function TableEmpty({
 }
 
 // ==========================================
-// 4. TABLE ERROR STATE (AC-NFR-04)
+// 4. TRẠNG THÁI LỖI CỦA BẢNG (AC-NFR-04)
 // ==========================================
 export interface TableErrorProps {
   colSpan: number;

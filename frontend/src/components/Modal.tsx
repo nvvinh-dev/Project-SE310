@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useId } from "react";
 import { Icons } from "./Icons";
 
 export type ModalSize = "sm" | "md" | "lg" | "xl";
@@ -13,7 +13,9 @@ export interface ModalProps {
   children: React.ReactNode;
   size?: ModalSize;
   closeOnBackdropClick?: boolean;
+  closeOnEscape?: boolean;
   showCloseButton?: boolean;
+  ariaLabelledBy?: string;
   className?: string;
 }
 
@@ -32,14 +34,18 @@ export function Modal({
   children,
   size = "md",
   closeOnBackdropClick = true,
+  closeOnEscape = true,
   showCloseButton = true,
+  ariaLabelledBy,
   className = "",
 }: ModalProps) {
+  const titleId = useId();
+
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && closeOnEscape) {
         onClose();
       }
     };
@@ -52,32 +58,38 @@ export function Modal({
       document.body.style.overflow = originalOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, closeOnEscape]);
 
   if (!isOpen) return null;
+
+  const effectiveTitleId = ariaLabelledBy || (title ? titleId : undefined);
 
   return (
     <div
       role="dialog"
       aria-modal="true"
+      aria-labelledby={effectiveTitleId}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
     >
-      {/* Backdrop */}
+      {/* Lớp nền mờ (Backdrop) */}
       <div
         className="fixed inset-0 bg-on-surface/40 backdrop-blur-sm transition-opacity"
         onClick={closeOnBackdropClick ? onClose : undefined}
       />
 
-      {/* Dialog box */}
+      {/* Khung nội dung hộp thoại */}
       <div
         className={`relative w-full rounded-3xl bg-surface-container-lowest p-6 shadow-2xl transition-all duration-200 z-10 my-8 text-left ${SIZE_CLASSES[size]} ${className}`}
       >
-        {/* Header */}
+        {/* Tiêu đề & nút đóng */}
         {(title || showCloseButton) && (
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="space-y-1">
               {title && (
-                <h3 className="text-lg font-bold text-on-surface leading-snug">
+                <h3
+                  id={titleId}
+                  className="text-lg font-bold text-on-surface leading-snug"
+                >
                   {title}
                 </h3>
               )}
@@ -101,7 +113,7 @@ export function Modal({
           </div>
         )}
 
-        {/* Content */}
+        {/* Nội dung chính */}
         <div className="text-sm text-on-surface">{children}</div>
       </div>
     </div>

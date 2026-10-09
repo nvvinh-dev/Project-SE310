@@ -5,7 +5,7 @@ import { Icons } from "./Icons";
 import { Button } from "./Button";
 
 // ==========================================
-// 1. LOADING SPINNER
+// 1. BIỂU TƯỢNG ĐANG TẢI (LOADING SPINNER)
 // ==========================================
 export interface LoadingSpinnerProps {
   label?: string;
@@ -27,7 +27,7 @@ export function LoadingSpinner({
 }
 
 // ==========================================
-// 2. EMPTY STATE
+// 2. TRẠNG THÁI RỖNG (EMPTY STATE)
 // ==========================================
 export interface EmptyStateProps {
   title?: string;
@@ -67,7 +67,7 @@ export function EmptyState({
 }
 
 // ==========================================
-// 3. ERROR MESSAGE / ALERT
+// 3. THÔNG BÁO LỖI (ERROR ALERT)
 // ==========================================
 export interface ErrorAlertProps {
   title?: string;
@@ -84,15 +84,15 @@ export function ErrorAlert({
 }: ErrorAlertProps) {
   return (
     <div
-      className={`rounded-2xl border border-red-200 bg-red-50 p-4 text-left flex items-start justify-between gap-3 ${className}`}
+      className={`rounded-2xl border border-error/30 bg-error-container/40 p-4 text-left flex items-start justify-between gap-3 text-on-error-container ${className}`}
     >
       <div className="flex items-start gap-3">
         <div className="text-error mt-0.5 shrink-0">
           <Icons.Alert />
         </div>
         <div>
-          <h4 className="text-sm font-bold text-red-900">{title}</h4>
-          <p className="text-xs text-red-700 mt-0.5 leading-relaxed">{message}</p>
+          <h4 className="text-sm font-bold text-on-error-container">{title}</h4>
+          <p className="text-xs text-error font-medium mt-0.5 leading-relaxed">{message}</p>
         </div>
       </div>
 
@@ -102,7 +102,7 @@ export function ErrorAlert({
           variant="outline"
           onClick={onRetry}
           icon={<Icons.Refresh />}
-          className="shrink-0 bg-white"
+          className="shrink-0 bg-surface-container-lowest"
         >
           Thử lại
         </Button>

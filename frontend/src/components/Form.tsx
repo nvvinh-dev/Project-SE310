@@ -1,9 +1,9 @@
 "use client";
 
-import React, { forwardRef, useState, useEffect } from "react";
+import React, { forwardRef, useState, useEffect, useRef, useId } from "react";
 
 // ==========================================
-// 1. INPUT COMPONENT
+// 1. Ô NHẬP LIỆU (INPUT)
 // ==========================================
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -30,7 +30,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     },
     ref
   ) => {
-    const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+    const generatedId = useId();
+    const inputId = id || generatedId;
 
     return (
       <div className="w-full space-y-1.5 text-left">
@@ -55,6 +56,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             disabled={disabled}
+            aria-required={required ? "true" : undefined}
             aria-invalid={error ? "true" : "false"}
             aria-describedby={
               error
@@ -97,7 +99,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 Input.displayName = "Input";
 
 // ==========================================
-// 2. TEXTAREA COMPONENT (HỖ TRỢ ĐẾM KÝ TỰ)
+// 2. Ô VĂN BẢN NHIỀU DÒNG (TEXTAREA - ĐẾM KÝ TỰ)
 // ==========================================
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
@@ -126,18 +128,65 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     },
     ref
   ) => {
-    const textareaId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+    const generatedId = useId();
+    const textareaId = id || generatedId;
+
+    const internalRef = useRef<HTMLTextAreaElement | null>(null);
+    const setRefs = (node: HTMLTextAreaElement | null) => {
+      internalRef.current = node;
+      if (typeof ref === "function") {
+        ref(node);
+      } else if (ref) {
+        (ref as React.MutableRefObject<HTMLTextAreaElement | null>).current = node;
+      }
+    };
+
     const [charCount, setCharCount] = useState<number>(() => {
       if (typeof value === "string") return value.length;
       if (typeof defaultValue === "string") return defaultValue.length;
       return 0;
     });
 
+    // Đồng bộ bộ đếm ký tự khi mount, khi value/defaultValue thay đổi,
+    // khi người dùng nhập liệu, và khi useForm gọi reset() / setValue() trực tiếp lên DOM
     useEffect(() => {
-      if (typeof value === "string") {
-        setCharCount(value.length);
+      const element = internalRef.current;
+      if (!element) return;
+
+      const updateCount = () => {
+        setCharCount(element.value.length);
+      };
+
+      // Đọc giá trị hiện tại trên DOM (cho defaultValues khi nạp ban đầu)
+      updateCount();
+
+      element.addEventListener("input", updateCount);
+      element.addEventListener("change", updateCount);
+
+      // Bắt trường hợp React Hook Form gọi reset() hoặc setValue() gán thẳng vào element.value
+      const descriptor = Object.getOwnPropertyDescriptor(
+        HTMLTextAreaElement.prototype,
+        "value"
+      );
+      if (descriptor && descriptor.set) {
+        const originalSet = descriptor.set;
+        Object.defineProperty(element, "value", {
+          configurable: true,
+          get() {
+            return descriptor.get?.call(this) ?? "";
+          },
+          set(val: string) {
+            originalSet.call(this, val);
+            updateCount();
+          },
+        });
       }
-    }, [value]);
+
+      return () => {
+        element.removeEventListener("input", updateCount);
+        element.removeEventListener("change", updateCount);
+      };
+    }, [value, defaultValue]);
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setCharCount(e.target.value.length);
@@ -173,13 +222,14 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         </div>
 
         <textarea
-          ref={ref}
+          ref={setRefs}
           id={textareaId}
           disabled={disabled}
           maxLength={maxLength}
           value={value}
           defaultValue={defaultValue}
           onChange={handleChange}
+          aria-required={required ? "true" : undefined}
           aria-invalid={error ? "true" : "false"}
           aria-describedby={
             error
@@ -213,7 +263,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 Textarea.displayName = "Textarea";
 
 // ==========================================
-// 3. SELECT COMPONENT
+// 3. HỘP CHỌN (SELECT)
 // ==========================================
 export interface SelectOption {
   value: string | number;
@@ -243,11 +293,22 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       disabled,
       className = "",
       children,
+      defaultValue,
+      value,
       ...props
     },
     ref
   ) => {
-    const selectId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+    const generatedId = useId();
+    const selectId = id || generatedId;
+
+    // Khi có placeholder và cả value lẫn defaultValue đều chưa đặt, gán defaultValue="" để hiển thị placeholder
+    const computedDefaultValue =
+      defaultValue !== undefined
+        ? defaultValue
+        : placeholder && value === undefined
+        ? ""
+        : undefined;
 
     return (
       <div className="w-full space-y-1.5 text-left">
@@ -266,6 +327,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             id={selectId}
             disabled={disabled}
+            value={value}
+            defaultValue={computedDefaultValue}
+            aria-required={required ? "true" : undefined}
             aria-invalid={error ? "true" : "false"}
             aria-describedby={
               error
@@ -326,7 +390,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
 Select.displayName = "Select";
 
 // ==========================================
-// 4. CHECKBOX COMPONENT
+// 4. HỘP KIỂM (CHECKBOX)
 // ==========================================
 export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {
   label?: React.ReactNode;
@@ -335,8 +399,9 @@ export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputE
 }
 
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ id, label, description, error, disabled, className = "", ...props }, ref) => {
-    const checkboxId = id || (typeof label === "string" ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+  ({ id, label, description, error, disabled, className = "", required, ...props }, ref) => {
+    const generatedId = useId();
+    const checkboxId = id || generatedId;
 
     return (
       <div className="text-left space-y-1">
@@ -352,6 +417,10 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               id={checkboxId}
               type="checkbox"
               disabled={disabled}
+              required={required}
+              aria-required={required ? "true" : undefined}
+              aria-invalid={error ? "true" : "false"}
+              aria-describedby={error ? `${checkboxId}-error` : undefined}
               className={`peer h-5 w-5 appearance-none rounded-lg border bg-surface-container-lowest transition-all checked:bg-primary checked:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 ${
                 error ? "border-error" : "border-slate-300"
               } ${className}`}
@@ -373,7 +442,12 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
 
           {(label || description) && (
             <div className="flex flex-col text-sm leading-snug">
-              {label && <span className="font-medium text-on-surface">{label}</span>}
+              {label && (
+                <span className="font-medium text-on-surface">
+                  {label}
+                  {required && <span className="ml-1 text-error">*</span>}
+                </span>
+              )}
               {description && (
                 <span className="text-xs text-on-surface-variant mt-0.5">{description}</span>
               )}
@@ -381,7 +455,11 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           )}
         </label>
 
-        {error && <p className="text-xs text-error font-medium ml-8">{error}</p>}
+        {error && (
+          <p id={`${checkboxId}-error`} className="text-xs text-error font-medium ml-8">
+            {error}
+          </p>
+        )}
       </div>
     );
   }

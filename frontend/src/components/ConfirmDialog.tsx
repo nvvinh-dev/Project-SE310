@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useId } from "react";
 import { Modal } from "./Modal";
 import { Button } from "./Button";
 import { Icons } from "./Icons";
@@ -54,19 +54,32 @@ export function ConfirmDialog({
   variant = "primary",
   isLoading = false,
 }: ConfirmDialogProps) {
+  const titleId = useId();
   const config = ICON_CONFIG[variant];
 
   const handleConfirm = async () => {
-    await onConfirm();
+    try {
+      await onConfirm();
+    } catch {
+      // Lỗi được xử lý bởi onError của mutation/caller, tránh unhandled promise rejection
+    }
+  };
+
+  const handleClose = () => {
+    if (!isLoading) {
+      onClose();
+    }
   };
 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       size="sm"
       closeOnBackdropClick={!isLoading}
+      closeOnEscape={!isLoading}
       showCloseButton={!isLoading}
+      ariaLabelledBy={titleId}
     >
       <div className="flex flex-col items-center text-center">
         {/* Biểu tượng trạng thái */}
@@ -77,7 +90,7 @@ export function ConfirmDialog({
         </div>
 
         {/* Tiêu đề & Nội dung */}
-        <h3 className="text-lg font-bold text-on-surface mb-2 leading-snug">
+        <h3 id={titleId} className="text-lg font-bold text-on-surface mb-2 leading-snug">
           {title}
         </h3>
         <div className="text-sm text-on-surface-variant leading-relaxed mb-6">
@@ -88,7 +101,7 @@ export function ConfirmDialog({
         <div className="flex w-full items-center justify-center gap-3">
           <Button
             variant="outline"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={isLoading}
             className="flex-1"
           >
