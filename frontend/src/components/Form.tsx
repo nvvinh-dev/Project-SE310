@@ -107,6 +107,7 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   error?: string;
   helperText?: string;
   showCount?: boolean;
+  currentValue?: string;
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
@@ -123,6 +124,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       className = "",
       value,
       defaultValue,
+      currentValue,
       onChange,
       ...props
     },
@@ -141,55 +143,31 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       }
     };
 
-    const [charCount, setCharCount] = useState<number>(() => {
+    const [internalCharCount, setInternalCharCount] = useState<number>(() => {
+      if (typeof currentValue === "string") return currentValue.length;
       if (typeof value === "string") return value.length;
       if (typeof defaultValue === "string") return defaultValue.length;
       return 0;
     });
 
-    // Đồng bộ bộ đếm ký tự khi mount, khi value/defaultValue thay đổi,
-    // khi người dùng nhập liệu, và khi useForm gọi reset() / setValue() trực tiếp lên DOM
+    // Khi truyền currentValue (ví dụ lấy từ watch/useWatch của React Hook Form) hoặc value (controlled),
+    // ưu tiên đếm thẳng theo giá trị đó để tự động cập nhật khi reset(data) / setValue().
+    // Khi dùng uncontrolled thông thường, dùng state nội bộ cập nhật khi người dùng gõ hoặc nạp defaultValue.
+    const charCount =
+      typeof currentValue === "string"
+        ? currentValue.length
+        : typeof value === "string"
+        ? value.length
+        : internalCharCount;
+
     useEffect(() => {
-      const element = internalRef.current;
-      if (!element) return;
-
-      const updateCount = () => {
-        setCharCount(element.value.length);
-      };
-
-      // Đọc giá trị hiện tại trên DOM (cho defaultValues khi nạp ban đầu)
-      updateCount();
-
-      element.addEventListener("input", updateCount);
-      element.addEventListener("change", updateCount);
-
-      // Bắt trường hợp React Hook Form gọi reset() hoặc setValue() gán thẳng vào element.value
-      const descriptor = Object.getOwnPropertyDescriptor(
-        HTMLTextAreaElement.prototype,
-        "value"
-      );
-      if (descriptor && descriptor.set) {
-        const originalSet = descriptor.set;
-        Object.defineProperty(element, "value", {
-          configurable: true,
-          get() {
-            return descriptor.get?.call(this) ?? "";
-          },
-          set(val: string) {
-            originalSet.call(this, val);
-            updateCount();
-          },
-        });
+      if (typeof currentValue !== "string" && typeof value !== "string" && internalRef.current) {
+        setInternalCharCount(internalRef.current.value.length);
       }
-
-      return () => {
-        element.removeEventListener("input", updateCount);
-        element.removeEventListener("change", updateCount);
-      };
-    }, [value, defaultValue]);
+    }, [currentValue, value, defaultValue]);
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setCharCount(e.target.value.length);
+      setInternalCharCount(e.target.value.length);
       if (onChange) {
         onChange(e);
       }
@@ -417,7 +395,6 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               id={checkboxId}
               type="checkbox"
               disabled={disabled}
-              required={required}
               aria-required={required ? "true" : undefined}
               aria-invalid={error ? "true" : "false"}
               aria-describedby={error ? `${checkboxId}-error` : undefined}
