@@ -3,6 +3,7 @@
 import React from "react";
 import {
   Button,
+  Icons,
   Table,
   TableBody,
   TableCell,
@@ -33,6 +34,7 @@ interface AttendanceTableProps {
   onOpenHealthNote: (child: HomeroomChildResponse) => void;
   isLoading: boolean;
   isError: boolean;
+  errorMessage?: string | null;
   onRetry: () => void;
 }
 
@@ -43,6 +45,7 @@ export function AttendanceTable({
   onOpenHealthNote,
   isLoading,
   isError,
+  errorMessage,
   onRetry,
 }: AttendanceTableProps) {
   const TABLE_COLUMNS = 6;
@@ -101,7 +104,7 @@ export function AttendanceTable({
         ) : isError ? (
           <TableError
             colSpan={TABLE_COLUMNS}
-            message="Không thể tải danh sách học sinh của lớp. Vui lòng thử lại."
+            message={errorMessage || "Không thể tải danh sách học sinh của lớp. Vui lòng thử lại."}
             onRetry={onRetry}
           />
         ) : items.length === 0 ? (
@@ -133,9 +136,6 @@ export function AttendanceTable({
                       <p className="font-semibold text-slate-900 leading-snug">
                         {child.fullName}
                       </p>
-                      <p className="text-[11px] text-slate-400 font-mono">
-                        ID: {child.id.substring(0, 8)}...
-                      </p>
                     </div>
                   </div>
                 </TableCell>
@@ -149,7 +149,9 @@ export function AttendanceTable({
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition-colors shadow-2xs group"
                       title="Bấm để xem chi tiết lưu ý sức khỏe"
                     >
-                      <span className="text-amber-600 text-xs">⚠️</span>
+                      <span className="text-amber-600 shrink-0">
+                        <Icons.Alert />
+                      </span>
                       <span className="truncate max-w-[120px]">
                         {child.healthNotes}
                       </span>
@@ -174,16 +176,10 @@ export function AttendanceTable({
                 {/* Thao tác điểm danh */}
                 <TableCell className="text-right pr-6">
                   {hasRecorded ? (
-                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200/60">
-                      <svg
-                        className="w-3.5 h-3.5 text-emerald-600"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        viewBox="0 0 24 24"
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
+                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200/80">
+                      <span className="text-emerald-600 shrink-0">
+                        <Icons.Check />
+                      </span>
                       <span>Đã chốt điểm danh</span>
                     </div>
                   ) : (
@@ -201,24 +197,26 @@ export function AttendanceTable({
                       </Button>
 
                       {/* Nút Vắng có phép */}
-                      <button
-                        type="button"
+                      <Button
+                        size="sm"
+                        variant="outline"
                         disabled={Boolean(submittingChildId)}
                         onClick={() => onCheckIn(child.id, "AbsentExcused")}
-                        className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-2.5 py-1 text-xs font-semibold border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
                       >
                         Có phép
-                      </button>
+                      </Button>
 
                       {/* Nút Vắng không phép */}
-                      <button
-                        type="button"
+                      <Button
+                        size="sm"
+                        variant="outline"
                         disabled={Boolean(submittingChildId)}
                         onClick={() => onCheckIn(child.id, "AbsentUnexcused")}
-                        className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-2.5 py-1 text-xs font-semibold border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100"
                       >
                         Không phép
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </TableCell>

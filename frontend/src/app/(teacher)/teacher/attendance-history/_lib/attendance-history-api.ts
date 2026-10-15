@@ -3,8 +3,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
 import type { ApiResponse } from "@/types/auth";
-import type { AttendanceResponse, HomeroomChildResponse } from "@/types/attendance";
-export const HOMEROOM_CHILDREN_QUERY_KEY = ["homeroom-children"] as const;
+import type { AttendanceResponse } from "@/types/attendance";
+import {
+  HOMEROOM_CHILDREN_QUERY_KEY,
+  useHomeroomChildren,
+} from "../../attendance/_lib/attendance-api";
+
+// Tái sử dụng query key và hook lấy danh sách trẻ từ module attendance (tránh trùng lặp code)
+export { HOMEROOM_CHILDREN_QUERY_KEY, useHomeroomChildren, useHomeroomChildren as useHomeroomChildrenList };
 
 export interface AttendanceHistoryParams {
   childId?: string;
@@ -14,6 +20,7 @@ export interface AttendanceHistoryParams {
 
 export function useAttendanceHistory(params: AttendanceHistoryParams) {
   const { childId, date, classId } = params;
+  const isEnabled = Boolean(childId || date);
 
   return useQuery({
     queryKey: ["attendances", "history-filter", { childId, date, classId }],
@@ -28,18 +35,8 @@ export function useAttendanceHistory(params: AttendanceHistoryParams) {
       );
       return res.data.data ?? [];
     },
+    enabled: isEnabled,
     retry: false,
   });
 }
 
-export function useHomeroomChildrenList() {
-  return useQuery({
-    queryKey: HOMEROOM_CHILDREN_QUERY_KEY,
-    queryFn: async () => {
-      const res = await apiClient.get<ApiResponse<HomeroomChildResponse[]>>(
-        "/api/homeroom-children"
-      );
-      return res.data.data ?? [];
-    },
-  });
-}

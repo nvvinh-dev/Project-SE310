@@ -32,7 +32,7 @@ export default function TeacherAttendanceHistoryPage() {
   const childrenQuery = useHomeroomChildrenList();
   const childrenList = useMemo(() => childrenQuery.data ?? [], [childrenQuery.data]);
 
-  // Fail-safe: Always ensure at least date or selectedChildId is present
+  // Fail-safe: Tự động đảm bảo có ít nhất ngày hoặc học sinh được chọn
   const queryParams = useMemo(() => {
     return {
       childId: selectedChildId || undefined,
@@ -43,24 +43,38 @@ export default function TeacherAttendanceHistoryPage() {
   const historyQuery = useAttendanceHistory(queryParams);
   const rawAttendances = useMemo(() => historyQuery.data ?? [], [historyQuery.data]);
 
+  // Đọc lỗi theo onboarding-guide §4.0.2: có errors thì liệt kê đủ các dòng, không có thì hiện message
   const errorMessage = useMemo(() => {
     if (!historyQuery.error) return null;
     const apiErr = toApiError(historyQuery.error);
-    return (
-      (apiErr.errors && apiErr.errors.length > 0 ? apiErr.errors[0] : null) ||
-      apiErr.message ||
-      "Không thể tải lịch sử điểm danh. Vui lòng thử lại."
-    );
+    if (apiErr.errors && apiErr.errors.length > 0) {
+      return apiErr.errors.join("\n");
+    }
+    return apiErr.message || "Không thể tải lịch sử điểm danh. Vui lòng thử lại.";
   }, [historyQuery.error]);
+
+  const childrenErrorMessage = useMemo(() => {
+    if (!childrenQuery.error) return null;
+    const apiErr = toApiError(childrenQuery.error);
+    return apiErr.message || "Không thể tải danh sách học sinh của lớp.";
+  }, [childrenQuery.error]);
 
   // Reset page when any filter changes
   const handleDateChange = (newDate: string) => {
+    // Tránh tình trạng ngày trống khi chưa chọn học sinh
+    if (!newDate && !selectedChildId) {
+      return;
+    }
     setDate(newDate);
     setPage(1);
   };
 
   const handleChildChange = (newChildId: string) => {
     setSelectedChildId(newChildId);
+    // Khi bỏ chọn học sinh trong lúc ngày đang trống ("Tất cả ngày"), tự động phục hồi ngày hôm nay
+    if (!newChildId && !date) {
+      setDate(todayStr);
+    }
     setPage(1);
   };
 
@@ -133,11 +147,11 @@ export default function TeacherAttendanceHistoryPage() {
               Lịch sử điểm danh lớp
             </h1>
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-secondary/10 text-secondary border border-secondary/20">
-              Chỉ xem (BR-ATTENDANCE-04)
+              Chế độ chỉ xem
             </span>
           </div>
           <p className="text-sm text-on-surface-variant mt-1">
-            Tra cứu lịch sử điểm danh theo ngày hoặc theo học sinh trong lớp chủ nhiệm (FR-ATT-03).
+            Tra cứu lịch sử điểm danh theo ngày hoặc theo học sinh trong lớp chủ nhiệm.
           </p>
         </div>
 
@@ -159,6 +173,24 @@ export default function TeacherAttendanceHistoryPage() {
           </Button>
         </div>
       </div>
+
+      {/* Cảnh báo nếu tải danh sách trẻ lớp chủ nhiệm bị lỗi */}
+      {childrenErrorMessage && (
+        <div
+          role="alert"
+          className="rounded-2xl border border-amber-200 bg-amber-50/70 p-3.5 flex items-center justify-between gap-3 text-xs text-amber-900"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-amber-600 shrink-0">
+              <Icons.Alert />
+            </span>
+            <span>{childrenErrorMessage}</span>
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => childrenQuery.refetch()}>
+            Tải lại danh sách
+          </Button>
+        </div>
+      )}
 
       {/* Thống kê nhanh kết quả */}
       <AttendanceHistoryStats

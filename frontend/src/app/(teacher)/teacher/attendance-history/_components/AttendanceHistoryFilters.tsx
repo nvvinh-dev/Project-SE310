@@ -66,49 +66,40 @@ export function AttendanceHistoryFilters({
   return (
     <div className="p-4 rounded-3xl bg-surface-container-lowest border border-slate-200/90 shadow-xs space-y-3.5">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* 1. Chọn ngày */}
+        {/* 1. Chọn ngày (dùng Input component có label) */}
         <div>
-          <label className="block text-xs font-semibold text-on-surface mb-1">
-            Ngày tra cứu
-          </label>
-          <input
+          <Input
             type="date"
+            label="Ngày tra cứu"
             value={date}
             onChange={(e) => onDateChange(e.target.value)}
-            className="w-full h-10 px-3 rounded-xl border border-slate-200/90 bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
           />
         </div>
 
-        {/* 2. Chọn học sinh */}
+        {/* 2. Chọn học sinh (dùng Select component có label) */}
         <div>
-          <label className="block text-xs font-semibold text-on-surface mb-1">
-            Học sinh trong lớp
-          </label>
           <Select
+            label="Học sinh trong lớp"
             options={childOptions}
             value={selectedChildId}
             onChange={(e) => onChildChange(e.target.value)}
           />
         </div>
 
-        {/* 3. Lọc theo trạng thái điểm danh */}
+        {/* 3. Lọc theo trạng thái điểm danh (dùng Select component có label) */}
         <div>
-          <label className="block text-xs font-semibold text-on-surface mb-1">
-            Trạng thái điểm danh
-          </label>
           <Select
+            label="Trạng thái điểm danh"
             options={statusOptions}
             value={statusFilter}
             onChange={(e) => onStatusFilterChange(e.target.value)}
           />
         </div>
 
-        {/* 4. Tìm theo tên học sinh */}
+        {/* 4. Tìm theo tên học sinh (dùng Input component có label) */}
         <div>
-          <label className="block text-xs font-semibold text-on-surface mb-1">
-            Tìm theo tên học sinh
-          </label>
           <Input
+            label="Tìm theo tên học sinh"
             placeholder="Gõ tên để tìm nhanh..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -151,15 +142,25 @@ export function AttendanceHistoryFilters({
             Hôm qua
           </button>
 
+          {/* Khóa nút 'Tất cả ngày' khi chưa chọn học sinh để tránh lỗi 400 Bad Request */}
           <button
             type="button"
+            disabled={!selectedChildId}
             onClick={() => onDateChange("")}
             className={`px-2.5 py-1 rounded-lg border font-medium transition-colors ${
               date === ""
                 ? "bg-secondary text-white border-secondary"
                 : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+            } ${
+              !selectedChildId
+                ? "opacity-50 cursor-not-allowed hover:bg-slate-50"
+                : ""
             }`}
-            title="Xem tất cả các ngày"
+            title={
+              !selectedChildId
+                ? "Cần chọn học sinh cụ thể trước khi xem tất cả ngày"
+                : "Xem tất cả các ngày của học sinh này"
+            }
           >
             Tất cả ngày
           </button>

@@ -26,7 +26,7 @@ import { AttendanceTable } from "./_components/AttendanceTable";
 import { HealthNoteModal } from "./_components/HealthNoteModal";
 
 export default function TeacherAttendancePage() {
-  const todayStr = useMemo(() => getTodayVietnamDateString(), []);
+  const [todayStr, setTodayStr] = useState(() => getTodayVietnamDateString());
   const formattedDisplayDate = useMemo(() => formatVietnamDisplayDate(todayStr), [todayStr]);
 
   // Queries
@@ -42,9 +42,10 @@ export default function TeacherAttendancePage() {
     useState<HomeroomChildResponse | null>(null);
   const [submittingChildId, setSubmittingChildId] = useState<string | null>(null);
 
-  // Notification banners
+  // Notification banners (onboarding-guide §4.0.2)
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
+  const [errorErrors, setErrorErrors] = useState<string[] | null>(null);
 
   // Auto-dismiss notices after 6 seconds
   useEffect(() => {
@@ -54,10 +55,13 @@ export default function TeacherAttendancePage() {
   }, [successNotice]);
 
   useEffect(() => {
-    if (!errorNotice) return;
-    const timer = setTimeout(() => setErrorNotice(null), 6000);
+    if (!errorNotice && (!errorErrors || errorErrors.length === 0)) return;
+    const timer = setTimeout(() => {
+      setErrorNotice(null);
+      setErrorErrors(null);
+    }, 6000);
     return () => clearTimeout(timer);
-  }, [errorNotice]);
+  }, [errorNotice, errorErrors]);
 
   const children = useMemo(() => childrenQuery.data ?? [], [childrenQuery.data]);
   const attendances = useMemo(() => attendancesQuery.data ?? [], [attendancesQuery.data]);
@@ -121,6 +125,7 @@ export default function TeacherAttendancePage() {
     const targetChild = children.find((c) => c.id === childId);
     setSubmittingChildId(childId);
     setErrorNotice(null);
+    setErrorErrors(null);
 
     try {
       await checkInMutation.mutateAsync({ childId, status });
@@ -128,17 +133,15 @@ export default function TeacherAttendancePage() {
       const childName = targetChild ? targetChild.fullName : "trẻ";
       setSuccessNotice(`Đã ghi nhận điểm danh: "${statusLabel}" cho bé ${childName}.`);
     } catch (err) {
+      // Tuân thủ onboarding-guide §4.0.2: luôn dùng toApiError(), không if/else theo từng status.
+      // Có errors thì hiển thị danh sách từng dòng, không có thì hiện apiErr.message từ backend.
       const apiErr = toApiError(err);
-      if (apiErr.status === 409) {
-        setErrorNotice(
-          "Trẻ đã được điểm danh hôm nay. Theo quy định, bản điểm danh đã ghi không thể sửa hoặc ghi đè."
-        );
-      } else if (apiErr.status === 404) {
-        setErrorNotice("Không tìm thấy trẻ trong danh sách lớp bạn chủ nhiệm.");
-      } else if (apiErr.message) {
-        setErrorNotice(apiErr.message);
+      if (apiErr.errors && apiErr.errors.length > 0) {
+        setErrorErrors(apiErr.errors);
+        setErrorNotice(null);
       } else {
-        setErrorNotice("Không thể ghi nhận điểm danh. Vui lòng thử lại.");
+        setErrorNotice(apiErr.message || "Không thể ghi nhận điểm danh. Vui lòng thử lại.");
+        setErrorErrors(null);
       }
     } finally {
       setSubmittingChildId(null);
@@ -156,9 +159,21 @@ export default function TeacherAttendancePage() {
   );
 
   const handleRefreshAll = () => {
+    setTodayStr(getTodayVietnamDateString());
     childrenQuery.refetch();
     attendancesQuery.refetch();
   };
+
+  // Lấy lỗi từ query qua toApiError để truyền thông báo chính xác vào TableError
+  const tableError = childrenQuery.error || attendancesQuery.error;
+  const tableErrorMessage = useMemo(() => {
+    if (!tableError) return null;
+    const apiErr = toApiError(tableError);
+    if (apiErr.errors && apiErr.errors.length > 0) {
+      return apiErr.errors.join("; ");
+    }
+    return apiErr.message || "Không thể tải danh sách học sinh của lớp. Vui lòng thử lại.";
+  }, [tableError]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -175,7 +190,7 @@ export default function TeacherAttendancePage() {
             </span>
           </div>
           <p className="text-sm text-on-surface-variant mt-1">
-            Ghi nhận trạng thái điểm danh học sinh khi đến lớp buổi sáng (FR-ATT-01).
+            Ghi nhận trạng thái điểm danh học sinh khi đến lớp buổi sáng.
           </p>
         </div>
 
@@ -216,8 +231,8 @@ export default function TeacherAttendancePage() {
         </div>
       )}
 
-      {/* Error Banner */}
-      {errorNotice && (
+      {/* Error Banner (hiển thị danh sách errors nếu có, hoặc message từ backend) */}
+      {(errorNotice || (errorErrors && errorErrors.length > 0)) && (
         <div
           role="alert"
           className="rounded-2xl border border-error/30 bg-error-container/40 p-4 flex items-start justify-between gap-3 shadow-2xs"
@@ -228,12 +243,23 @@ export default function TeacherAttendancePage() {
             </span>
             <div>
               <p className="text-sm font-bold text-on-error-container">Lỗi điểm danh</p>
-              <p className="text-xs font-medium text-error mt-0.5">{errorNotice}</p>
+              {errorErrors && errorErrors.length > 0 ? (
+                <ul className="mt-1 list-disc list-inside space-y-0.5 text-xs font-medium text-error">
+                  {errorErrors.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs font-medium text-error mt-0.5">{errorNotice}</p>
+              )}
             </div>
           </div>
           <button
             type="button"
-            onClick={() => setErrorNotice(null)}
+            onClick={() => {
+              setErrorNotice(null);
+              setErrorErrors(null);
+            }}
             aria-label="Đóng thông báo"
             className="shrink-0 p-1 rounded-full text-outline hover:bg-error-container hover:text-error transition-colors cursor-pointer"
           >
@@ -269,6 +295,7 @@ export default function TeacherAttendancePage() {
         onOpenHealthNote={(ch) => setSelectedChildHealthNote(ch)}
         isLoading={childrenQuery.isLoading || attendancesQuery.isLoading}
         isError={childrenQuery.isError || attendancesQuery.isError}
+        errorMessage={tableErrorMessage}
         onRetry={handleRefreshAll}
       />
 

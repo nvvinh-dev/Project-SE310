@@ -103,7 +103,8 @@ export function AttendanceHistoryTable({
             <TableEmpty
               colSpan={TABLE_COLUMNS}
               title="Không có bản ghi điểm danh"
-              message="Không tìm thấy bản ghi điểm danh nào trong ngày hoặc học sinh đã chọn. (BR-ATTENDANCE-04: Giáo viên chỉ xem bản ghi đã tạo của lớp mình)."
+              // BR-ATTENDANCE-03: Giáo viên chỉ xem bản ghi của lớp mình chủ nhiệm
+              message="Không tìm thấy bản ghi điểm danh nào trong ngày hoặc học sinh đã chọn. Giáo viên chỉ xem được bản ghi của lớp mình chủ nhiệm."
             />
           ) : (
             items.map((item, index) => {
@@ -121,9 +122,6 @@ export function AttendanceHistoryTable({
                     <div className="font-semibold text-slate-900 text-xs">
                       {formatVietnamDisplayDate(item.attendanceDate)}
                     </div>
-                    <div className="text-[11px] text-slate-400 font-mono">
-                      {item.attendanceDate}
-                    </div>
                   </TableCell>
 
                   {/* Tên học sinh */}
@@ -135,9 +133,6 @@ export function AttendanceHistoryTable({
                       <div>
                         <p className="font-semibold text-slate-900 leading-snug">
                           {item.childFullName}
-                        </p>
-                        <p className="text-[11px] text-slate-400 font-mono">
-                          ID: {item.childId.substring(0, 8)}...
                         </p>
                       </div>
                     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Button, Input, Select } from "@/components";
+import { Button, Checkbox, Icons, Input, Select } from "@/components";
 
 interface AttendanceFiltersProps {
   search: string;
@@ -66,19 +66,19 @@ export function AttendanceFilters({
         </div>
 
         {/* Quick toggle: Trẻ có lưu ý sức khỏe */}
-        <div className="flex items-center h-10">
-          <label className="inline-flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-on-surface-variant hover:text-on-surface">
-            <input
-              type="checkbox"
-              checked={onlyHealthNotes}
-              onChange={(e) => onOnlyHealthNotesChange(e.target.checked)}
-              className="w-4 h-4 rounded text-primary focus:ring-primary/20 accent-primary"
-            />
-            <span className="flex items-center gap-1">
-              <span className="text-amber-600">⚠️</span>
-              Chỉ trẻ có lưu ý sức khỏe
-            </span>
-          </label>
+        <div className="flex items-center pb-2">
+          <Checkbox
+            checked={onlyHealthNotes}
+            onChange={(e) => onOnlyHealthNotesChange(e.target.checked)}
+            label={
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant">
+                <span className="text-amber-600 inline-flex items-center shrink-0">
+                  <Icons.Alert />
+                </span>
+                Chỉ trẻ có lưu ý sức khỏe
+              </span>
+            }
+          />
         </div>
       </div>
 
