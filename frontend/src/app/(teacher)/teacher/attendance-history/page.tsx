@@ -2,17 +2,21 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { Button, Icons } from "@/components";
-import { toApiError } from "@/lib/axios";
+import { Button, EmptyState, ErrorAlert, Icons } from "@/components";
 import {
   getTodayVietnamDateString,
   normalizeForSearch,
+  readApiError,
 } from "../attendance/_lib/attendance-helpers";
 import {
-  useAttendanceHistory,
-  useHomeroomChildrenList,
-} from "./_lib/attendance-history-api";
-import { AttendanceHistoryFilters } from "./_components/AttendanceHistoryFilters";
+  type AttendanceQuery,
+  useAttendances,
+  useHomeroomChildren,
+} from "../attendance/_lib/attendance-api";
+import {
+  AttendanceHistoryFilters,
+  type HistoryViewMode,
+} from "./_components/AttendanceHistoryFilters";
 import { AttendanceHistoryStats } from "./_components/AttendanceHistoryStats";
 import { AttendanceHistoryTable } from "./_components/AttendanceHistoryTable";
 
@@ -22,6 +26,7 @@ export default function TeacherAttendanceHistoryPage() {
   const todayStr = useMemo(() => getTodayVietnamDateString(), []);
 
   // Filter states
+  const [mode, setMode] = useState<HistoryViewMode>("date");
   const [date, setDate] = useState<string>(todayStr);
   const [selectedChildId, setSelectedChildId] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -29,52 +34,51 @@ export default function TeacherAttendanceHistoryPage() {
   const [page, setPage] = useState<number>(1);
 
   // Queries
-  const childrenQuery = useHomeroomChildrenList();
+  const childrenQuery = useHomeroomChildren();
   const childrenList = useMemo(() => childrenQuery.data ?? [], [childrenQuery.data]);
 
-  // Fail-safe: Tự động đảm bảo có ít nhất ngày hoặc học sinh được chọn
-  const queryParams = useMemo(() => {
-    return {
-      childId: selectedChildId || undefined,
-      date: date || undefined,
-    };
-  }, [selectedChildId, date]);
+  // Gửi đúng một trong hai tham số theo cách xem đang chọn (SCR-TCH-02 Hành vi 1). Xem theo trẻ
+  // mà chưa chọn trẻ thì chưa gọi API.
+  const query: AttendanceQuery | null =
+    mode === "date"
+      ? date
+        ? { date }
+        : null
+      : selectedChildId
+        ? { childId: selectedChildId }
+        : null;
 
-  const historyQuery = useAttendanceHistory(queryParams);
+  const historyQuery = useAttendances(query, { retry: false });
   const rawAttendances = useMemo(() => historyQuery.data ?? [], [historyQuery.data]);
 
-  // Đọc lỗi theo onboarding-guide §4.0.2: có errors thì liệt kê đủ các dòng, không có thì hiện message
-  const errorMessage = useMemo(() => {
-    if (!historyQuery.error) return null;
-    const apiErr = toApiError(historyQuery.error);
-    if (apiErr.errors && apiErr.errors.length > 0) {
-      return apiErr.errors.join("\n");
-    }
-    return apiErr.message || "Không thể tải lịch sử điểm danh. Vui lòng thử lại.";
-  }, [historyQuery.error]);
+  // Lỗi khi chưa có dữ liệu thì thay cả bảng; lỗi lúc tải lại thì giữ bảng cũ và báo ở trên
+  // (ui-screens.md §4.2)
+  const errorMessage = historyQuery.error ? readApiError(historyQuery.error) : null;
+  const hasHistoryData = historyQuery.data !== undefined;
 
   const childrenErrorMessage = useMemo(() => {
     if (!childrenQuery.error) return null;
-    const apiErr = toApiError(childrenQuery.error);
-    return apiErr.message || "Không thể tải danh sách học sinh của lớp.";
+    return readApiError(childrenQuery.error);
   }, [childrenQuery.error]);
 
   // Reset page when any filter changes
-  const handleDateChange = (newDate: string) => {
-    // Tránh tình trạng ngày trống khi chưa chọn học sinh
-    if (!newDate && !selectedChildId) {
-      return;
+  const handleModeChange = (newMode: HistoryViewMode) => {
+    setMode(newMode);
+    if (newMode === "date" && !date) {
+      setDate(todayStr);
     }
+    setPage(1);
+  };
+
+  const handleDateChange = (newDate: string) => {
+    setMode("date");
     setDate(newDate);
     setPage(1);
   };
 
   const handleChildChange = (newChildId: string) => {
+    setMode("child");
     setSelectedChildId(newChildId);
-    // Khi bỏ chọn học sinh trong lúc ngày đang trống ("Tất cả ngày"), tự động phục hồi ngày hôm nay
-    if (!newChildId && !date) {
-      setDate(todayStr);
-    }
     setPage(1);
   };
 
@@ -89,6 +93,7 @@ export default function TeacherAttendanceHistoryPage() {
   };
 
   const handleResetFilters = () => {
+    setMode("date");
     setDate(todayStr);
     setSelectedChildId("");
     setStatusFilter("all");
@@ -96,8 +101,18 @@ export default function TeacherAttendanceHistoryPage() {
     setPage(1);
   };
 
+  const handleClearResultFilters = () => {
+    setStatusFilter("all");
+    setSearch("");
+    setPage(1);
+  };
+
   const hasFilters = Boolean(
-    date !== todayStr || selectedChildId !== "" || statusFilter !== "all" || search !== ""
+    mode !== "date" ||
+      date !== todayStr ||
+      selectedChildId !== "" ||
+      statusFilter !== "all" ||
+      search !== ""
   );
 
   // Filter client-side by status and name
@@ -132,10 +147,37 @@ export default function TeacherAttendanceHistoryPage() {
     return filteredAttendances.slice(startIndex, startIndex + PAGE_SIZE);
   }, [filteredAttendances, currentPage]);
 
+  const emptyState =
+    query === null
+      ? mode === "child"
+        ? {
+            title: "Chưa chọn trẻ",
+            message: "Chọn một trẻ trong lớp để xem lịch sử điểm danh của trẻ đó.",
+          }
+        : {
+            title: "Chưa chọn ngày",
+            message: "Chọn một ngày để xem điểm danh của cả lớp trong ngày đó.",
+          }
+      : rawAttendances.length === 0
+        ? {
+            title: "Không có bản ghi điểm danh",
+            message: "Không có bản ghi điểm danh nào cho lựa chọn này.",
+          }
+        : {
+            title: "Không tìm thấy bản ghi",
+            message: "Không có bản ghi nào khớp với bộ lọc đang chọn.",
+            actionText: "Xóa bộ lọc",
+            onAction: handleClearResultFilters,
+          };
+
   const handleRefresh = () => {
-    historyQuery.refetch();
+    // refetch() chạy cả khi query đang tắt; chưa đủ tham số thì đừng gọi để khỏi nhận 400
+    if (query !== null) historyQuery.refetch();
     childrenQuery.refetch();
   };
+
+  // Lớp chủ nhiệm chưa có trẻ: câu rỗng chung của mọi màn hình giáo viên (ui-screens.md §2.3)
+  const isClassEmpty = childrenQuery.isSuccess && childrenList.length === 0;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -151,7 +193,7 @@ export default function TeacherAttendanceHistoryPage() {
             </span>
           </div>
           <p className="text-sm text-on-surface-variant mt-1">
-            Tra cứu lịch sử điểm danh theo ngày hoặc theo học sinh trong lớp chủ nhiệm.
+            Tra cứu lịch sử điểm danh theo ngày hoặc theo trẻ trong lớp chủ nhiệm.
           </p>
         </div>
 
@@ -192,41 +234,61 @@ export default function TeacherAttendanceHistoryPage() {
         </div>
       )}
 
-      {/* Thống kê nhanh kết quả */}
-      <AttendanceHistoryStats
-        attendances={rawAttendances}
-        activeStatusFilter={statusFilter}
-        onSelectStatus={handleStatusFilterChange}
-      />
+      {isClassEmpty ? (
+        <EmptyState
+          title="Chưa có trẻ trong lớp"
+          message="Chưa có trẻ nào trong lớp chủ nhiệm của bạn. Nếu bạn chưa được phân công lớp, liên hệ Ban giám hiệu."
+        />
+      ) : (
+        <>
+          {/* Thống kê nhanh kết quả */}
+          <AttendanceHistoryStats
+            attendances={rawAttendances}
+            activeStatusFilter={statusFilter}
+            onSelectStatus={handleStatusFilterChange}
+          />
 
-      {/* Bộ lọc tra cứu */}
-      <AttendanceHistoryFilters
-        date={date}
-        onDateChange={handleDateChange}
-        selectedChildId={selectedChildId}
-        onChildChange={handleChildChange}
-        statusFilter={statusFilter}
-        onStatusFilterChange={handleStatusFilterChange}
-        search={search}
-        onSearchChange={handleSearchChange}
-        childrenList={childrenList}
-        onReset={handleResetFilters}
-        hasFilters={hasFilters}
-      />
+          {/* Bộ lọc tra cứu */}
+          <AttendanceHistoryFilters
+            mode={mode}
+            onModeChange={handleModeChange}
+            date={date}
+            onDateChange={handleDateChange}
+            selectedChildId={selectedChildId}
+            onChildChange={handleChildChange}
+            statusFilter={statusFilter}
+            onStatusFilterChange={handleStatusFilterChange}
+            search={search}
+            onSearchChange={handleSearchChange}
+            childrenList={childrenList}
+            onReset={handleResetFilters}
+            hasFilters={hasFilters}
+          />
 
-      {/* Bảng kết quả lịch sử */}
-      <AttendanceHistoryTable
-        items={paginatedItems}
-        isLoading={historyQuery.isLoading}
-        isError={historyQuery.isError}
-        errorMessage={errorMessage}
-        onRetry={() => historyQuery.refetch()}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        pageSize={PAGE_SIZE}
-        totalItems={totalItems}
-        onPageChange={setPage}
-      />
+          {/* Tải lại lỗi khi đã có kết quả: giữ bảng cũ, cảnh báo ở đây */}
+          {errorMessage && hasHistoryData && (
+            <ErrorAlert
+              title="Không tải lại được lịch sử điểm danh"
+              message={errorMessage}
+              onRetry={() => historyQuery.refetch()}
+            />
+          )}
+
+          {/* Bảng kết quả lịch sử */}
+          <AttendanceHistoryTable
+            items={paginatedItems}
+            isLoading={historyQuery.isLoading}
+            errorMessage={hasHistoryData ? null : errorMessage}
+            onRetry={() => historyQuery.refetch()}
+            empty={emptyState}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={PAGE_SIZE}
+            totalItems={totalItems}
+            onPageChange={setPage}
+          />
+        </>
+      )}
     </div>
   );
 }

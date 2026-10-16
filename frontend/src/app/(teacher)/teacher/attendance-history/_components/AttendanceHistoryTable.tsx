@@ -23,9 +23,15 @@ import {
 interface AttendanceHistoryTableProps {
   items: AttendanceResponse[];
   isLoading: boolean;
-  isError: boolean;
-  errorMessage?: string | null;
+  // Chỉ truyền khi chưa có dữ liệu: lỗi lúc tải lại thì trang giữ bảng cũ (ui-screens.md §4.2)
+  errorMessage: string | null;
   onRetry: () => void;
+  empty: {
+    title: string;
+    message: string;
+    actionText?: string;
+    onAction?: () => void;
+  };
   currentPage: number;
   totalPages: number;
   pageSize: number;
@@ -36,9 +42,9 @@ interface AttendanceHistoryTableProps {
 export function AttendanceHistoryTable({
   items,
   isLoading,
-  isError,
   errorMessage,
   onRetry,
+  empty,
   currentPage,
   totalPages,
   pageSize,
@@ -81,7 +87,7 @@ export function AttendanceHistoryTable({
           <TableRow>
             <TableHead className="w-14 text-center">STT</TableHead>
             <TableHead className="w-48">Ngày điểm danh</TableHead>
-            <TableHead className="min-w-[200px]">Học sinh</TableHead>
+            <TableHead className="min-w-[200px]">Trẻ</TableHead>
             <TableHead className="w-36 text-center">Giờ ghi nhận</TableHead>
             <TableHead className="w-48 text-right pr-6">Trạng thái điểm danh</TableHead>
           </TableRow>
@@ -90,21 +96,15 @@ export function AttendanceHistoryTable({
         <TableBody>
           {isLoading ? (
             <TableLoading colSpan={TABLE_COLUMNS} rowCount={5} />
-          ) : isError ? (
-            <TableError
-              colSpan={TABLE_COLUMNS}
-              message={
-                errorMessage ||
-                "Không thể tải lịch sử điểm danh. Vui lòng kiểm tra kết nối và thử lại."
-              }
-              onRetry={onRetry}
-            />
+          ) : errorMessage ? (
+            <TableError colSpan={TABLE_COLUMNS} message={errorMessage} onRetry={onRetry} />
           ) : items.length === 0 ? (
             <TableEmpty
               colSpan={TABLE_COLUMNS}
-              title="Không có bản ghi điểm danh"
-              // BR-ATTENDANCE-03: Giáo viên chỉ xem bản ghi của lớp mình chủ nhiệm
-              message="Không tìm thấy bản ghi điểm danh nào trong ngày hoặc học sinh đã chọn. Giáo viên chỉ xem được bản ghi của lớp mình chủ nhiệm."
+              title={empty.title}
+              message={empty.message}
+              actionText={empty.actionText}
+              onAction={empty.onAction}
             />
           ) : (
             items.map((item, index) => {
@@ -124,7 +124,7 @@ export function AttendanceHistoryTable({
                     </div>
                   </TableCell>
 
-                  {/* Tên học sinh */}
+                  {/* Tên trẻ */}
                   <TableCell>
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase shrink-0">
@@ -159,7 +159,7 @@ export function AttendanceHistoryTable({
       </Table>
 
       {/* Phân trang */}
-      {!isLoading && !isError && totalPages > 1 && (
+      {!isLoading && !errorMessage && totalPages > 1 && (
         <div className="flex justify-end pt-2">
           <Pagination
             currentPage={currentPage}

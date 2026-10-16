@@ -3,9 +3,14 @@
 import React from "react";
 import { Button, Input, Select } from "@/components";
 import type { HomeroomChildResponse } from "@/types/attendance";
+import { ATTENDANCE_STATUS_LABELS } from "@/types/attendance";
 import { getTodayVietnamDateString } from "../../attendance/_lib/attendance-helpers";
 
+export type HistoryViewMode = "date" | "child";
+
 interface AttendanceHistoryFiltersProps {
+  mode: HistoryViewMode;
+  onModeChange: (mode: HistoryViewMode) => void;
   date: string;
   onDateChange: (date: string) => void;
   selectedChildId: string;
@@ -19,7 +24,11 @@ interface AttendanceHistoryFiltersProps {
   hasFilters: boolean;
 }
 
+// Xem theo một ngày hoặc theo một trẻ, không gộp hai cách (ui-screens.md SCR-TCH-02 vùng [1]).
+// Đổi ô ngày hay ô trẻ thì tự chuyển sang cách xem tương ứng.
 export function AttendanceHistoryFilters({
+  mode,
+  onModeChange,
   date,
   onDateChange,
   selectedChildId,
@@ -35,19 +44,16 @@ export function AttendanceHistoryFilters({
   const todayStr = getTodayVietnamDateString();
 
   // Child options for select dropdown
-  const childOptions = [
-    { value: "", label: "— Tất cả học sinh trong lớp —" },
-    ...childrenList.map((ch) => ({
-      value: ch.id,
-      label: ch.fullName,
-    })),
-  ];
+  const childOptions = childrenList.map((ch) => ({
+    value: ch.id,
+    label: ch.fullName,
+  }));
 
   const statusOptions = [
     { value: "all", label: "Tất cả trạng thái" },
-    { value: "Present", label: "Có mặt" },
-    { value: "AbsentExcused", label: "Vắng có phép" },
-    { value: "AbsentUnexcused", label: "Vắng không phép" },
+    { value: "Present", label: ATTENDANCE_STATUS_LABELS.Present },
+    { value: "AbsentExcused", label: ATTENDANCE_STATUS_LABELS.AbsentExcused },
+    { value: "AbsentUnexcused", label: ATTENDANCE_STATUS_LABELS.AbsentUnexcused },
   ];
 
   // Set to yesterday
@@ -63,115 +69,108 @@ export function AttendanceHistoryFilters({
     onDateChange(formatter.format(d));
   };
 
+  const panelClass = (active: boolean) =>
+    `rounded-2xl border p-3 space-y-2.5 transition-colors ${
+      active ? "border-primary/40 bg-primary-fixed/20" : "border-slate-200/90"
+    }`;
+
   return (
     <div className="p-4 rounded-3xl bg-surface-container-lowest border border-slate-200/90 shadow-xs space-y-3.5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* 1. Chọn ngày (dùng Input component có label) */}
-        <div>
-          <Input
-            type="date"
-            label="Ngày tra cứu"
-            value={date}
-            onChange={(e) => onDateChange(e.target.value)}
-          />
-        </div>
-
-        {/* 2. Chọn học sinh (dùng Select component có label) */}
-        <div>
-          <Select
-            label="Học sinh trong lớp"
-            options={childOptions}
-            value={selectedChildId}
-            onChange={(e) => onChildChange(e.target.value)}
-          />
-        </div>
-
-        {/* 3. Lọc theo trạng thái điểm danh (dùng Select component có label) */}
-        <div>
-          <Select
-            label="Trạng thái điểm danh"
-            options={statusOptions}
-            value={statusFilter}
-            onChange={(e) => onStatusFilterChange(e.target.value)}
-          />
-        </div>
-
-        {/* 4. Tìm theo tên học sinh (dùng Input component có label) */}
-        <div>
-          <Input
-            label="Tìm theo tên học sinh"
-            placeholder="Gõ tên để tìm nhanh..."
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            prefixIcon={
-              <svg
-                className="w-4 h-4 text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
+      <fieldset>
+        <legend className="text-sm font-semibold text-on-surface mb-2">Xem theo</legend>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* 1. Theo ngày */}
+          <div className={panelClass(mode === "date")}>
+            <label className="flex items-center gap-2 text-sm font-medium text-on-surface cursor-pointer">
+              <input
+                type="radio"
+                name="attendance-history-mode"
+                value="date"
+                checked={mode === "date"}
+                onChange={() => onModeChange("date")}
+                className="w-4 h-4 accent-primary"
+              />
+              Ngày
+            </label>
+            <Input
+              type="date"
+              aria-label="Ngày cần xem"
+              value={date}
+              max={todayStr}
+              onChange={(e) => onDateChange(e.target.value)}
+            />
+            <div className="flex items-center gap-1.5 flex-wrap text-xs">
+              <button
+                type="button"
+                onClick={() => onDateChange(todayStr)}
+                className={`px-2.5 py-1 rounded-lg border font-medium transition-colors cursor-pointer ${
+                  mode === "date" && date === todayStr
+                    ? "bg-primary text-white border-primary"
+                    : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                }`}
               >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            }
-          />
+                Hôm nay
+              </button>
+              <button
+                type="button"
+                onClick={handleSetYesterday}
+                className="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium transition-colors cursor-pointer"
+              >
+                Hôm qua
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Theo trẻ: xem mọi ngày của một trẻ */}
+          <div className={panelClass(mode === "child")}>
+            <label className="flex items-center gap-2 text-sm font-medium text-on-surface cursor-pointer">
+              <input
+                type="radio"
+                name="attendance-history-mode"
+                value="child"
+                checked={mode === "child"}
+                onChange={() => onModeChange("child")}
+                className="w-4 h-4 accent-primary"
+              />
+              Trẻ
+            </label>
+            <Select
+              aria-label="Trẻ cần xem"
+              placeholder="Chọn trẻ"
+              options={childOptions}
+              value={selectedChildId}
+              onChange={(e) => onChildChange(e.target.value)}
+            />
+          </div>
         </div>
+      </fieldset>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3.5 border-t border-slate-100">
+        {/* 3. Lọc theo trạng thái điểm danh */}
+        <Select
+          label="Trạng thái điểm danh"
+          options={statusOptions}
+          value={statusFilter}
+          onChange={(e) => onStatusFilterChange(e.target.value)}
+        />
+
+        {/* 4. Tìm theo tên trẻ */}
+        <Input
+          type="search"
+          label="Tìm theo tên trẻ"
+          placeholder="Gõ tên để tìm nhanh..."
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+        />
       </div>
 
-      {/* Quick shortcuts & Action bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100 text-xs">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-slate-400 font-medium mr-1">Chọn nhanh ngày:</span>
-          <button
-            type="button"
-            onClick={() => onDateChange(todayStr)}
-            className={`px-2.5 py-1 rounded-lg border font-medium transition-colors ${
-              date === todayStr
-                ? "bg-primary text-white border-primary"
-                : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-            }`}
-          >
-            Hôm nay
-          </button>
-          <button
-            type="button"
-            onClick={handleSetYesterday}
-            className="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 font-medium transition-colors"
-          >
-            Hôm qua
-          </button>
-
-          {/* Khóa nút 'Tất cả ngày' khi chưa chọn học sinh để tránh lỗi 400 Bad Request */}
-          <button
-            type="button"
-            disabled={!selectedChildId}
-            onClick={() => onDateChange("")}
-            className={`px-2.5 py-1 rounded-lg border font-medium transition-colors ${
-              date === ""
-                ? "bg-secondary text-white border-secondary"
-                : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-            } ${
-              !selectedChildId
-                ? "opacity-50 cursor-not-allowed hover:bg-slate-50"
-                : ""
-            }`}
-            title={
-              !selectedChildId
-                ? "Cần chọn học sinh cụ thể trước khi xem tất cả ngày"
-                : "Xem tất cả các ngày của học sinh này"
-            }
-          >
-            Tất cả ngày
-          </button>
-        </div>
-
-        {hasFilters && (
+      {hasFilters && (
+        <div className="flex justify-end">
           <Button variant="ghost" size="sm" onClick={onReset}>
             Đặt lại bộ lọc
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
