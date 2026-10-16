@@ -25,8 +25,6 @@ export function AttendanceHistoryStats({
     else if (item.status === "AbsentUnexcused") absentUnexcused++;
   }
 
-  const attendanceRate = total > 0 ? Math.round((present / total) * 100) : 0;
-
   const cards = [
     {
       id: "all",
@@ -68,24 +66,15 @@ export function AttendanceHistoryStats({
       borderClass: "border-rose-200/80",
       accentBar: "bg-rose-500",
     },
-    {
-      id: "rate",
-      label: "Tỷ lệ có mặt",
-      value: `${attendanceRate}%`,
-      unit: "tổng số",
-      colorClass: "text-primary",
-      bgClass: "bg-primary-fixed/20",
-      borderClass: "border-primary/20",
-      accentBar: "bg-primary",
-      clickable: false,
-    },
   ];
 
+  // Không có tỷ lệ có mặt: chia cho số bản ghi sẽ sai khi lớp chưa điểm danh hết; tỷ lệ có mặt là
+  // chỉ số của SCR-ADM-01 (ui-screens.md SCR-TCH-02 Hành vi 5)
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
       {cards.map((card) => {
         const isSelected = activeStatusFilter === card.id;
-        const isClickable = card.clickable !== false && Boolean(onSelectStatus);
+        const isClickable = Boolean(onSelectStatus);
 
         return (
           <button

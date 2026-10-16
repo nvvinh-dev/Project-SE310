@@ -3,7 +3,6 @@
 import React from "react";
 import { Button, Input, Select } from "@/components";
 import type { HomeroomChildResponse } from "@/types/attendance";
-import { ATTENDANCE_STATUS_LABELS } from "@/types/attendance";
 import { getTodayVietnamDateString } from "../../attendance/_lib/attendance-helpers";
 
 export type HistoryViewMode = "date" | "child";
@@ -15,8 +14,6 @@ interface AttendanceHistoryFiltersProps {
   onDateChange: (date: string) => void;
   selectedChildId: string;
   onChildChange: (childId: string) => void;
-  statusFilter: string;
-  onStatusFilterChange: (status: string) => void;
   search: string;
   onSearchChange: (search: string) => void;
   childrenList: HomeroomChildResponse[];
@@ -25,7 +22,8 @@ interface AttendanceHistoryFiltersProps {
 }
 
 // Xem theo một ngày hoặc theo một trẻ, không gộp hai cách (ui-screens.md SCR-TCH-02 vùng [1]).
-// Đổi ô ngày hay ô trẻ thì tự chuyển sang cách xem tương ứng.
+// Đổi ô ngày hay ô trẻ thì tự chuyển sang cách xem tương ứng. Lọc theo trạng thái nằm ở các ô
+// đếm phía trên; ô tìm trẻ chỉ có khi xem theo ngày (vùng [2], [3]).
 export function AttendanceHistoryFilters({
   mode,
   onModeChange,
@@ -33,8 +31,6 @@ export function AttendanceHistoryFilters({
   onDateChange,
   selectedChildId,
   onChildChange,
-  statusFilter,
-  onStatusFilterChange,
   search,
   onSearchChange,
   childrenList,
@@ -48,13 +44,6 @@ export function AttendanceHistoryFilters({
     value: ch.id,
     label: ch.fullName,
   }));
-
-  const statusOptions = [
-    { value: "all", label: "Tất cả trạng thái" },
-    { value: "Present", label: ATTENDANCE_STATUS_LABELS.Present },
-    { value: "AbsentExcused", label: ATTENDANCE_STATUS_LABELS.AbsentExcused },
-    { value: "AbsentUnexcused", label: ATTENDANCE_STATUS_LABELS.AbsentUnexcused },
-  ];
 
   // Set to yesterday
   const handleSetYesterday = () => {
@@ -145,24 +134,18 @@ export function AttendanceHistoryFilters({
         </div>
       </fieldset>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3.5 border-t border-slate-100">
-        {/* 3. Lọc theo trạng thái điểm danh */}
-        <Select
-          label="Trạng thái điểm danh"
-          options={statusOptions}
-          value={statusFilter}
-          onChange={(e) => onStatusFilterChange(e.target.value)}
-        />
-
-        {/* 4. Tìm theo tên trẻ */}
-        <Input
-          type="search"
-          label="Tìm theo tên trẻ"
-          placeholder="Gõ tên để tìm nhanh..."
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-        />
-      </div>
+      {/* 3. Tìm theo tên trẻ: chỉ khi xem theo ngày */}
+      {mode === "date" && (
+        <div className="pt-3.5 border-t border-slate-100 sm:max-w-md">
+          <Input
+            type="search"
+            label="Tìm theo tên trẻ"
+            placeholder="Gõ tên để tìm nhanh..."
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+          />
+        </div>
+      )}
 
       {hasFilters && (
         <div className="flex justify-end">

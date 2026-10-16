@@ -20,7 +20,9 @@ import {
 import { AttendanceHistoryStats } from "./_components/AttendanceHistoryStats";
 import { AttendanceHistoryTable } from "./_components/AttendanceHistoryTable";
 
-const PAGE_SIZE = 10;
+// Xem theo trẻ: 20 bản ghi một trang, khoảng một tháng đi học. Xem theo ngày: cả lớp trên một
+// trang (ui-screens.md SCR-TCH-02 vùng [5])
+const CHILD_VIEW_PAGE_SIZE = 20;
 
 export default function TeacherAttendanceHistoryPage() {
   const todayStr = useMemo(() => getTodayVietnamDateString(), []);
@@ -67,6 +69,9 @@ export default function TeacherAttendanceHistoryPage() {
     if (newMode === "date" && !date) {
       setDate(todayStr);
     }
+    if (newMode === "child") {
+      setSearch("");
+    }
     setPage(1);
   };
 
@@ -79,6 +84,8 @@ export default function TeacherAttendanceHistoryPage() {
   const handleChildChange = (newChildId: string) => {
     setMode("child");
     setSelectedChildId(newChildId);
+    // Ô tìm chỉ có khi xem theo ngày; bỏ từ khóa cũ để không lọc ngầm kết quả của trẻ
+    setSearch("");
     setPage(1);
   };
 
@@ -139,13 +146,14 @@ export default function TeacherAttendanceHistoryPage() {
 
   // Pagination calculation
   const totalItems = filteredAttendances.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const pageSize = mode === "child" ? CHILD_VIEW_PAGE_SIZE : Math.max(1, totalItems);
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const currentPage = Math.min(page, totalPages);
 
   const paginatedItems = useMemo(() => {
-    const startIndex = (currentPage - 1) * PAGE_SIZE;
-    return filteredAttendances.slice(startIndex, startIndex + PAGE_SIZE);
-  }, [filteredAttendances, currentPage]);
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredAttendances.slice(startIndex, startIndex + pageSize);
+  }, [filteredAttendances, currentPage, pageSize]);
 
   const emptyState =
     query === null
@@ -256,8 +264,6 @@ export default function TeacherAttendanceHistoryPage() {
             onDateChange={handleDateChange}
             selectedChildId={selectedChildId}
             onChildChange={handleChildChange}
-            statusFilter={statusFilter}
-            onStatusFilterChange={handleStatusFilterChange}
             search={search}
             onSearchChange={handleSearchChange}
             childrenList={childrenList}
@@ -283,7 +289,7 @@ export default function TeacherAttendanceHistoryPage() {
             empty={emptyState}
             currentPage={currentPage}
             totalPages={totalPages}
-            pageSize={PAGE_SIZE}
+            pageSize={pageSize}
             totalItems={totalItems}
             onPageChange={setPage}
           />
