@@ -178,10 +178,24 @@ export default function TeacherAttendanceHistoryPage() {
             onAction: handleClearResultFilters,
           };
 
-  const handleRefresh = () => {
+  // Dùng cho "Làm mới" và "Thử lại": tải lại danh sách trẻ trước (ui-screens.md §4.2: 404 thì tải
+  // lại danh sách). Trẻ đang xem vừa bị chuyển khỏi lớp thì bỏ chọn, thay vì gửi lại đúng request
+  // sẽ lại 404. Không rẽ nhánh theo mã lỗi.
+  const handleRefresh = async () => {
+    const childrenResult = await childrenQuery.refetch();
+    const latestChildren = childrenResult.data;
+    if (
+      mode === "child" &&
+      selectedChildId &&
+      latestChildren &&
+      !latestChildren.some((c) => c.id === selectedChildId)
+    ) {
+      setSelectedChildId("");
+      setPage(1);
+      return;
+    }
     // refetch() chạy cả khi query đang tắt; chưa đủ tham số thì đừng gọi để khỏi nhận 400
-    if (query !== null) historyQuery.refetch();
-    childrenQuery.refetch();
+    if (query !== null) void historyQuery.refetch();
   };
 
   // Lớp chủ nhiệm chưa có trẻ: câu rỗng chung của mọi màn hình giáo viên (ui-screens.md §2.3)
@@ -276,7 +290,7 @@ export default function TeacherAttendanceHistoryPage() {
             <ErrorAlert
               title="Không tải lại được lịch sử điểm danh"
               message={errorMessage}
-              onRetry={() => historyQuery.refetch()}
+              onRetry={handleRefresh}
             />
           )}
 
@@ -285,7 +299,7 @@ export default function TeacherAttendanceHistoryPage() {
             items={paginatedItems}
             isLoading={historyQuery.isLoading}
             errorMessage={hasHistoryData ? null : errorMessage}
-            onRetry={() => historyQuery.refetch()}
+            onRetry={handleRefresh}
             empty={emptyState}
             currentPage={currentPage}
             totalPages={totalPages}
