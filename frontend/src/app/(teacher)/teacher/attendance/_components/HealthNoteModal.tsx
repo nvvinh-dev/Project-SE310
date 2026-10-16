@@ -27,7 +27,7 @@ export function HealthNoteModal({ child, isOpen, onClose }: HealthNoteModalProps
           <span>Lưu ý sức khỏe của trẻ</span>
         </div>
       }
-      description={`Thông tin y tế đặc biệt cần chú ý đối với bé ${child.fullName}`}
+      description={`Thông tin y tế đặc biệt cần chú ý ở trẻ ${child.fullName}`}
       size="md"
     >
       <div className="space-y-4 pt-1">

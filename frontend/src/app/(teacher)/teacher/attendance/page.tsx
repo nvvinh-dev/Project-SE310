@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Icons } from "@/components";
+import { Button, ErrorAlert, Icons } from "@/components";
 import { toApiError } from "@/lib/axios";
 import type {
   AttendanceResponse,
@@ -10,19 +10,20 @@ import type {
 } from "@/types/attendance";
 import { ATTENDANCE_STATUS_LABELS } from "@/types/attendance";
 import {
+  useAttendances,
   useCheckInMutation,
   useHomeroomChildren,
-  useTodayAttendances,
 } from "./_lib/attendance-api";
 import {
   calculateAttendanceStats,
   formatVietnamDisplayDate,
   getTodayVietnamDateString,
   normalizeForSearch,
+  readApiError,
 } from "./_lib/attendance-helpers";
 import { AttendanceFilters } from "./_components/AttendanceFilters";
 import { AttendanceStatsCards } from "./_components/AttendanceStatsCards";
-import { AttendanceTable } from "./_components/AttendanceTable";
+import { AttendanceList, type SubmittingCheckIn } from "./_components/AttendanceList";
 import { HealthNoteModal } from "./_components/HealthNoteModal";
 
 export default function TeacherAttendancePage() {
@@ -31,8 +32,8 @@ export default function TeacherAttendancePage() {
 
   // Queries
   const childrenQuery = useHomeroomChildren();
-  const attendancesQuery = useTodayAttendances(todayStr);
-  const checkInMutation = useCheckInMutation(todayStr);
+  const attendancesQuery = useAttendances({ date: todayStr });
+  const checkInMutation = useCheckInMutation();
 
   // Component states
   const [search, setSearch] = useState("");
@@ -40,7 +41,7 @@ export default function TeacherAttendancePage() {
   const [onlyHealthNotes, setOnlyHealthNotes] = useState(false);
   const [selectedChildHealthNote, setSelectedChildHealthNote] =
     useState<HomeroomChildResponse | null>(null);
-  const [submittingChildId, setSubmittingChildId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState<SubmittingCheckIn | null>(null);
 
   // Notification banners (onboarding-guide §4.0.2)
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
@@ -112,7 +113,7 @@ export default function TeacherAttendancePage() {
         }
 
         // Health notes filter
-        if (onlyHealthNotes && (!child.healthNotes || !child.healthNotes.trim())) {
+        if (onlyHealthNotes && !child.healthNotes) {
           return false;
         }
 
@@ -123,7 +124,7 @@ export default function TeacherAttendancePage() {
   // Check-in action handler
   const handleCheckIn = async (childId: string, status: AttendanceStatus) => {
     const targetChild = children.find((c) => c.id === childId);
-    setSubmittingChildId(childId);
+    setSubmitting({ childId, status });
     setErrorNotice(null);
     setErrorErrors(null);
 
@@ -131,7 +132,7 @@ export default function TeacherAttendancePage() {
       await checkInMutation.mutateAsync({ childId, status });
       const statusLabel = ATTENDANCE_STATUS_LABELS[status];
       const childName = targetChild ? targetChild.fullName : "trẻ";
-      setSuccessNotice(`Đã ghi nhận điểm danh: "${statusLabel}" cho bé ${childName}.`);
+      setSuccessNotice(`Đã ghi nhận điểm danh "${statusLabel}" cho ${childName}.`);
     } catch (err) {
       // Tuân thủ onboarding-guide §4.0.2: luôn dùng toApiError(), không if/else theo từng status.
       // Có errors thì hiển thị danh sách từng dòng, không có thì hiện apiErr.message từ backend.
@@ -140,11 +141,11 @@ export default function TeacherAttendancePage() {
         setErrorErrors(apiErr.errors);
         setErrorNotice(null);
       } else {
-        setErrorNotice(apiErr.message || "Không thể ghi nhận điểm danh. Vui lòng thử lại.");
+        setErrorNotice(apiErr.message);
         setErrorErrors(null);
       }
     } finally {
-      setSubmittingChildId(null);
+      setSubmitting(null);
     }
   };
 
@@ -164,21 +165,17 @@ export default function TeacherAttendancePage() {
     attendancesQuery.refetch();
   };
 
-  // Lấy lỗi từ query qua toApiError để truyền thông báo chính xác vào TableError
-  const tableError = childrenQuery.error || attendancesQuery.error;
-  const tableErrorMessage = useMemo(() => {
-    if (!tableError) return null;
-    const apiErr = toApiError(tableError);
-    if (apiErr.errors && apiErr.errors.length > 0) {
-      return apiErr.errors.join("; ");
-    }
-    return apiErr.message || "Không thể tải danh sách học sinh của lớp. Vui lòng thử lại.";
-  }, [tableError]);
+  // Lỗi khi chưa có dữ liệu thì thay cả danh sách; lỗi lúc tải lại thì giữ danh sách cũ và báo ở
+  // trên (ui-screens.md §4.2, khuôn SCR-ADM-02)
+  const hasData = childrenQuery.data !== undefined && attendancesQuery.data !== undefined;
+  const loadError = childrenQuery.error ?? attendancesQuery.error;
+  const loadErrorMessage = loadError ? readApiError(loadError) : null;
+  const recordedCount = stats.total - stats.unrecorded;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto pb-12">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
             <h1 className="text-2xl font-bold tracking-tight text-on-surface">
@@ -189,12 +186,18 @@ export default function TeacherAttendancePage() {
               {formattedDisplayDate}
             </span>
           </div>
-          <p className="text-sm text-on-surface-variant mt-1">
-            Ghi nhận trạng thái điểm danh học sinh khi đến lớp buổi sáng.
+          <p className="hidden sm:block text-sm text-on-surface-variant mt-1">
+            Ghi nhận trạng thái điểm danh khi trẻ đến lớp buổi sáng.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between sm:justify-end gap-3">
+          {/* Tiến độ: số trẻ đã điểm danh trên tổng số trẻ (SCR-TCH-01 vùng [1]) */}
+          {hasData && stats.total > 0 && (
+            <p className="text-sm font-semibold text-on-surface">
+              Đã điểm danh {recordedCount}/{stats.total}
+            </p>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -268,35 +271,49 @@ export default function TeacherAttendancePage() {
         </div>
       )}
 
-      {/* Statistics Cards */}
-      <AttendanceStatsCards
-        stats={stats}
-        activeFilter={statusFilter}
-        onFilterStatus={(st) => setStatusFilter(st)}
-      />
+      {/* Tải lại lỗi khi đã có danh sách: giữ danh sách cũ, cảnh báo ở đây */}
+      {loadErrorMessage && hasData && (
+        <ErrorAlert
+          title="Không tải lại được danh sách"
+          message={loadErrorMessage}
+          onRetry={handleRefreshAll}
+        />
+      )}
 
-      {/* Search & Filters */}
-      <AttendanceFilters
-        search={search}
-        onSearchChange={setSearch}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        onlyHealthNotes={onlyHealthNotes}
-        onOnlyHealthNotesChange={setOnlyHealthNotes}
-        onReset={handleResetFilters}
-        hasFilters={hasFilters}
-      />
+      {hasData && children.length > 0 && (
+        <>
+          {/* Statistics Cards */}
+          <AttendanceStatsCards
+            stats={stats}
+            activeFilter={statusFilter}
+            onFilterStatus={(st) => setStatusFilter(st)}
+          />
 
-      {/* Main Attendance Table */}
-      <AttendanceTable
+          {/* Search & Filters */}
+          <AttendanceFilters
+            search={search}
+            onSearchChange={setSearch}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            onlyHealthNotes={onlyHealthNotes}
+            onOnlyHealthNotesChange={setOnlyHealthNotes}
+            onReset={handleResetFilters}
+            hasFilters={hasFilters}
+          />
+        </>
+      )}
+
+      {/* Danh sách trẻ */}
+      <AttendanceList
         items={filteredItems}
-        submittingChildId={submittingChildId}
+        submitting={submitting}
         onCheckIn={handleCheckIn}
         onOpenHealthNote={(ch) => setSelectedChildHealthNote(ch)}
-        isLoading={childrenQuery.isLoading || attendancesQuery.isLoading}
-        isError={childrenQuery.isError || attendancesQuery.isError}
-        errorMessage={tableErrorMessage}
+        isLoading={!hasData && !loadError}
+        errorMessage={hasData ? null : loadErrorMessage}
         onRetry={handleRefreshAll}
+        isClassEmpty={children.length === 0}
+        onClearFilters={handleResetFilters}
       />
 
       {/* Health Note Details Modal */}

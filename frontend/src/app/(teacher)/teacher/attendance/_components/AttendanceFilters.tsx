@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Button, Checkbox, Icons, Input, Select } from "@/components";
+import { ATTENDANCE_STATUS_LABELS } from "@/types/attendance";
 
 interface AttendanceFiltersProps {
   search: string;
@@ -27,18 +28,20 @@ export function AttendanceFilters({
   const statusOptions = [
     { value: "all", label: "Tất cả trạng thái" },
     { value: "Unrecorded", label: "Chưa điểm danh" },
-    { value: "Present", label: "Có mặt" },
-    { value: "AbsentExcused", label: "Vắng có phép" },
-    { value: "AbsentUnexcused", label: "Vắng không phép" },
+    { value: "Present", label: ATTENDANCE_STATUS_LABELS.Present },
+    { value: "AbsentExcused", label: ATTENDANCE_STATUS_LABELS.AbsentExcused },
+    { value: "AbsentUnexcused", label: ATTENDANCE_STATUS_LABELS.AbsentUnexcused },
   ];
 
   return (
-    <div className="p-4 rounded-2xl bg-surface-container-lowest border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-3 items-stretch md:items-end justify-between">
+    <div className="p-3 sm:p-4 rounded-2xl bg-surface-container-lowest border border-slate-200/80 shadow-xs flex flex-col md:flex-row gap-3 items-stretch md:items-end justify-between">
       <div className="flex flex-col sm:flex-row gap-3 flex-1 items-stretch sm:items-end">
         {/* Search by name */}
         <div className="flex-1 max-w-md">
           <Input
-            placeholder="Tìm theo tên học sinh..."
+            type="search"
+            aria-label="Tìm theo tên trẻ"
+            placeholder="Tìm theo tên trẻ..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             prefixIcon={
@@ -56,9 +59,11 @@ export function AttendanceFilters({
           />
         </div>
 
-        {/* Filter by attendance status */}
-        <div className="w-full sm:w-56">
+        {/* Filter by attendance status. Dưới sm ẩn đi vì hàng nhãn thống kê phía trên lọc được
+            đúng các trạng thái này, nhường chỗ cho danh sách trẻ trên điện thoại */}
+        <div className="hidden sm:block sm:w-56">
           <Select
+            aria-label="Lọc theo trạng thái điểm danh"
             options={statusOptions}
             value={statusFilter}
             onChange={(e) => onStatusFilterChange(e.target.value)}

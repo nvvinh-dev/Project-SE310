@@ -1,4 +1,12 @@
+import { toApiError } from "@/lib/axios";
 import type { AttendanceStatus } from "@/types/attendance";
+
+// Đọc lỗi qua toApiError (ui-screens.md §4.2): có errors thì liệt kê từng dòng, không có thì lấy
+// message của backend
+export function readApiError(err: unknown): string {
+  const apiErr = toApiError(err);
+  return apiErr.errors && apiErr.errors.length > 0 ? apiErr.errors.join("\n") : apiErr.message;
+}
 
 export function getTodayVietnamDateString(): string {
   const formatter = new Intl.DateTimeFormat("en-CA", {

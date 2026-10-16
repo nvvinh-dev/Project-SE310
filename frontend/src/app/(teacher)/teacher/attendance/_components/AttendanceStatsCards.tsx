@@ -62,32 +62,35 @@ export function AttendanceStatsCards({
     },
   ];
 
+  // Dưới sm thu thành hàng nhãn nhỏ để danh sách trẻ hiện ngay trên màn hình điện thoại
+  // (ui-screens.md §4.5); từ sm trở lên là thẻ
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+    <div className="flex flex-wrap gap-2 sm:grid sm:grid-cols-3 lg:grid-cols-5 sm:gap-3.5">
       {cards.map((card) => {
         const isSelected = activeFilter === card.id;
         return (
           <button
             type="button"
             key={card.id}
+            aria-pressed={isSelected}
             onClick={() => onFilterStatus?.(card.id)}
-            className={`p-4 rounded-2xl border text-left transition-all relative overflow-hidden shadow-xs hover:shadow-sm ${
+            className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 py-1.5 sm:block sm:rounded-2xl sm:p-4 border text-left transition-all relative overflow-hidden shadow-xs hover:shadow-sm cursor-pointer ${
               card.bgClass
             } ${card.borderClass} ${
               isSelected ? "ring-2 ring-primary ring-offset-1" : ""
             }`}
           >
             <div
-              className={`absolute top-0 left-0 right-0 h-1 ${card.accentBar}`}
+              className={`hidden sm:block absolute top-0 left-0 right-0 h-1 ${card.accentBar}`}
             />
             <p className="text-xs font-medium text-on-surface-variant truncate">
               {card.label}
             </p>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className={`text-2xl font-bold tracking-tight ${card.colorClass}`}>
+            <div className="sm:mt-1 flex items-baseline justify-between">
+              <span className={`text-sm sm:text-2xl font-bold tracking-tight ${card.colorClass}`}>
                 {card.value}
               </span>
-              <span className="text-[11px] font-medium text-slate-400">trẻ</span>
+              <span className="hidden sm:inline text-[11px] font-medium text-slate-400">trẻ</span>
             </div>
           </button>
         );
