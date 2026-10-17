@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { ATTENDANCE_STATUS_LABELS } from "@/types/attendance";
 import type { AttendanceStats } from "../_lib/attendance-helpers";
 
 interface AttendanceStatsCardsProps {
@@ -15,50 +16,42 @@ export function AttendanceStatsCards({
   activeFilter,
 }: AttendanceStatsCardsProps) {
   const cards = [
+    // Màu theo tông trạng thái của design-system.md §3.2: con số theo màu chữ của tông, vạch trên
+    // theo màu chấm của tông
     {
       id: "all",
       label: "Tổng sĩ số",
       value: stats.total,
-      colorClass: "text-slate-800",
-      bgClass: "bg-surface-container-lowest",
-      borderClass: "border-slate-200/80",
-      accentBar: "bg-slate-400",
+      colorClass: "text-on-surface",
+      accentBar: "bg-on-surface-variant",
     },
     {
       id: "Present",
-      label: "Có mặt",
+      label: ATTENDANCE_STATUS_LABELS.Present,
       value: stats.present,
-      colorClass: "text-emerald-700",
-      bgClass: "bg-emerald-50/40",
-      borderClass: "border-emerald-200/80",
-      accentBar: "bg-emerald-500",
+      colorClass: "text-primary",
+      accentBar: "bg-primary",
     },
     {
       id: "AbsentExcused",
-      label: "Vắng có phép",
+      label: ATTENDANCE_STATUS_LABELS.AbsentExcused,
       value: stats.absentExcused,
-      colorClass: "text-amber-700",
-      bgClass: "bg-amber-50/40",
-      borderClass: "border-amber-200/80",
-      accentBar: "bg-amber-500",
+      colorClass: "text-amber-800",
+      accentBar: "bg-amber-600",
     },
     {
       id: "AbsentUnexcused",
-      label: "Vắng không phép",
+      label: ATTENDANCE_STATUS_LABELS.AbsentUnexcused,
       value: stats.absentUnexcused,
-      colorClass: "text-rose-700",
-      bgClass: "bg-rose-50/40",
-      borderClass: "border-rose-200/80",
-      accentBar: "bg-rose-500",
+      colorClass: "text-on-error-container",
+      accentBar: "bg-error",
     },
     {
       id: "Unrecorded",
       label: "Chưa điểm danh",
       value: stats.unrecorded,
-      colorClass: "text-sky-700",
-      bgClass: "bg-sky-50/40",
-      borderClass: "border-sky-200/80",
-      accentBar: "bg-sky-500",
+      colorClass: "text-outline",
+      accentBar: "bg-outline",
     },
   ];
 
@@ -74,14 +67,13 @@ export function AttendanceStatsCards({
             key={card.id}
             aria-pressed={isSelected}
             onClick={() => onFilterStatus?.(card.id)}
-            className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 py-1.5 sm:block sm:rounded-2xl sm:p-4 border text-left transition-all relative overflow-hidden shadow-xs hover:shadow-sm cursor-pointer ${
-              card.bgClass
-            } ${card.borderClass} ${
+            className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 py-1.5 sm:block sm:rounded-3xl sm:p-4 border border-slate-200/90 bg-surface-container-lowest text-left transition-colors relative overflow-hidden shadow-sm hover:bg-surface-container-low cursor-pointer ${
               isSelected ? "ring-2 ring-primary ring-offset-1" : ""
             }`}
           >
             <div
               className={`hidden sm:block absolute top-0 left-0 right-0 h-1 ${card.accentBar}`}
+              aria-hidden="true"
             />
             <p className="text-xs font-medium text-on-surface-variant truncate">
               {card.label}
@@ -90,7 +82,7 @@ export function AttendanceStatsCards({
               <span className={`text-sm sm:text-2xl font-bold tracking-tight ${card.colorClass}`}>
                 {card.value}
               </span>
-              <span className="hidden sm:inline text-[11px] font-medium text-slate-400">trẻ</span>
+              <span className="hidden sm:inline text-xs font-medium text-outline">trẻ</span>
             </div>
           </button>
         );

@@ -18,11 +18,9 @@ export function HealthNoteModal({ child, isOpen, onClose }: HealthNoteModalProps
       isOpen={isOpen}
       onClose={onClose}
       title={
-        <div className="flex items-center gap-2 text-amber-700">
-          <span className="p-1.5 rounded-xl bg-amber-100/80 text-amber-700">
-            <span className="text-amber-600 shrink-0">
-              <Icons.Alert />
-            </span>
+        <div className="flex items-center gap-2">
+          <span className="p-1.5 rounded-full bg-amber-100 text-amber-600" aria-hidden="true">
+            <Icons.Alert />
           </span>
           <span>Lưu ý sức khỏe của trẻ</span>
         </div>
@@ -31,11 +29,9 @@ export function HealthNoteModal({ child, isOpen, onClose }: HealthNoteModalProps
       size="md"
     >
       <div className="space-y-4 pt-1">
-        <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 text-on-surface">
-          <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-1">
-            Ghi chú của Y tế
-          </p>
-          <p className="text-sm text-amber-950 font-medium whitespace-pre-wrap leading-relaxed">
+        <div className="p-4 rounded-2xl bg-amber-100">
+          <p className="text-xs font-semibold text-amber-800 mb-1">Ghi chú của Y tế</p>
+          <p className="text-sm text-on-surface whitespace-pre-wrap leading-relaxed">
             {child.healthNotes || "Không có lưu ý đặc biệt."}
           </p>
         </div>

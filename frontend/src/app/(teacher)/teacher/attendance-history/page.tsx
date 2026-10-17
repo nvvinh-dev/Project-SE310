@@ -1,13 +1,11 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button, EmptyState, ErrorAlert, Icons } from "@/components";
-import {
-  getTodayVietnamDateString,
-  normalizeForSearch,
-  readApiError,
-} from "../attendance/_lib/attendance-helpers";
+import { getTodayVietnamDateString } from "@/lib/datetime";
+import { normalizeForSearch } from "@/lib/text";
+import { readApiError } from "../attendance/_lib/attendance-helpers";
 import {
   type AttendanceQuery,
   useAttendances,
@@ -25,6 +23,7 @@ import { AttendanceHistoryTable } from "./_components/AttendanceHistoryTable";
 const CHILD_VIEW_PAGE_SIZE = 20;
 
 export default function TeacherAttendanceHistoryPage() {
+  const router = useRouter();
   const todayStr = useMemo(() => getTodayVietnamDateString(), []);
 
   // Filter states
@@ -99,28 +98,14 @@ export default function TeacherAttendanceHistoryPage() {
     setPage(1);
   };
 
-  const handleResetFilters = () => {
-    setMode("date");
-    setDate(todayStr);
-    setSelectedChildId("");
+  // Bộ lọc là trạng thái và từ khóa; cách xem (ngày hay trẻ) không phải bộ lọc nên giữ nguyên
+  const handleClearFilters = () => {
     setStatusFilter("all");
     setSearch("");
     setPage(1);
   };
 
-  const handleClearResultFilters = () => {
-    setStatusFilter("all");
-    setSearch("");
-    setPage(1);
-  };
-
-  const hasFilters = Boolean(
-    mode !== "date" ||
-      date !== todayStr ||
-      selectedChildId !== "" ||
-      statusFilter !== "all" ||
-      search !== ""
-  );
+  const hasFilters = statusFilter !== "all" || search !== "";
 
   // Filter client-side by status and name
   const filteredAttendances = useMemo(() => {
@@ -175,7 +160,7 @@ export default function TeacherAttendanceHistoryPage() {
             title: "Không tìm thấy bản ghi",
             message: "Không có bản ghi nào khớp với bộ lọc đang chọn.",
             actionText: "Xóa bộ lọc",
-            onAction: handleClearResultFilters,
+            onAction: handleClearFilters,
           };
 
   // Dùng cho "Làm mới" và "Thử lại": tải lại danh sách trẻ trước (ui-screens.md §4.2: 404 thì tải
@@ -202,7 +187,7 @@ export default function TeacherAttendanceHistoryPage() {
   const isClassEmpty = childrenQuery.isSuccess && childrenList.length === 0;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="py-8 space-y-6">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -210,7 +195,7 @@ export default function TeacherAttendanceHistoryPage() {
             <h1 className="text-2xl font-bold tracking-tight text-on-surface">
               Lịch sử điểm danh lớp
             </h1>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-secondary/10 text-secondary border border-secondary/20">
+            <span className="inline-flex items-center whitespace-nowrap rounded-full bg-surface-container-low px-2.5 py-1 text-xs font-semibold text-secondary">
               Chế độ chỉ xem
             </span>
           </div>
@@ -220,18 +205,15 @@ export default function TeacherAttendanceHistoryPage() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <Link href="/teacher/attendance">
-            <Button variant="outline" size="sm" className="bg-surface-container-lowest">
-              Điểm danh hôm nay
-            </Button>
-          </Link>
+          <Button variant="outline" size="sm" onClick={() => router.push("/teacher/attendance")}>
+            Điểm danh hôm nay
+          </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
             disabled={historyQuery.isFetching || childrenQuery.isFetching}
             icon={<Icons.Refresh />}
-            className="bg-surface-container-lowest"
           >
             Làm mới
           </Button>
@@ -242,16 +224,16 @@ export default function TeacherAttendanceHistoryPage() {
       {childrenErrorMessage && (
         <div
           role="alert"
-          className="rounded-2xl border border-amber-200 bg-amber-50/70 p-3.5 flex items-center justify-between gap-3 text-xs text-amber-900"
+          className="rounded-2xl border border-amber-600/30 bg-amber-100 p-4 flex items-center justify-between gap-3 text-sm text-amber-800"
         >
           <div className="flex items-center gap-2">
-            <span className="text-amber-600 shrink-0">
+            <span className="text-amber-600 shrink-0" aria-hidden="true">
               <Icons.Alert />
             </span>
             <span>{childrenErrorMessage}</span>
           </div>
-          <Button size="sm" variant="ghost" onClick={() => childrenQuery.refetch()}>
-            Tải lại danh sách
+          <Button size="sm" variant="outline" onClick={() => childrenQuery.refetch()}>
+            Thử lại
           </Button>
         </div>
       )}
@@ -281,7 +263,7 @@ export default function TeacherAttendanceHistoryPage() {
             search={search}
             onSearchChange={handleSearchChange}
             childrenList={childrenList}
-            onReset={handleResetFilters}
+            onReset={handleClearFilters}
             hasFilters={hasFilters}
           />
 

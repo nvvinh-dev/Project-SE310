@@ -16,12 +16,9 @@ import {
   TableLoading,
   TableRow,
 } from "@/components";
-import type { AttendanceResponse, AttendanceStatus } from "@/types/attendance";
-import { ATTENDANCE_STATUS_LABELS } from "@/types/attendance";
-import {
-  formatCheckInTime,
-  formatVietnamDisplayDate,
-} from "../../attendance/_lib/attendance-helpers";
+import type { AttendanceResponse } from "@/types/attendance";
+import { formatVietnamDisplayDate, formatVietnamTime } from "@/lib/datetime";
+import { AttendanceStatusBadge } from "../../attendance/_components/AttendanceStatusBadge";
 
 interface AttendanceHistoryTableProps {
   items: AttendanceResponse[];
@@ -55,33 +52,6 @@ export function AttendanceHistoryTable({
   onPageChange,
 }: AttendanceHistoryTableProps) {
   const TABLE_COLUMNS = 5;
-
-  const renderStatusBadge = (status: AttendanceStatus) => {
-    if (status === "Present") {
-      return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-          {ATTENDANCE_STATUS_LABELS.Present}
-        </span>
-      );
-    }
-
-    if (status === "AbsentExcused") {
-      return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
-          {ATTENDANCE_STATUS_LABELS.AbsentExcused}
-        </span>
-      );
-    }
-
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-300">
-        <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
-        {ATTENDANCE_STATUS_LABELS.AbsentUnexcused}
-      </span>
-    );
-  };
 
   return (
     <div className="space-y-4">
@@ -117,15 +87,15 @@ export function AttendanceHistoryTable({
                 const rowNumber = (currentPage - 1) * pageSize + index + 1;
 
                 return (
-                  <TableRow key={item.id} className="hover:bg-slate-50/80">
+                  <TableRow key={item.id}>
                     {/* STT */}
-                    <TableCell className="text-center font-medium text-slate-500 text-xs">
+                    <TableCell className="text-center font-medium text-outline text-xs tabular-nums">
                       {rowNumber}
                     </TableCell>
 
                     {/* Ngày điểm danh */}
                     <TableCell>
-                      <div className="font-semibold text-slate-900 text-xs">
+                      <div className="font-semibold text-on-surface text-xs">
                         {formatVietnamDisplayDate(item.attendanceDate)}
                       </div>
                     </TableCell>
@@ -137,7 +107,7 @@ export function AttendanceHistoryTable({
                           {item.childFullName?.trim().charAt(0) || "B"}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-900 leading-snug">
+                          <p className="font-semibold text-on-surface leading-snug">
                             {item.childFullName}
                           </p>
                         </div>
@@ -145,17 +115,17 @@ export function AttendanceHistoryTable({
                     </TableCell>
 
                     {/* Giờ ghi nhận */}
-                    <TableCell className="text-center font-mono text-xs text-slate-600">
+                    <TableCell className="text-center text-xs text-on-surface-variant tabular-nums">
                       {item.checkInTimeUtc ? (
-                        formatCheckInTime(item.checkInTimeUtc)
+                        formatVietnamTime(item.checkInTimeUtc)
                       ) : (
-                        <span className="text-slate-300">-</span>
+                        <span className="text-outline">—</span>
                       )}
                     </TableCell>
 
                     {/* Trạng thái điểm danh (Chỉ xem) */}
                     <TableCell className="text-right pr-6">
-                      {renderStatusBadge(item.status)}
+                      <AttendanceStatusBadge status={item.status} />
                     </TableCell>
                   </TableRow>
                 );
@@ -186,17 +156,19 @@ export function AttendanceHistoryTable({
             {items.map((item) => (
               <li
                 key={item.id}
-                className="rounded-2xl border border-slate-200/90 bg-surface-container-lowest p-3.5 shadow-xs space-y-1.5"
+                className="rounded-2xl border border-slate-200/90 bg-surface-container-lowest p-3 shadow-xs space-y-1.5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <p className="font-semibold text-on-surface leading-snug min-w-0 break-words">
                     {item.childFullName}
                   </p>
-                  <span className="shrink-0">{renderStatusBadge(item.status)}</span>
+                  <span className="shrink-0">
+                    <AttendanceStatusBadge status={item.status} />
+                  </span>
                 </div>
                 <p className="text-xs text-on-surface-variant">
                   {formatVietnamDisplayDate(item.attendanceDate)}
-                  {item.checkInTimeUtc && <> · ghi nhận lúc {formatCheckInTime(item.checkInTimeUtc)}</>}
+                  {item.checkInTimeUtc && <> · ghi nhận lúc {formatVietnamTime(item.checkInTimeUtc)}</>}
                 </p>
               </li>
             ))}

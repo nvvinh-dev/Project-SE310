@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { AttendanceResponse } from "@/types/attendance";
+import { ATTENDANCE_STATUS_LABELS } from "@/types/attendance";
 
 interface AttendanceHistoryStatsProps {
   attendances: AttendanceResponse[];
@@ -25,46 +26,35 @@ export function AttendanceHistoryStats({
     else if (item.status === "AbsentUnexcused") absentUnexcused++;
   }
 
+  // Màu theo tông trạng thái của design-system.md §3.2, giống ô đếm của SCR-TCH-01
   const cards = [
     {
       id: "all",
       label: "Tổng bản ghi",
       value: total,
-      unit: "lượt",
-      colorClass: "text-slate-800",
-      bgClass: "bg-surface-container-lowest",
-      borderClass: "border-slate-200/80",
-      accentBar: "bg-slate-400",
+      colorClass: "text-on-surface",
+      accentBar: "bg-on-surface-variant",
     },
     {
       id: "Present",
-      label: "Có mặt",
+      label: ATTENDANCE_STATUS_LABELS.Present,
       value: present,
-      unit: "lượt",
-      colorClass: "text-emerald-700",
-      bgClass: "bg-emerald-50/40",
-      borderClass: "border-emerald-200/80",
-      accentBar: "bg-emerald-500",
+      colorClass: "text-primary",
+      accentBar: "bg-primary",
     },
     {
       id: "AbsentExcused",
-      label: "Vắng có phép",
+      label: ATTENDANCE_STATUS_LABELS.AbsentExcused,
       value: absentExcused,
-      unit: "lượt",
-      colorClass: "text-amber-700",
-      bgClass: "bg-amber-50/40",
-      borderClass: "border-amber-200/80",
-      accentBar: "bg-amber-500",
+      colorClass: "text-amber-800",
+      accentBar: "bg-amber-600",
     },
     {
       id: "AbsentUnexcused",
-      label: "Vắng không phép",
+      label: ATTENDANCE_STATUS_LABELS.AbsentUnexcused,
       value: absentUnexcused,
-      unit: "lượt",
-      colorClass: "text-rose-700",
-      bgClass: "bg-rose-50/40",
-      borderClass: "border-rose-200/80",
-      accentBar: "bg-rose-500",
+      colorClass: "text-on-error-container",
+      accentBar: "bg-error",
     },
   ];
 
@@ -81,15 +71,15 @@ export function AttendanceHistoryStats({
             type="button"
             key={card.id}
             disabled={!isClickable}
+            aria-pressed={isSelected}
             onClick={() => isClickable && onSelectStatus?.(card.id)}
-            className={`p-4 rounded-2xl border text-left transition-all relative overflow-hidden shadow-xs ${
-              card.bgClass
-            } ${card.borderClass} ${
+            className={`p-4 rounded-3xl border border-slate-200/90 bg-surface-container-lowest text-left transition-colors relative overflow-hidden shadow-sm ${
               isSelected ? "ring-2 ring-primary ring-offset-1" : ""
-            } ${isClickable ? "hover:shadow-sm cursor-pointer" : "cursor-default"}`}
+            } ${isClickable ? "hover:bg-surface-container-low cursor-pointer" : "cursor-default"}`}
           >
             <div
               className={`absolute top-0 left-0 right-0 h-1 ${card.accentBar}`}
+              aria-hidden="true"
             />
             <p className="text-xs font-medium text-on-surface-variant truncate">
               {card.label}
@@ -98,9 +88,7 @@ export function AttendanceHistoryStats({
               <span className={`text-2xl font-bold tracking-tight ${card.colorClass}`}>
                 {card.value}
               </span>
-              <span className="text-[11px] font-medium text-slate-400">
-                {card.unit}
-              </span>
+              <span className="text-xs font-medium text-outline">lượt</span>
             </div>
           </button>
         );

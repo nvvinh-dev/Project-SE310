@@ -9,7 +9,8 @@ import type {
   HomeroomChildResponse,
 } from "@/types/attendance";
 import { ATTENDANCE_STATUS_LABELS } from "@/types/attendance";
-import { formatCheckInTime } from "../_lib/attendance-helpers";
+import { formatVietnamTime } from "@/lib/datetime";
+import { AttendanceStatusBadge } from "./AttendanceStatusBadge";
 
 export interface AttendanceRowItem {
   child: HomeroomChildResponse;
@@ -34,28 +35,16 @@ interface AttendanceListProps {
   onClearFilters: () => void;
 }
 
-const CHECK_IN_BUTTONS: { status: AttendanceStatus; variant: ButtonVariant; className: string }[] = [
-  { status: "Present", variant: "primary", className: "font-semibold" },
-  {
-    status: "AbsentExcused",
-    variant: "outline",
-    className: "font-semibold border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100",
-  },
-  {
-    status: "AbsentUnexcused",
-    variant: "outline",
-    className: "font-semibold border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100",
-  },
+// Nút không mang tông trạng thái: "Có mặt" là primary, hai nút vắng là outline (design-system.md
+// §3.2). Không ghi đè màu của Button bằng className (§1 mục 3)
+const CHECK_IN_BUTTONS: { status: AttendanceStatus; variant: ButtonVariant }[] = [
+  { status: "Present", variant: "primary" },
+  { status: "AbsentExcused", variant: "outline" },
+  { status: "AbsentUnexcused", variant: "outline" },
 ];
 
-const STATUS_BADGE_CLASSES: Record<AttendanceStatus, { badge: string; dot: string }> = {
-  Present: { badge: "bg-emerald-100 text-emerald-800 border-emerald-300", dot: "bg-emerald-600" },
-  AbsentExcused: { badge: "bg-amber-100 text-amber-800 border-amber-300", dot: "bg-amber-600" },
-  AbsentUnexcused: { badge: "bg-rose-100 text-rose-800 border-rose-300", dot: "bg-rose-600" },
-};
-
 // Danh sách thiết kế cho điện thoại trước (ui-screens.md §4.5, NFR-USE-04): mỗi trẻ một thẻ, ba
-// nút cao 44px bấm một lần là ghi. Từ lg trở lên tên trẻ và ba nút nằm trên cùng một dòng.
+// nút cao 44px. Từ lg trở lên tên trẻ và ba nút nằm trên cùng một dòng.
 export function AttendanceList({
   items,
   submitting,
@@ -123,9 +112,9 @@ export function AttendanceList({
                     type="button"
                     onClick={() => onOpenHealthNote(child)}
                     aria-label={`Xem lưu ý sức khỏe của ${child.fullName}`}
-                    className="inline-flex min-h-8 max-w-full items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition-colors cursor-pointer"
+                    className="inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 transition-shadow hover:shadow-sm cursor-pointer"
                   >
-                    <span className="text-amber-600 shrink-0">
+                    <span className="text-amber-600 shrink-0" aria-hidden="true">
                       <Icons.Alert />
                     </span>
                     <span className="truncate max-w-48">{child.healthNotes}</span>
@@ -134,16 +123,9 @@ export function AttendanceList({
 
                 {attendance && (
                   <>
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${STATUS_BADGE_CLASSES[attendance.status].badge}`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${STATUS_BADGE_CLASSES[attendance.status].dot}`}
-                      />
-                      {ATTENDANCE_STATUS_LABELS[attendance.status]}
-                    </span>
-                    <span className="text-xs text-on-surface-variant">
-                      lúc {formatCheckInTime(attendance.checkInTimeUtc)}
+                    <AttendanceStatusBadge status={attendance.status} />
+                    <span className="text-xs text-on-surface-variant tabular-nums">
+                      lúc {formatVietnamTime(attendance.checkInTimeUtc)}
                     </span>
                   </>
                 )}
@@ -158,7 +140,7 @@ export function AttendanceList({
               aria-label={`Điểm danh ${child.fullName}`}
               className="grid grid-cols-3 gap-2 lg:w-[27rem] lg:shrink-0"
             >
-              {CHECK_IN_BUTTONS.map(({ status, variant, className }) => (
+              {CHECK_IN_BUTTONS.map(({ status, variant }) => (
                 <Button
                   key={status}
                   size="sm"
@@ -166,7 +148,7 @@ export function AttendanceList({
                   disabled={submitting !== null}
                   isLoading={submitting?.childId === child.id && submitting.status === status}
                   onClick={() => onCheckIn(child.id, status)}
-                  className={`min-h-11 w-full text-center leading-tight ${className}`}
+                  className="min-h-11 w-full text-center leading-tight"
                 >
                   {ATTENDANCE_STATUS_LABELS[status]}
                 </Button>

@@ -14,13 +14,9 @@ import {
   useCheckInMutation,
   useHomeroomChildren,
 } from "./_lib/attendance-api";
-import {
-  calculateAttendanceStats,
-  formatVietnamDisplayDate,
-  getTodayVietnamDateString,
-  normalizeForSearch,
-  readApiError,
-} from "./_lib/attendance-helpers";
+import { formatVietnamDisplayDate, getTodayVietnamDateString } from "@/lib/datetime";
+import { normalizeForSearch } from "@/lib/text";
+import { calculateAttendanceStats, readApiError } from "./_lib/attendance-helpers";
 import { AttendanceFilters } from "./_components/AttendanceFilters";
 import { AttendanceStatsCards } from "./_components/AttendanceStatsCards";
 import { AttendanceList, type SubmittingCheckIn } from "./_components/AttendanceList";
@@ -182,7 +178,7 @@ export default function TeacherAttendancePage() {
   const recordedCount = stats.total - stats.unrecorded;
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="py-8 space-y-4 sm:space-y-6">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -190,8 +186,7 @@ export default function TeacherAttendancePage() {
             <h1 className="text-2xl font-bold tracking-tight text-on-surface">
               Điểm danh vào lớp
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary-fixed/40 text-on-primary-fixed border border-primary/20">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="inline-flex items-center whitespace-nowrap rounded-full bg-surface-container-low px-2.5 py-1 text-xs font-semibold text-secondary">
               {formattedDisplayDate}
             </span>
           </div>
@@ -213,7 +208,6 @@ export default function TeacherAttendancePage() {
             onClick={handleRefreshAll}
             disabled={childrenQuery.isFetching || attendancesQuery.isFetching}
             icon={<Icons.Refresh />}
-            className="bg-surface-container-lowest"
           >
             Làm mới
           </Button>
@@ -224,7 +218,7 @@ export default function TeacherAttendancePage() {
       {successNotice && (
         <div
           role="status"
-          className="rounded-2xl border border-primary/20 bg-primary-fixed/30 p-4 flex items-start justify-between gap-3 shadow-2xs"
+          className="rounded-2xl border border-primary/20 bg-primary-fixed/30 p-4 flex items-start justify-between gap-3"
         >
           <div className="flex items-start gap-3">
             <span className="text-primary mt-0.5 shrink-0">
@@ -247,7 +241,7 @@ export default function TeacherAttendancePage() {
       {writeError && !pendingAbsence && (
         <div
           role="alert"
-          className="rounded-2xl border border-error/30 bg-error-container/40 p-4 flex items-start justify-between gap-3 shadow-2xs"
+          className="rounded-2xl border border-error/30 bg-error-container/40 p-4 flex items-start justify-between gap-3"
         >
           <div className="flex items-start gap-3">
             <span className="text-error mt-0.5 shrink-0">

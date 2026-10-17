@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Button, Input } from "@/components";
+import { Button, Icons, Input } from "@/components";
 
 interface AttendanceFiltersProps {
   search: string;
@@ -27,25 +27,14 @@ export function AttendanceFilters({
           placeholder="Tìm theo tên trẻ..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          prefixIcon={
-            <svg
-              className="w-4 h-4 text-slate-400"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          }
+          prefixIcon={<Icons.Search />}
         />
       </div>
 
       {hasFilters && (
         <div className="flex justify-end">
           <Button variant="ghost" size="sm" onClick={onReset}>
-            Đặt lại bộ lọc
+            Xóa bộ lọc
           </Button>
         </div>
       )}
