@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components";
 import type { AttendanceResponse } from "@/types/attendance";
-import { formatVietnamDisplayDate, formatVietnamTime } from "@/lib/datetime";
+import { formatVietnamShortDate, formatVietnamTime } from "@/lib/datetime";
 import { AttendanceStatusBadge } from "../../attendance/_components/AttendanceStatusBadge";
 
 interface AttendanceHistoryTableProps {
@@ -96,7 +96,7 @@ export function AttendanceHistoryTable({
                     {/* Ngày điểm danh */}
                     <TableCell>
                       <div className="font-semibold text-on-surface text-xs">
-                        {formatVietnamDisplayDate(item.attendanceDate)}
+                        {formatVietnamShortDate(item.attendanceDate)}
                       </div>
                     </TableCell>
 
@@ -167,7 +167,7 @@ export function AttendanceHistoryTable({
                   </span>
                 </div>
                 <p className="text-xs text-on-surface-variant">
-                  {formatVietnamDisplayDate(item.attendanceDate)}
+                  {formatVietnamShortDate(item.attendanceDate)}
                   {item.checkInTimeUtc && <> · ghi nhận lúc {formatVietnamTime(item.checkInTimeUtc)}</>}
                 </p>
               </li>

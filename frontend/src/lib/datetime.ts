@@ -33,6 +33,16 @@ export function formatVietnamDisplayDate(dateStr: string): string {
   }).format(new Date(`${dateStr}T00:00:00+07:00`));
 }
 
+// Trường chỉ có ngày (yyyy-MM-dd) → "16/10/2026" (dd/MM/yyyy theo ui-screens.md §4.4)
+export function formatVietnamShortDate(dateStr: string): string {
+  const parts = dateStr.split("-");
+  if (parts.length === 3) {
+    const [year, month, day] = parts;
+    return `${day}/${month}/${year}`;
+  }
+  return dateStr;
+}
+
 // Trường kết thúc bằng Utc → giờ phút theo giờ Việt Nam, ví dụ "07:42"
 export function formatVietnamTime(utcIso: string): string {
   return new Intl.DateTimeFormat("vi-VN", {

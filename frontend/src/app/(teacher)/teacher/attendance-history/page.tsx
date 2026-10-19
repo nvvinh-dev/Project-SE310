@@ -24,7 +24,7 @@ const CHILD_VIEW_PAGE_SIZE = 20;
 
 export default function TeacherAttendanceHistoryPage() {
   const router = useRouter();
-  const todayStr = useMemo(() => getTodayVietnamDateString(), []);
+  const [todayStr, setTodayStr] = useState(() => getTodayVietnamDateString());
 
   // Filter states
   const [mode, setMode] = useState<HistoryViewMode>("date");
@@ -167,6 +167,7 @@ export default function TeacherAttendanceHistoryPage() {
   // lại danh sách). Trẻ đang xem vừa bị chuyển khỏi lớp thì bỏ chọn, thay vì gửi lại đúng request
   // sẽ lại 404. Không rẽ nhánh theo mã lỗi.
   const handleRefresh = async () => {
+    setTodayStr(getTodayVietnamDateString());
     const childrenResult = await childrenQuery.refetch();
     const latestChildren = childrenResult.data;
     if (
@@ -222,20 +223,11 @@ export default function TeacherAttendanceHistoryPage() {
 
       {/* Cảnh báo nếu tải danh sách trẻ lớp chủ nhiệm bị lỗi */}
       {childrenErrorMessage && (
-        <div
-          role="alert"
-          className="rounded-2xl border border-amber-600/30 bg-amber-100 p-4 flex items-center justify-between gap-3 text-sm text-amber-800"
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-amber-600 shrink-0" aria-hidden="true">
-              <Icons.Alert />
-            </span>
-            <span>{childrenErrorMessage}</span>
-          </div>
-          <Button size="sm" variant="outline" onClick={() => childrenQuery.refetch()}>
-            Thử lại
-          </Button>
-        </div>
+        <ErrorAlert
+          title="Không tải được danh sách trẻ"
+          message={childrenErrorMessage}
+          onRetry={() => childrenQuery.refetch()}
+        />
       )}
 
       {isClassEmpty ? (
@@ -265,6 +257,7 @@ export default function TeacherAttendanceHistoryPage() {
             childrenList={childrenList}
             onReset={handleClearFilters}
             hasFilters={hasFilters}
+            todayStr={todayStr}
           />
 
           {/* Tải lại lỗi khi đã có kết quả: giữ bảng cũ, cảnh báo ở đây */}

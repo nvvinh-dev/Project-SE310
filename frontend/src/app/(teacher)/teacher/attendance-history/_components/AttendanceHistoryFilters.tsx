@@ -19,6 +19,7 @@ interface AttendanceHistoryFiltersProps {
   childrenList: HomeroomChildResponse[];
   onReset: () => void;
   hasFilters: boolean;
+  todayStr?: string;
 }
 
 // Xem theo một ngày hoặc theo một trẻ, không gộp hai cách (ui-screens.md SCR-TCH-02 vùng [1]).
@@ -37,8 +38,9 @@ export function AttendanceHistoryFilters({
   childrenList,
   onReset,
   hasFilters,
+  todayStr: propTodayStr,
 }: AttendanceHistoryFiltersProps) {
-  const todayStr = getTodayVietnamDateString();
+  const todayStr = propTodayStr ?? getTodayVietnamDateString();
   const yesterdayStr = addDaysToDateString(todayStr, -1);
 
   // Child options for select dropdown
