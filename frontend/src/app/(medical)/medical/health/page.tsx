@@ -1,14 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { NoticeBanner } from "@/components";
 import type { SchoolChildResponse } from "@/types/health";
 import { ChildSelector } from "./_components/ChildSelector";
 import { GrowthMeasurementForm } from "./_components/GrowthMeasurementForm";
 import { GrowthMeasurementHistory } from "./_components/GrowthMeasurementHistory";
+import { useSchoolChildren } from "./_lib/health-api";
 
 export default function MedicalHealthPage() {
   const [selectedChild, setSelectedChild] = useState<SchoolChildResponse | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
+  const { data: schoolChildren } = useSchoolChildren();
+
+  // Bỏ chọn nếu trẻ không còn trong danh sách sau khi tải lại (ví dụ nhận 404 trẻ bị xóa)
+  const isSelectedChildValid =
+    !selectedChild ||
+    !schoolChildren ||
+    schoolChildren.some((c) => c.id === selectedChild.id);
+  const activeSelectedChild = isSelectedChildValid ? selectedChild : null;
 
   // Dải thông báo thành công role="status" tự ẩn sau 6 giây (ui-screens.md §4.2)
   useEffect(() => {
@@ -24,7 +34,7 @@ export default function MedicalHealthPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 py-8">
       {/* Tiêu đề trang (design-system.md §2) */}
       <div>
         <h1 className="text-2xl font-bold text-on-surface">Chiều cao, cân nặng</h1>
@@ -33,33 +43,19 @@ export default function MedicalHealthPage() {
         </p>
       </div>
 
-      {/* Dải thông báo thành công */}
+      {/* Dải thông báo thành công (design-system.md §5.1) */}
       {successNotice && (
-        <div
+        <NoticeBanner
+          message={successNotice}
+          onClose={() => setSuccessNotice(null)}
           role="status"
-          className="flex items-center justify-between rounded-2xl border border-primary/30 bg-primary-fixed/40 p-4 text-on-primary-fixed shadow-xs animate-in fade-in duration-200"
-        >
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white text-xs font-bold">
-              ✓
-            </span>
-            <span className="text-sm font-semibold">{successNotice}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setSuccessNotice(null)}
-            className="text-xs font-bold text-primary hover:text-primary/80 transition-colors p-1 rounded-md"
-            aria-label="Đóng thông báo"
-          >
-            Đóng
-          </button>
-        </div>
+        />
       )}
 
-      {/* Vùng [1]: Chọn trẻ toàn trường */}
-      <div className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-5 sm:p-6 shadow-xs">
+      {/* Vùng [1]: Chọn trẻ */}
+      <div className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-4 shadow-xs">
         <ChildSelector
-          selectedChild={selectedChild}
+          selectedChild={activeSelectedChild}
           onSelectChild={(child) => {
             setSelectedChild(child);
             setSuccessNotice(null);
@@ -67,14 +63,15 @@ export default function MedicalHealthPage() {
         />
       </div>
 
-      {/* Vùng [2]: Form nhập số đo mới */}
+      {/* Vùng [2]: Form nhập số đo mới (key reset form và error khi đổi trẻ) */}
       <GrowthMeasurementForm
-        selectedChild={selectedChild}
+        key={activeSelectedChild?.id ?? "none"}
+        selectedChild={activeSelectedChild}
         onSuccessNotice={handleSuccessNotice}
       />
 
       {/* Vùng [3]: Lịch sử số đo của trẻ */}
-      <GrowthMeasurementHistory selectedChild={selectedChild} />
+      <GrowthMeasurementHistory selectedChild={activeSelectedChild} />
     </div>
   );
 }

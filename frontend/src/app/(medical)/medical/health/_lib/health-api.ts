@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import { apiClient } from "@/lib/axios";
 import type { ApiResponse } from "@/types/auth";
 import type {
@@ -45,31 +44,26 @@ export function useGrowthMeasurements(childId: string | null) {
   });
 }
 
-// Y tế ghi số đo mới cho trẻ
+// Y tế ghi số đo mới cho trẻ.
+// Làm mới cả số đo và danh sách trẻ trong onSettled theo frontend-conventions.md §3.2 & §5
 export function useCreateGrowthMeasurement(childId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (body: GrowthMeasurementRequest) => {
       if (!childId) throw new Error("Chưa chọn trẻ.");
-      const res = await apiClient.post<ApiResponse<GrowthMeasurementResponse>>(
+      await apiClient.post<ApiResponse<GrowthMeasurementResponse>>(
         `/api/children/${childId}/growth-measurements`,
         body
       );
-      return res.data.data as GrowthMeasurementResponse;
     },
-    onSuccess: () => {
+    onSettled: () => {
       if (childId) {
         queryClient.invalidateQueries({
           queryKey: growthMeasurementsQueryKey(childId),
         });
       }
-    },
-    onError: (error: unknown) => {
-      // Trẻ không còn tồn tại -> 404, tải lại danh sách trẻ (ui-screens.md §8)
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        queryClient.invalidateQueries({ queryKey: SCHOOL_CHILDREN_QUERY_KEY });
-      }
+      queryClient.invalidateQueries({ queryKey: SCHOOL_CHILDREN_QUERY_KEY });
     },
   });
 }

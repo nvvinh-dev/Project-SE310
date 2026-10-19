@@ -16,53 +16,17 @@ import {
   TableRow,
 } from "@/components";
 import { toApiError } from "@/lib/axios";
+import {
+  formatHeight,
+  formatMeasurementDateTime,
+  formatWeight,
+} from "@/lib/format";
 import type { SchoolChildResponse } from "@/types/health";
 import { useGrowthMeasurements } from "../_lib/health-api";
 
 interface GrowthMeasurementHistoryProps {
   selectedChild: SchoolChildResponse | null;
   className?: string;
-}
-
-// Định dạng thời điểm đo theo giờ Việt Nam: dd/MM/yyyy HH:mm (ui-screens.md §4.4)
-export function formatMeasurementDateTime(utcDateStr: string): string {
-  try {
-    const date = new Date(utcDateStr);
-    const parts = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Asia/Ho_Chi_Minh",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-    }).formatToParts(date);
-
-    const find = (type: string) =>
-      parts.find((p) => p.type === type)?.value ?? "";
-    return `${find("day")}/${find("month")}/${find("year")} ${find("hour")}:${find("minute")}`;
-  } catch {
-    return utcDateStr;
-  }
-}
-
-// Định dạng số đo với dấu phẩy kiểu Việt Nam, null hiện "—"
-export function formatHeight(height: number | null): string {
-  if (height === null || height === undefined) return "—";
-  const str = height.toLocaleString("vi-VN", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
-  return `${str} cm`;
-}
-
-export function formatWeight(weight: number | null): string {
-  if (weight === null || weight === undefined) return "—";
-  const str = weight.toLocaleString("vi-VN", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
-  return `${str} kg`;
 }
 
 export function GrowthMeasurementHistory({
@@ -83,7 +47,7 @@ export function GrowthMeasurementHistory({
   if (!selectedChild) {
     return (
       <div
-        className={`rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-6 shadow-xs ${className}`}
+        className={`rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-4 shadow-xs ${className}`}
       >
         <div className="border-b border-slate-100 pb-3 mb-6">
           <h2 className="text-base font-bold text-on-surface">Lịch sử số đo</h2>
@@ -102,7 +66,7 @@ export function GrowthMeasurementHistory({
 
   return (
     <div
-      className={`rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-5 sm:p-6 shadow-xs ${className}`}
+      className={`rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-4 shadow-xs ${className}`}
     >
       <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
@@ -118,7 +82,6 @@ export function GrowthMeasurementHistory({
           onClick={() => refetch()}
           isLoading={isFetching}
           disabled={isFetching}
-          className="text-xs font-semibold"
         >
           Làm mới
         </Button>
@@ -134,8 +97,8 @@ export function GrowthMeasurementHistory({
         </div>
       )}
 
-      {/* Giao diện Desktop (Bảng 3 cột) */}
-      <div className="hidden md:block">
+      {/* Giao diện Desktop (Bảng 3 cột từ xl theo design-system.md §6) */}
+      <div className="hidden xl:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -178,8 +141,8 @@ export function GrowthMeasurementHistory({
         </Table>
       </div>
 
-      {/* Giao diện Điện thoại (Card List chống cuộn ngang - AC-NFR-03) */}
-      <div className="block md:hidden">
+      {/* Giao diện Màn hình hẹp (Card List dưới xl theo design-system.md §6 - AC-NFR-03) */}
+      <div className="block xl:hidden">
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((idx) => (

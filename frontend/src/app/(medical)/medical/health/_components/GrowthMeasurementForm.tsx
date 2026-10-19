@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { Button, Input } from "@/components";
-import type { GrowthMeasurementFormValues, SchoolChildResponse } from "@/types/health";
+import { useForm } from "react-hook-form";
+import { ApiErrorAlert, Button, Input } from "@/components";
+import type { SchoolChildResponse } from "@/types/health";
 import { useCreateGrowthMeasurement } from "../_lib/health-api";
 import {
+  type GrowthMeasurementFormValues,
   parseMeasurementValue,
   validateHeight,
   validateWeight,
 } from "../_lib/health-rules";
-import { ApiErrorAlert } from "./ApiErrorAlert";
 
 interface GrowthMeasurementFormProps {
   selectedChild: SchoolChildResponse | null;
@@ -30,9 +30,6 @@ export function GrowthMeasurementForm({
     register,
     handleSubmit,
     reset,
-    control,
-    setError,
-    clearErrors,
     formState: { errors },
   } = useForm<GrowthMeasurementFormValues>({
     defaultValues: {
@@ -42,40 +39,11 @@ export function GrowthMeasurementForm({
     mode: "onTouched",
   });
 
-  const [heightVal, weightVal] = useWatch({
-    control,
-    name: ["heightCm", "weightKg"],
-  });
-
   const onSubmit = (data: GrowthMeasurementFormValues) => {
     setApiError(null);
 
-    const trimmedHeight = data.heightCm.trim();
-    const trimmedWeight = data.weightKg.trim();
-
-    // AC-HEALTH-07: Cả hai ô trống -> báo lỗi ngay ở client, không gửi
-    if (!trimmedHeight && !trimmedWeight) {
-      setError("heightCm", {
-        type: "manual",
-        message: "Cần nhập ít nhất chiều cao hoặc cân nặng.",
-      });
-      return;
-    }
-
-    const heightCheck = validateHeight(trimmedHeight, trimmedWeight);
-    if (heightCheck !== true) {
-      setError("heightCm", { type: "manual", message: heightCheck });
-      return;
-    }
-
-    const weightCheck = validateWeight(trimmedWeight, trimmedHeight);
-    if (weightCheck !== true) {
-      setError("weightKg", { type: "manual", message: weightCheck });
-      return;
-    }
-
-    const heightNum = parseMeasurementValue(trimmedHeight);
-    const weightNum = parseMeasurementValue(trimmedWeight);
+    const heightNum = parseMeasurementValue(data.heightCm);
+    const weightNum = parseMeasurementValue(data.weightKg);
 
     createMutation.mutate(
       { heightCm: heightNum, weightKg: weightNum },
@@ -97,7 +65,7 @@ export function GrowthMeasurementForm({
 
   return (
     <div
-      className={`rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-5 sm:p-6 shadow-xs ${className}`}
+      className={`rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-4 shadow-xs ${className}`}
     >
       <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 border-b border-slate-100 pb-3">
         <div>
@@ -121,6 +89,7 @@ export function GrowthMeasurementForm({
           <Input
             id="heightCm"
             label="Chiều cao"
+            inputMode="decimal"
             disabled={isFormDisabled}
             placeholder="Ví dụ: 102.5"
             suffixIcon={
@@ -131,21 +100,15 @@ export function GrowthMeasurementForm({
             error={errors.heightCm?.message}
             helperText="Lớn hơn 0 và tối đa 200 cm"
             {...register("heightCm", {
-              validate: (val) => validateHeight(val, weightVal),
-              onChange: () => {
-                if (
-                  errors.heightCm?.message ===
-                  "Cần nhập ít nhất chiều cao hoặc cân nặng."
-                ) {
-                  clearErrors("heightCm");
-                }
-              },
+              validate: (val, formValues) =>
+                validateHeight(val, formValues.weightKg),
             })}
           />
 
           <Input
             id="weightKg"
             label="Cân nặng"
+            inputMode="decimal"
             disabled={isFormDisabled}
             placeholder="Ví dụ: 16.2"
             suffixIcon={
@@ -156,15 +119,7 @@ export function GrowthMeasurementForm({
             error={errors.weightKg?.message}
             helperText="Lớn hơn 0 và tối đa 100 kg"
             {...register("weightKg", {
-              validate: (val) => validateWeight(val, heightVal),
-              onChange: () => {
-                if (
-                  errors.heightCm?.message ===
-                  "Cần nhập ít nhất chiều cao hoặc cân nặng."
-                ) {
-                  clearErrors("heightCm");
-                }
-              },
+              validate: (val) => validateWeight(val),
             })}
           />
         </div>
@@ -176,7 +131,7 @@ export function GrowthMeasurementForm({
             size="md"
             disabled={isFormDisabled}
             isLoading={createMutation.isPending}
-            className="w-full sm:w-auto min-w-[120px]"
+            className="w-full sm:w-auto min-w-[120px] min-h-11"
           >
             Lưu
           </Button>

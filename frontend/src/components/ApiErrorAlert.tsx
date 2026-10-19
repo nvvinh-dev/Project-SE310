@@ -1,9 +1,10 @@
 "use client";
 
-import { ErrorAlert, Icons } from "@/components";
+import { ErrorAlert } from "./StateFeedback";
+import { Icons } from "./Icons";
 import { toApiError } from "@/lib/axios";
 
-// Có errors (400 validate) thì hiện từng dòng, không có thì hiện một message (ui-screens.md §4.2).
+// Có errors (400 validate) thì hiện từng dòng, không có thì hiện một message (ui-screens.md §4.2, design-system.md §5.1).
 // Câu chữ luôn lấy từ backend qua toApiError, không tự viết theo từng status
 export function ApiErrorAlert({
   error,

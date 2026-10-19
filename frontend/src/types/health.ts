@@ -17,8 +17,3 @@ export interface GrowthMeasurementRequest {
   heightCm: number | null;
   weightKg: number | null;
 }
-
-export interface GrowthMeasurementFormValues {
-  heightCm: string;
-  weightKg: string;
-}
