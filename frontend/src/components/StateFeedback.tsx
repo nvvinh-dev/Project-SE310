@@ -84,15 +84,16 @@ export function ErrorAlert({
 }: ErrorAlertProps) {
   return (
     <div
+      role="alert"
       className={`rounded-2xl border border-error/30 bg-error-container/40 p-4 text-left flex items-start justify-between gap-3 text-on-error-container ${className}`}
     >
       <div className="flex items-start gap-3">
-        <div className="text-error mt-0.5 shrink-0">
+        <div className="text-error mt-0.5 shrink-0" aria-hidden="true">
           <Icons.Alert />
         </div>
         <div>
           <h4 className="text-sm font-bold text-on-error-container">{title}</h4>
-          <p className="text-xs text-error font-medium mt-0.5 leading-relaxed">{message}</p>
+          <p className="text-xs text-error font-medium mt-0.5 leading-relaxed whitespace-pre-line">{message}</p>
         </div>
       </div>
 

@@ -153,7 +153,7 @@ export function TableError({
             <Icons.Alert />
           </div>
           <h3 className="text-sm font-bold text-on-surface mb-1">Đã có lỗi xảy ra</h3>
-          <p className="text-xs text-error font-medium mb-4 max-w-xs">{message}</p>
+          <p className="text-xs text-error font-medium mb-4 max-w-xs whitespace-pre-line">{message}</p>
           {onRetry && (
             <Button size="sm" variant="outline" icon={<Icons.Refresh />} onClick={onRetry}>
               Thử lại
