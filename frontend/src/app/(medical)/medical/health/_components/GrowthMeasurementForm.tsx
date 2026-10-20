@@ -119,6 +119,7 @@ export function GrowthMeasurementForm({
             error={errors.weightKg?.message}
             helperText="Lớn hơn 0 và tối đa 100 kg"
             {...register("weightKg", {
+              deps: "heightCm",
               validate: (val) => validateWeight(val),
             })}
           />

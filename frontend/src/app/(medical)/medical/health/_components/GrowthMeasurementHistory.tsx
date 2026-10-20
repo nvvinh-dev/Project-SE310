@@ -16,11 +16,8 @@ import {
   TableRow,
 } from "@/components";
 import { toApiError } from "@/lib/axios";
-import {
-  formatHeight,
-  formatMeasurementDateTime,
-  formatWeight,
-} from "@/lib/format";
+import { formatMeasurementDateTime } from "@/lib/datetime";
+import { formatHeight, formatWeight } from "@/lib/format";
 import type { SchoolChildResponse } from "@/types/health";
 import { useGrowthMeasurements } from "../_lib/health-api";
 

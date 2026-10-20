@@ -3,8 +3,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Icons } from "@/components";
 import { toApiError } from "@/lib/axios";
-import { formatDateOfBirth } from "@/lib/format";
-import { normalizeForSearch } from "@/lib/search";
+import { formatVietnamShortDate } from "@/lib/datetime";
+import { normalizeForSearch } from "@/lib/text";
 import type { SchoolChildResponse } from "@/types/health";
 import { useSchoolChildren } from "../_lib/health-api";
 
@@ -120,7 +120,7 @@ export function ChildSelector({
                 {selectedChild.fullName}
               </span>
               <span className="ml-2 text-xs text-on-surface-variant font-medium">
-                (Sinh: {formatDateOfBirth(selectedChild.dateOfBirth)})
+                (Sinh: {formatVietnamShortDate(selectedChild.dateOfBirth)})
               </span>
             </div>
           </div>
@@ -213,7 +213,7 @@ export function ChildSelector({
                   <div className="flex items-center gap-2 truncate">
                     <span className="truncate">{child.fullName}</span>
                     <span className="text-xs text-on-surface-variant shrink-0">
-                      (Sinh ngày: {formatDateOfBirth(child.dateOfBirth)})
+                      (Sinh ngày: {formatVietnamShortDate(child.dateOfBirth)})
                     </span>
                   </div>
                   {isSelected && (

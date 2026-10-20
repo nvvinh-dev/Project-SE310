@@ -52,3 +52,25 @@ export function formatVietnamTime(utcIso: string): string {
     hour12: false,
   }).format(new Date(utcIso));
 }
+
+// Định dạng thời điểm đo theo giờ Việt Nam: dd/MM/yyyy HH:mm (ui-screens.md §4.4, frontend-conventions.md §6)
+export function formatMeasurementDateTime(utcDateStr: string): string {
+  try {
+    const date = new Date(utcDateStr);
+    const parts = new Intl.DateTimeFormat("vi-VN", {
+      timeZone: VIETNAM_TIME_ZONE,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(date);
+
+    const find = (type: string) =>
+      parts.find((p) => p.type === type)?.value ?? "";
+    return `${find("day")}/${find("month")}/${find("year")} ${find("hour")}:${find("minute")}`;
+  } catch {
+    return utcDateStr;
+  }
+}
