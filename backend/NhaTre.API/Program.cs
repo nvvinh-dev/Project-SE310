@@ -164,6 +164,7 @@ builder.Services.AddScoped<ITuitionRepository, TuitionRepository>();
 builder.Services.AddScoped<ITuitionService, TuitionService>();
 builder.Services.AddScoped<IValidator<TuitionFeeRequest>, TuitionFeeRequestValidator>();
 builder.Services.AddScoped<IValidator<InvoiceRequest>, InvoiceRequestValidator>();
+builder.Services.AddScoped<IValidator<RecordPaymentRequest>, RecordPaymentRequestValidator>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IValidator<CreateUserRequest>, CreateUserRequestValidator>();
@@ -193,6 +194,7 @@ builder.Services.AddScoped<IValidator<GrowthMeasurementRequest>, GrowthMeasureme
 builder.Services.AddScoped<IIncidentRepository, IncidentRepository>();
 builder.Services.AddScoped<IIncidentService, IncidentService>();
 builder.Services.AddScoped<IValidator<CreateIncidentRequest>, CreateIncidentRequestValidator>();
+builder.Services.AddScoped<IValidator<AttachIncidentPhotosRequest>, AttachIncidentPhotosRequestValidator>();
 builder.Services.AddHttpClient<IFileStorageService, SupabaseFileStorageService>(); // D22, D53: Supabase:Url và Supabase:ServiceKey đọc lúc gọi, không chặn khởi động
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
