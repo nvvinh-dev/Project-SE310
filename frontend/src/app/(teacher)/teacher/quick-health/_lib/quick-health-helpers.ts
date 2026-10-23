@@ -1,57 +1,11 @@
-// Các hàm tiện ích phục vụ SCR-TCH-03 theo quy định ui-screens.md §4.4 và D39
+// Các hàm tiện ích upload ảnh và format dung lượng cho SCR-TCH-03 (D39 mục 5)
 
-export const VIETNAM_TIME_ZONE = "Asia/Ho_Chi_Minh";
-
-/**
- * Lấy thời điểm hiện tại theo giờ Việt Nam dạng YYYY-MM-DDTHH:mm
- * dùng làm giá trị mặc định và thuộc tính `max` cho input datetime-local.
- */
-export function getNowVietnamDateTimeLocal(): string {
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: VIETNAM_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  const parts = formatter.formatToParts(new Date());
-  const find = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
-  return `${find("year")}-${find("month")}-${find("day")}T${find("hour")}:${find("minute")}`;
-}
-
-/**
- * Đổi chuỗi YYYY-MM-DDTHH:mm (giờ Việt Nam) sang chuỗi ISO có múi giờ +07:00
- * theo yêu cầu của backend D39 mục 17: ví dụ 2026-10-16T10:15:00+07:00.
- */
-export function toVietnamIsoString(localValue: string): string {
-  if (!localValue) return "";
-  // Nếu đã có múi giờ hoặc Z thì giữ nguyên
-  if (localValue.endsWith("Z") || /[+-]\d{2}:\d{2}$/.test(localValue)) {
-    return localValue;
-  }
-  // Nếu chưa có giây
-  if (localValue.length === 16) {
-    return `${localValue}:00+07:00`;
-  }
-  // Nếu đã có giây (YYYY-MM-DDTHH:mm:ss)
-  if (localValue.length === 19) {
-    return `${localValue}+07:00`;
-  }
-  return `${localValue}+07:00`;
-}
-
-/**
- * Kiểm tra xem thời điểm đã chọn có sau thời điểm hiện tại không (chặn tương lai).
- */
-export function isFutureVietnamDateTime(localValue: string): boolean {
-  if (!localValue) return false;
-  const isoStr = toVietnamIsoString(localValue);
-  const targetTime = new Date(isoStr).getTime();
-  if (Number.isNaN(targetTime)) return false;
-  return targetTime > Date.now();
-}
+export {
+  VIETNAM_TIME_ZONE,
+  getNowVietnamDateTimeLocal,
+  toVietnamIsoString,
+  isFutureVietnamDateTime,
+} from "@/lib/datetime";
 
 /**
  * Kiểm tra tính hợp lệ của danh sách ảnh sự cố theo D39 mục 5 & AttachIncidentPhotosRequestValidator:

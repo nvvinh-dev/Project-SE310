@@ -4,11 +4,13 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   ApiErrorAlert,
   Button,
+  EmptyState,
   ErrorAlert,
   Icons,
   LoadingSpinner,
   NoticeBanner,
 } from "@/components";
+import { toApiError } from "@/lib/axios";
 import {
   useAttachIncidentPhotos,
   useCreateIncident,
@@ -24,11 +26,18 @@ import type { HealthMood } from "@/types/health";
 export default function QuickHealthPage() {
   const [activeTab, setActiveTab] = useState<QuickHealthTab>("health");
   const [selectedChildId, setSelectedChildId] = useState<string>("");
+  const [childSelectError, setChildSelectError] = useState<string | undefined>(undefined);
 
   // Banners & Errors
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [apiError, setApiError] = useState<unknown | null>(null);
   const [submittingStepText, setSubmittingStepText] = useState<string>("");
+
+  // Trạng thái lưu tạm sự cố đã tạo để chống nhân bản sự cố nếu upload ảnh thất bại
+  const [pendingIncident, setPendingIncident] = useState<{
+    id: string;
+    childName: string;
+  } | null>(null);
 
   // Dải thành công tự ẩn sau 6 giây theo onboarding-guide §4.0.2
   useEffect(() => {
@@ -45,10 +54,29 @@ export default function QuickHealthPage() {
 
   const childrenList = useMemo(() => childrenQuery.data ?? [], [childrenQuery.data]);
 
+  // Đồng bộ lại selectedChildId nếu danh sách trẻ thay đổi (ví dụ Admin vừa gỡ trẻ khỏi lớp - 404)
+  const [prevChildrenList, setPrevChildrenList] = useState(childrenList);
+  if (prevChildrenList !== childrenList) {
+    setPrevChildrenList(childrenList);
+    if (selectedChildId && !childrenList.some((c) => c.id === selectedChildId)) {
+      setSelectedChildId("");
+      setChildSelectError("Trẻ đã được chuyển lớp hoặc không còn trong danh sách lớp.");
+    }
+  }
+
   const selectedChild = useMemo(
     () => childrenList.find((c) => c.id === selectedChildId) ?? null,
     [childrenList, selectedChildId]
   );
+
+  const validateChildSelection = (): boolean => {
+    if (!selectedChildId) {
+      setChildSelectError("Vui lòng chọn trẻ trong lớp.");
+      return false;
+    }
+    setChildSelectError(undefined);
+    return true;
+  };
 
   // Xử lý gửi Sức khỏe nhanh
   const handleQuickHealthSubmit = async (values: {
@@ -56,7 +84,10 @@ export default function QuickHealthPage() {
     temperatureCelsius: number | null;
     notes: string;
   }): Promise<boolean> => {
-    if (!selectedChildId) return false;
+    if (!selectedChildId) {
+      setChildSelectError("Vui lòng chọn trẻ trong lớp.");
+      return false;
+    }
     setApiError(null);
 
     try {
@@ -71,19 +102,30 @@ export default function QuickHealthPage() {
       setSuccessNotice(`Đã lưu tình trạng sức khỏe cho ${childName}.`);
       return true;
     } catch (err) {
+      const parsed = toApiError(err);
+      if (parsed.status === 404) {
+        setSelectedChildId("");
+        setChildSelectError("Trẻ không còn thuộc lớp chủ nhiệm của bạn.");
+      }
       setApiError(err);
       return false;
     }
   };
 
-  // Xử lý gửi Sự cố (bao gồm cả tải ảnh nếu có)
+  // Xử lý gửi Sự cố (Bước 1: Lưu sự cố -> Bước 2: Tải ảnh)
+  // Xử lý lỗi nguyên tử: Lưu pendingIncident để tránh nhân bản sự cố khi tải ảnh thất bại
   const handleIncidentSubmit = async (values: {
     occurredAtUtc: string;
     description: string;
     photos: File[];
   }): Promise<boolean> => {
-    if (!selectedChildId) return false;
+    if (!selectedChildId) {
+      setChildSelectError("Vui lòng chọn trẻ trong lớp.");
+      return false;
+    }
     setApiError(null);
+
+    const childName = selectedChild ? selectedChild.fullName : "trẻ";
 
     try {
       setSubmittingStepText("Đang lưu sự cố...");
@@ -97,17 +139,54 @@ export default function QuickHealthPage() {
         throw new Error("Không nhận được phản hồi hợp lệ từ máy chủ.");
       }
 
-      // Đính kèm ảnh sự cố nếu có ảnh đã chọn
+      // Đính kèm ảnh nếu có
       if (values.photos.length > 0) {
+        setPendingIncident({ id: createdIncident.id, childName });
         setSubmittingStepText("Đang tải ảnh sự cố...");
+
         await attachPhotosMutation.mutateAsync({
           incidentId: createdIncident.id,
           files: values.photos,
         });
+
+        // Tải ảnh thành công
+        setPendingIncident(null);
+        setSuccessNotice(`Đã lưu sự cố và ảnh cho ${childName}.`);
+        return true;
       }
 
-      const childName = selectedChild ? selectedChild.fullName : "trẻ";
+      // Không có ảnh đính kèm
+      setPendingIncident(null);
       setSuccessNotice(`Đã lưu sự cố cho ${childName}.`);
+      return true;
+    } catch (err) {
+      const parsed = toApiError(err);
+      if (parsed.status === 404) {
+        setSelectedChildId("");
+        setChildSelectError("Trẻ không còn thuộc lớp chủ nhiệm của bạn.");
+      }
+      setApiError(err);
+      return false;
+    } finally {
+      setSubmittingStepText("");
+    }
+  };
+
+  // Thử lại việc tải ảnh riêng biệt cho sự cố đã lưu (tránh gọi lại API tạo sự cố)
+  const handleRetryPhotosOnly = async (files: File[]): Promise<boolean> => {
+    if (!pendingIncident) return false;
+    setApiError(null);
+
+    try {
+      setSubmittingStepText("Đang thử lại tải ảnh...");
+      await attachPhotosMutation.mutateAsync({
+        incidentId: pendingIncident.id,
+        files,
+      });
+
+      const childName = pendingIncident.childName;
+      setPendingIncident(null);
+      setSuccessNotice(`Đã tải ảnh sự cố thành công cho ${childName}.`);
       return true;
     } catch (err) {
       setApiError(err);
@@ -117,9 +196,23 @@ export default function QuickHealthPage() {
     }
   };
 
+  // Bỏ qua ảnh khi tải ảnh gặp sự cố
+  const handleSkipPhotos = () => {
+    const childName = pendingIncident?.childName || "trẻ";
+    setPendingIncident(null);
+    setApiError(null);
+    setSuccessNotice(`Đã hoàn tất ghi nhận sự cố cho ${childName} (không đính kèm ảnh).`);
+  };
+
   const isSubmittingHealth = createQuickHealthStatusMutation.isPending;
   const isSubmittingIncident =
     createIncidentMutation.isPending || attachPhotosMutation.isPending;
+
+  // Xử lý hiển thị theo ui-screens.md §4.2:
+  // Chưa có dữ liệu thì hiện vòng quay / bảng lỗi đầy trang; đã có dữ liệu mà lần tải lại bị lỗi thì giữ dữ liệu cũ
+  const hasData = childrenList.length > 0;
+  const isInitialLoading = childrenQuery.isLoading && !hasData;
+  const isInitialError = childrenQuery.isError && !hasData;
 
   return (
     <div className="py-8 space-y-6 max-w-4xl mx-auto">
@@ -156,6 +249,27 @@ export default function QuickHealthPage() {
         />
       )}
 
+      {/* Cảnh báo khi tải lại danh sách trẻ ngầm bị lỗi (giữ nguyên form và dữ liệu cũ) */}
+      {childrenQuery.isError && hasData && (
+        <div
+          role="alert"
+          className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 flex items-center justify-between gap-3 shadow-xs"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="text-amber-600 shrink-0"><Icons.Alert /></span>
+            <span>Không thể làm mới danh sách học sinh. Danh sách hiện tại vẫn được giữ nguyên.</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => childrenQuery.refetch()}
+            disabled={childrenQuery.isFetching}
+          >
+            Thử lại
+          </Button>
+        </div>
+      )}
+
       {/* Thông báo lỗi từ API */}
       {Boolean(apiError) && (
         <div className="relative">
@@ -171,16 +285,25 @@ export default function QuickHealthPage() {
         </div>
       )}
 
-      {/* Trạng thái tải dữ liệu học sinh */}
-      {childrenQuery.isLoading ? (
+      {/* Trạng thái tải lần đầu hoặc lỗi tải lần đầu */}
+      {isInitialLoading ? (
         <div className="p-12 text-center">
           <LoadingSpinner label="Đang tải danh sách học sinh của lớp..." />
         </div>
-      ) : childrenQuery.isError ? (
+      ) : isInitialError ? (
         <ErrorAlert
           title="Không thể tải danh sách học sinh"
           message="Đã có lỗi xảy ra khi nạp danh sách học sinh của lớp. Vui lòng thử lại."
           onRetry={() => childrenQuery.refetch()}
+        />
+      ) : childrenList.length === 0 ? (
+        /* Trạng thái rỗng theo ui-screens.md §2.3: Chưa có trẻ nào trong lớp chủ nhiệm */
+        <EmptyState
+          title="Chưa có trẻ nào trong lớp chủ nhiệm của bạn."
+          message="Nếu bạn chưa được phân công lớp, liên hệ Ban giám hiệu."
+          icon={<Icons.School />}
+          actionText="Tải lại danh sách"
+          onAction={() => childrenQuery.refetch()}
         />
       ) : (
         <div className="space-y-6">
@@ -195,24 +318,29 @@ export default function QuickHealthPage() {
             selectedChildId={selectedChildId}
             onSelectChild={(id) => {
               setSelectedChildId(id);
+              setChildSelectError(undefined);
               setApiError(null);
             }}
+            error={childSelectError}
             disabled={isSubmittingHealth || isSubmittingIncident}
           />
 
           {/* [3] Form Sức khỏe nhanh hoặc [4] Form Ghi sự cố */}
           {activeTab === "health" ? (
             <QuickHealthStatusForm
-              selectedChildId={selectedChildId}
               isSubmitting={isSubmittingHealth}
+              onValidateChild={validateChildSelection}
               onSubmit={handleQuickHealthSubmit}
             />
           ) : (
             <IncidentForm
-              selectedChildId={selectedChildId}
               isSubmitting={isSubmittingIncident}
               submittingStepText={submittingStepText}
+              pendingIncidentId={pendingIncident?.id ?? null}
+              onValidateChild={validateChildSelection}
               onSubmit={handleIncidentSubmit}
+              onRetryPhotosOnly={handleRetryPhotosOnly}
+              onSkipPhotos={handleSkipPhotos}
             />
           )}
         </div>
