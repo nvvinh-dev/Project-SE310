@@ -113,7 +113,7 @@ export default function ParentAttendancePage() {
       ) : isChildrenInitialError ? (
         <ErrorAlert
           title="Không thể tải danh sách con"
-          message={childrenErrorMessage!}
+          message={childrenErrorMessage ?? ""}
           onRetry={handleRefresh}
         />
       ) : childrenList.length === 0 ? (

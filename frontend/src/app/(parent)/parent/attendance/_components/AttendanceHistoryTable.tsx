@@ -143,8 +143,8 @@ export function AttendanceHistoryTable({
         )}
       </div>
 
-      {/* 3. Phân trang: chỉ hiển thị khi có hơn 1 trang và không đang tải lần đầu/lỗi */}
-      {!isLoading && !errorMessage && totalPages > 1 && (
+      {/* 3. Phân trang: chỉ ẩn khi đang tải lần đầu hay lỗi thay cả danh sách (frontend-conventions.md §3.4) */}
+      {!isLoading && !(errorMessage && items.length === 0) && totalPages > 1 && (
         <div className="pt-2">
           <Pagination
             currentPage={currentPage}
