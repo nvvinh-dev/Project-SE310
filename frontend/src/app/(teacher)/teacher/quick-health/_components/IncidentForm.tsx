@@ -4,9 +4,11 @@ import React, { useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Button, Input, Textarea, Icons } from "@/components";
 import {
-  formatFileSize,
   getNowVietnamDateTimeLocal,
   toVietnamIsoString,
+} from "@/lib/datetime";
+import {
+  formatFileSize,
   validateIncidentPhotos,
 } from "../_lib/quick-health-helpers";
 import { descriptionRules, occurredAtRules } from "../_lib/quick-health-rules";
@@ -86,32 +88,8 @@ export function IncidentForm({
     setPhotoError(err);
   };
 
+  // Tạo sự cố mới (bước 1 lưu sự cố -> nếu có ảnh thì tải ảnh)
   const onFormSubmit = async (values: IncidentFormValues) => {
-    // Nếu đang trong trạng thái thử lại tải ảnh cho sự cố đã tạo (tránh nhân bản sự cố)
-    if (pendingIncidentId) {
-      if (photos.length === 0) {
-        setPhotoError("Vui lòng chọn ít nhất 1 ảnh để thử lại tải ảnh, hoặc bấm Bỏ qua ảnh.");
-        return;
-      }
-      const err = validateIncidentPhotos(photos);
-      if (err) {
-        setPhotoError(err);
-        return;
-      }
-
-      const success = await onRetryPhotosOnly(photos);
-      if (success) {
-        reset({
-          occurredAt: getNowVietnamDateTimeLocal(0),
-          description: "",
-        });
-        setPhotos([]);
-        setPhotoError(null);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      }
-      return;
-    }
-
     if (!onValidateChild()) return;
 
     if (photos.length > 0) {
@@ -142,6 +120,30 @@ export function IncidentForm({
     }
   };
 
+  // Gọi thẳng bước tải ảnh khi đang chờ thử lại mà KHÔNG đi qua handleSubmit của form
+  const handleRetryPhotos = async () => {
+    if (photos.length === 0) {
+      setPhotoError("Vui lòng chọn ít nhất 1 ảnh để thử lại tải ảnh, hoặc bấm Bỏ qua ảnh.");
+      return;
+    }
+    const err = validateIncidentPhotos(photos);
+    if (err) {
+      setPhotoError(err);
+      return;
+    }
+
+    const success = await onRetryPhotosOnly(photos);
+    if (success) {
+      reset({
+        occurredAt: getNowVietnamDateTimeLocal(0),
+        description: "",
+      });
+      setPhotos([]);
+      setPhotoError(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const handleSkipPhotosClick = () => {
     onSkipPhotos();
     reset({
@@ -153,8 +155,8 @@ export function IncidentForm({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // max được tính động với 5 phút dung sai đồng hồ khớp backend (D39 mục 17)
-  const maxLocalTime = getNowVietnamDateTimeLocal(5);
+  // max theo giờ Việt Nam hiện tại, chặn thời điểm trong tương lai ngay ở client (SCR-TCH-03)
+  const maxLocalTime = getNowVietnamDateTimeLocal(0);
 
   return (
     <form
@@ -163,7 +165,9 @@ export function IncidentForm({
       aria-labelledby="tab-incident"
       onSubmit={(e) => {
         e.preventDefault();
-        void handleSubmit(onFormSubmit)(e);
+        if (!pendingIncidentId) {
+          void handleSubmit(onFormSubmit)(e);
+        }
       }}
       noValidate
       className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-5 sm:p-6 shadow-sm space-y-6"
@@ -181,14 +185,14 @@ export function IncidentForm({
       {pendingIncidentId && (
         <div
           role="alert"
-          className="rounded-2xl border border-amber-400 bg-amber-50 p-4 text-xs text-amber-950 space-y-2 shadow-xs"
+          className="rounded-2xl bg-amber-100 p-4 text-xs text-amber-800 space-y-2 shadow-xs"
         >
           <div className="flex items-start gap-2.5">
             <span className="text-amber-600 mt-0.5 shrink-0" aria-hidden="true">
               <Icons.Alert />
             </span>
             <div>
-              <p className="font-bold text-sm text-amber-900">
+              <p className="font-bold text-sm text-amber-800">
                 Sự cố đã được ghi nhận vào hệ thống
               </p>
               <p className="mt-0.5 leading-relaxed">
@@ -236,7 +240,10 @@ export function IncidentForm({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <label className="block text-sm font-semibold text-on-surface">
+            <label
+              htmlFor="incident-photos-file-input"
+              className="block text-sm font-semibold text-on-surface cursor-pointer"
+            >
               Ảnh sự cố (không bắt buộc)
             </label>
             <p className="text-xs text-on-surface-variant mt-0.5">
@@ -320,7 +327,7 @@ export function IncidentForm({
       {/* Lời nhắc quy trình khẩn cấp của nhà trường (đặt ngay trên nút bấm theo bố cục [4] ui-screens.md) */}
       <div
         role="note"
-        className="rounded-2xl border border-amber-300/80 bg-amber-50/80 p-3.5 text-xs text-amber-900 leading-relaxed flex items-start gap-2.5 shadow-xs"
+        className="rounded-2xl bg-amber-100 p-3.5 text-xs text-amber-800 leading-relaxed flex items-start gap-2.5 shadow-xs"
       >
         <span className="text-amber-600 mt-0.5 shrink-0" aria-hidden="true">
           <Icons.Alert />
@@ -345,19 +352,32 @@ export function IncidentForm({
           </Button>
         )}
 
-        <Button
-          type="submit"
-          variant="primary"
-          size="md"
-          isLoading={isSubmitting}
-          className="w-full sm:w-auto min-w-[140px]"
-        >
-          {isSubmitting
-            ? submittingStepText || "Đang lưu..."
-            : pendingIncidentId
-            ? "Thử lại tải ảnh"
-            : "Lưu sự cố"}
-        </Button>
+        {pendingIncidentId ? (
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            isLoading={isSubmitting}
+            onClick={handleRetryPhotos}
+            className="w-full sm:w-auto min-w-[140px]"
+          >
+            {isSubmitting
+              ? submittingStepText || "Đang tải ảnh..."
+              : "Thử lại tải ảnh"}
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            isLoading={isSubmitting}
+            className="w-full sm:w-auto min-w-[140px]"
+          >
+            {isSubmitting
+              ? submittingStepText || "Đang lưu sự cố..."
+              : "Lưu sự cố"}
+          </Button>
+        )}
       </div>
     </form>
   );

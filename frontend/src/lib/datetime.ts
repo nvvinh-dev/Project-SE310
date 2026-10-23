@@ -17,8 +17,7 @@ export function getTodayVietnamDateString(): string {
 /**
  * Lấy thời điểm hiện tại theo giờ Việt Nam dạng YYYY-MM-DDTHH:mm
  * dùng cho input datetime-local.
- * @param bufferMinutes Số phút đệm thêm (mặc định 0). Ví dụ truyền 5 để làm giá trị max
- * khớp với dung sai đồng hồ (ClockSkew = 5 phút) ở backend (D39 mục 17).
+ * @param bufferMinutes Số phút đệm thêm (mặc định 0).
  */
 export function getNowVietnamDateTimeLocal(bufferMinutes: number = 0): string {
   const targetDate = new Date(Date.now() + bufferMinutes * 60 * 1000);
@@ -48,17 +47,14 @@ export function toVietnamIsoString(localValue: string): string {
   if (localValue.length === 16) {
     return `${localValue}:00+07:00`;
   }
-  if (localValue.length === 19) {
-    return `${localValue}+07:00`;
-  }
   return `${localValue}+07:00`;
 }
 
 /**
- * Kiểm tra xem thời điểm đã chọn có sau thời điểm hiện tại quá dung sai cho phép không.
- * Mặc định cho phép dung sai 5 phút khớp với CreateIncidentRequestValidator ở backend.
+ * Kiểm tra xem thời điểm đã chọn có sau thời điểm hiện tại không (chặn tương lai theo SCR-TCH-03).
+ * Mặc định toleranceMinutes = 0 để chặn ngay ở client.
  */
-export function isFutureVietnamDateTime(localValue: string, toleranceMinutes: number = 5): boolean {
+export function isFutureVietnamDateTime(localValue: string, toleranceMinutes: number = 0): boolean {
   if (!localValue) return false;
   const isoStr = toVietnamIsoString(localValue);
   const targetTime = new Date(isoStr).getTime();

@@ -1,12 +1,5 @@
 // Các hàm tiện ích upload ảnh và format dung lượng cho SCR-TCH-03 (D39 mục 5)
 
-export {
-  VIETNAM_TIME_ZONE,
-  getNowVietnamDateTimeLocal,
-  toVietnamIsoString,
-  isFutureVietnamDateTime,
-} from "@/lib/datetime";
-
 /**
  * Kiểm tra tính hợp lệ của danh sách ảnh sự cố theo D39 mục 5 & AttachIncidentPhotosRequestValidator:
  * - Tối đa 5 ảnh

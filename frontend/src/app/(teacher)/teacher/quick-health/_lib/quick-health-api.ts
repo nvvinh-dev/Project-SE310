@@ -66,12 +66,7 @@ export function useAttachIncidentPhotos() {
 
       const res = await apiClient.post<ApiResponse<IncidentResponse>>(
         `/api/incidents/${incidentId}/photos`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
+        formData
       );
       return res.data.data;
     },

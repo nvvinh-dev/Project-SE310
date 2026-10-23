@@ -1,15 +1,13 @@
 import { isFutureVietnamDateTime } from "@/lib/datetime";
-import type { HealthMood } from "@/types/health";
+import { isHealthMood } from "@/types/health";
 
 type FieldRules = { validate: Record<string, (value: string) => true | string> };
-
-const VALID_MOODS: HealthMood[] = ["Happy", "Normal", "Tired", "Fussy"];
 
 export const moodRules: FieldRules = {
   validate: {
     notEmpty: (value) => value.trim().length > 0 || "Tâm trạng không được để trống.",
     validMood: (value) =>
-      VALID_MOODS.includes(value as HealthMood) ||
+      isHealthMood(value) ||
       "Tâm trạng chỉ nhận 'Happy', 'Normal', 'Tired' hoặc 'Fussy'.",
   },
 };

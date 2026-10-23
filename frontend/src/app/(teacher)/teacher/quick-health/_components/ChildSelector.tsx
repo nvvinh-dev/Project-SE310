@@ -48,7 +48,7 @@ export function ChildSelector({
             error={error}
             helperText={
               childrenList.length === 0
-                ? "Lớp chưa có học sinh hoặc bạn chưa được phân công lớp chủ nhiệm."
+                ? "Lớp chưa có trẻ hoặc bạn chưa được phân công lớp chủ nhiệm."
                 : undefined
             }
           />
@@ -60,13 +60,13 @@ export function ChildSelector({
               <button
                 type="button"
                 onClick={() => setShowHealthNoteModal(true)}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold hover:bg-amber-100 transition-colors cursor-pointer shadow-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-amber-100 text-amber-800 text-xs font-semibold hover:bg-amber-100/80 transition-colors cursor-pointer shadow-xs focus:outline-none focus:ring-2 focus:ring-primary"
                 title="Bấm để xem chi tiết lưu ý sức khỏe của trẻ"
               >
-                <span className="p-1 rounded-full bg-amber-200/70 text-amber-700" aria-hidden="true">
+                <span className="p-1 rounded-full bg-amber-100 text-amber-600" aria-hidden="true">
                   <Icons.Alert />
                 </span>
-                <span>⚠ Có lưu ý sức khỏe — xem</span>
+                <span>Có lưu ý sức khỏe — xem</span>
               </button>
             ) : (
               <span className="inline-flex items-center gap-1.5 text-xs text-on-surface-variant font-medium px-2 py-1">

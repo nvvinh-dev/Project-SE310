@@ -4,7 +4,7 @@ import React from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Button, Input, Select, Textarea } from "@/components";
 import type { HealthMood } from "@/types/health";
-import { HEALTH_MOOD_OPTIONS } from "@/types/health";
+import { HEALTH_MOOD_OPTIONS, isHealthMood } from "@/types/health";
 import {
   moodRules,
   temperatureRules,
@@ -13,7 +13,7 @@ import {
 } from "../_lib/quick-health-rules";
 
 export interface QuickHealthFormValues {
-  mood: HealthMood | "";
+  mood: string;
   temperatureCelsius: string;
   notes: string;
 }
@@ -52,10 +52,11 @@ export function QuickHealthStatusForm({
 
   const onFormSubmit = async (values: QuickHealthFormValues) => {
     if (!onValidateChild()) return;
+    if (!isHealthMood(values.mood)) return;
 
     const parsedTemp = parseTemperatureValue(values.temperatureCelsius);
     const success = await onSubmit({
-      mood: values.mood as HealthMood,
+      mood: values.mood,
       temperatureCelsius: parsedTemp,
       notes: values.notes.trim(),
     });

@@ -54,13 +54,13 @@ export default function QuickHealthPage() {
 
   const childrenList = useMemo(() => childrenQuery.data ?? [], [childrenQuery.data]);
 
-  // Đồng bộ lại selectedChildId nếu danh sách trẻ thay đổi (ví dụ Admin vừa gỡ trẻ khỏi lớp - 404)
+  // Đồng bộ lại selectedChildId nếu danh sách trẻ thay đổi (ví dụ Admin vừa gỡ trẻ khỏi lớp)
   const [prevChildrenList, setPrevChildrenList] = useState(childrenList);
   if (prevChildrenList !== childrenList) {
     setPrevChildrenList(childrenList);
     if (selectedChildId && !childrenList.some((c) => c.id === selectedChildId)) {
       setSelectedChildId("");
-      setChildSelectError("Trẻ đã được chuyển lớp hoặc không còn trong danh sách lớp.");
+      setChildSelectError(undefined);
     }
   }
 
@@ -102,11 +102,6 @@ export default function QuickHealthPage() {
       setSuccessNotice(`Đã lưu tình trạng sức khỏe cho ${childName}.`);
       return true;
     } catch (err) {
-      const parsed = toApiError(err);
-      if (parsed.status === 404) {
-        setSelectedChildId("");
-        setChildSelectError("Trẻ không còn thuộc lớp chủ nhiệm của bạn.");
-      }
       setApiError(err);
       return false;
     }
@@ -160,11 +155,6 @@ export default function QuickHealthPage() {
       setSuccessNotice(`Đã lưu sự cố cho ${childName}.`);
       return true;
     } catch (err) {
-      const parsed = toApiError(err);
-      if (parsed.status === 404) {
-        setSelectedChildId("");
-        setChildSelectError("Trẻ không còn thuộc lớp chủ nhiệm của bạn.");
-      }
       setApiError(err);
       return false;
     } finally {
@@ -208,14 +198,14 @@ export default function QuickHealthPage() {
   const isSubmittingIncident =
     createIncidentMutation.isPending || attachPhotosMutation.isPending;
 
-  // Xử lý hiển thị theo ui-screens.md §4.2:
-  // Chưa có dữ liệu thì hiện vòng quay / bảng lỗi đầy trang; đã có dữ liệu mà lần tải lại bị lỗi thì giữ dữ liệu cũ
-  const hasData = childrenList.length > 0;
-  const isInitialLoading = childrenQuery.isLoading && !hasData;
+  // Xử lý hiển thị theo ui-screens.md §4.2 & frontend-conventions.md §3.3:
+  // Data === undefined: chưa có dữ liệu; isPending: lần tải đầu; đã có dữ liệu mà refetch lỗi: giữ dữ liệu cũ
+  const hasData = childrenQuery.data !== undefined;
+  const isInitialLoading = childrenQuery.isPending && !hasData;
   const isInitialError = childrenQuery.isError && !hasData;
 
   return (
-    <div className="py-8 space-y-6 max-w-4xl mx-auto">
+    <div className="py-8 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
       {/* Tiêu đề trang */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -253,11 +243,15 @@ export default function QuickHealthPage() {
       {childrenQuery.isError && hasData && (
         <div
           role="alert"
-          className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 flex items-center justify-between gap-3 shadow-xs"
+          className="rounded-2xl bg-amber-100 p-4 text-xs text-amber-800 flex items-center justify-between gap-3 shadow-xs"
         >
           <div className="flex items-center gap-2.5">
-            <span className="text-amber-600 shrink-0"><Icons.Alert /></span>
-            <span>Không thể làm mới danh sách học sinh. Danh sách hiện tại vẫn được giữ nguyên.</span>
+            <span className="text-amber-600 shrink-0" aria-hidden="true">
+              <Icons.Alert />
+            </span>
+            <span>
+              Không thể làm mới danh sách trẻ: {toApiError(childrenQuery.error).message}. Danh sách hiện tại vẫn được giữ nguyên.
+            </span>
           </div>
           <Button
             variant="outline"
@@ -272,12 +266,14 @@ export default function QuickHealthPage() {
 
       {/* Thông báo lỗi từ API */}
       {Boolean(apiError) && (
-        <div className="relative">
-          <ApiErrorAlert error={apiError} />
+        <div className="flex items-start gap-2">
+          <div className="flex-1">
+            <ApiErrorAlert error={apiError} />
+          </div>
           <button
             type="button"
             onClick={() => setApiError(null)}
-            className="absolute top-3 right-3 text-outline hover:text-on-surface p-1 rounded-full cursor-pointer"
+            className="p-2 text-outline hover:text-on-surface rounded-full cursor-pointer shrink-0 mt-1"
             aria-label="Đóng thông báo lỗi"
           >
             <Icons.Close />
@@ -288,12 +284,12 @@ export default function QuickHealthPage() {
       {/* Trạng thái tải lần đầu hoặc lỗi tải lần đầu */}
       {isInitialLoading ? (
         <div className="p-12 text-center">
-          <LoadingSpinner label="Đang tải danh sách học sinh của lớp..." />
+          <LoadingSpinner label="Đang tải danh sách trẻ của lớp..." />
         </div>
       ) : isInitialError ? (
         <ErrorAlert
-          title="Không thể tải danh sách học sinh"
-          message="Đã có lỗi xảy ra khi nạp danh sách học sinh của lớp. Vui lòng thử lại."
+          title="Không thể tải danh sách trẻ"
+          message={toApiError(childrenQuery.error).message}
           onRetry={() => childrenQuery.refetch()}
         />
       ) : childrenList.length === 0 ? (
@@ -302,17 +298,17 @@ export default function QuickHealthPage() {
           title="Chưa có trẻ nào trong lớp chủ nhiệm của bạn."
           message="Nếu bạn chưa được phân công lớp, liên hệ Ban giám hiệu."
           icon={<Icons.School />}
-          actionText="Tải lại danh sách"
+          actionText="Làm mới"
           onAction={() => childrenQuery.refetch()}
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* [1] Hai thẻ chức năng */}
           <div className="flex justify-start">
             <QuickHealthTabs activeTab={activeTab} onTabChange={setActiveTab} />
           </div>
 
-          {/* [2] Bộ chọn trẻ trong lớp (dùng chung cho cả 2 thẻ) */}
+          {/* [2] Bộ chọn trẻ trong lớp (dùng chung cho cả 2 thẻ, khóa khi đang chờ thử lại sự cố) */}
           <ChildSelector
             childrenList={childrenList}
             selectedChildId={selectedChildId}
@@ -322,7 +318,7 @@ export default function QuickHealthPage() {
               setApiError(null);
             }}
             error={childSelectError}
-            disabled={isSubmittingHealth || isSubmittingIncident}
+            disabled={isSubmittingHealth || isSubmittingIncident || Boolean(pendingIncident)}
           />
 
           {/* [3] Form Sức khỏe nhanh hoặc [4] Form Ghi sự cố */}

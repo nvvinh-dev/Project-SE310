@@ -28,12 +28,16 @@ export const HEALTH_MOOD_LABELS: Record<HealthMood, string> = {
   Fussy: "Quấy khóc",
 };
 
-export const HEALTH_MOOD_OPTIONS: { value: HealthMood; label: string }[] = [
-  { value: "Happy", label: "Vui vẻ" },
-  { value: "Normal", label: "Bình thường" },
-  { value: "Tired", label: "Mệt" },
-  { value: "Fussy", label: "Quấy khóc" },
-];
+export const HEALTH_MOODS = Object.keys(HEALTH_MOOD_LABELS) as HealthMood[];
+
+export function isHealthMood(value: string): value is HealthMood {
+  return (HEALTH_MOODS as string[]).includes(value);
+}
+
+export const HEALTH_MOOD_OPTIONS = HEALTH_MOODS.map((mood) => ({
+  value: mood,
+  label: HEALTH_MOOD_LABELS[mood],
+}));
 
 export interface QuickHealthStatusRequest {
   childId: string;
