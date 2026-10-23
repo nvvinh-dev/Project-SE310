@@ -6,6 +6,8 @@ export * from "./Modal";
 export * from "./ConfirmDialog";
 export * from "./StateFeedback";
 export * from "./Icons";
+export * from "./ApiErrorAlert";
+export * from "./NoticeBanner";
 export { default as DashboardLayout } from "./DashboardLayout";
 export { default as RoleGuard } from "./RoleGuard";
 export { default as UnderConstruction } from "./UnderConstruction";
