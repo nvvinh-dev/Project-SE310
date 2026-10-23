@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Select } from "@/components";
 import type { MyChildResponse } from "@/types/child";
 

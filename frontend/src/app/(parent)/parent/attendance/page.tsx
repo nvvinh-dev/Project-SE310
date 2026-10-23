@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { EmptyState, ErrorAlert, LoadingSpinner } from "@/components";
 import { toApiError } from "@/lib/axios";
 import { useMyChildren, useChildAttendances } from "./_lib/parent-attendance-api";
@@ -65,77 +65,41 @@ export default function ParentAttendancePage() {
     return rawAttendances.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   }, [rawAttendances, currentPage]);
 
-  // Xử lý lỗi theo ui-screens.md §4.2:
-  // Lỗi khi chưa có dữ liệu thì thay cả bảng; lỗi lúc tải lại thì giữ bảng cũ và báo ở trên
+  // Xử lý lỗi theo ui-screens.md §4.2 & frontend-conventions.md §3.3:
+  // - Chỉ hiện lỗi thay cả màn hình khi chưa có dữ liệu (data === undefined).
+  // - Đã có dữ liệu mà lần tải lại bị lỗi thì giữ dữ liệu cũ và báo phía trên.
+  const isChildrenInitialLoading = childrenQuery.isPending && childrenQuery.data === undefined;
+  const isChildrenInitialError = childrenQuery.isError && childrenQuery.data === undefined;
+  const childrenErrorMessage = childrenQuery.error
+    ? toApiError(childrenQuery.error).message
+    : null;
+
   const hasHistoryData = attendancesQuery.data !== undefined;
   const historyErrorMessage = attendancesQuery.error
     ? toApiError(attendancesQuery.error).message
     : null;
 
-  // Trạng thái đang tải danh sách con lần đầu
-  if (childrenQuery.isPending) {
-    return (
-      <div className="py-8 space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-on-surface">Điểm danh của con</h1>
-          <p className="text-sm text-on-surface-variant">
-            Theo dõi con có mặt hay vắng ở trường qua các ngày
-          </p>
-        </div>
-        <LoadingSpinner label="Đang tải danh sách con..." />
-      </div>
-    );
-  }
-
-  // Trạng thái lỗi khi tải danh sách con
-  if (childrenQuery.isError) {
-    return (
-      <div className="py-8 space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-on-surface">Điểm danh của con</h1>
-          <p className="text-sm text-on-surface-variant">
-            Theo dõi con có mặt hay vắng ở trường qua các ngày
-          </p>
-        </div>
-        <ErrorAlert
-          title="Không thể tải danh sách con"
-          message={toApiError(childrenQuery.error).message}
-          onRetry={() => childrenQuery.refetch()}
-        />
-      </div>
-    );
-  }
-
-  // Trạng thái tài khoản phụ huynh chưa được liên kết với trẻ nào (ui-screens.md Bảng 2.3)
-  if (childrenList.length === 0) {
-    return (
-      <div className="py-8 space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-on-surface">Điểm danh của con</h1>
-          <p className="text-sm text-on-surface-variant">
-            Theo dõi con có mặt hay vắng ở trường qua các ngày
-          </p>
-        </div>
-        <EmptyState
-          title="Chưa liên kết trẻ"
-          message="Tài khoản chưa được liên kết với trẻ nào. Liên hệ văn phòng nhà trường."
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="py-8 space-y-6">
-      {/* Vùng [1]: Chọn con (Một con thì chọn sẵn không ô chọn; nhiều con thì ô chọn ở đầu - ui-screens.md §10) */}
+      {/* Tiêu đề trang và ô chọn con (nếu có nhiều hơn 1 con) */}
       <ChildSelectHeader
         childrenList={childrenList}
         selectedChildId={activeChildId}
         onSelectChild={handleSelectChild}
-        isLoading={attendancesQuery.isFetching}
+        isLoading={attendancesQuery.isPending}
       />
 
-      {/* Cảnh báo lỗi khi tải lại dữ liệu mà bảng vẫn còn dữ liệu cũ */}
-      {hasHistoryData && historyErrorMessage && (
+      {/* Cảnh báo lỗi tải lại danh sách con (khi đã có dữ liệu cũ trong cache) */}
+      {!isChildrenInitialError && childrenErrorMessage && (
+        <ErrorAlert
+          title="Không thể làm mới danh sách con"
+          message={childrenErrorMessage}
+          onRetry={handleRefresh}
+        />
+      )}
+
+      {/* Cảnh báo lỗi làm mới lịch sử điểm danh (khi bảng vẫn còn dữ liệu cũ) */}
+      {hasHistoryData && rawAttendances.length > 0 && historyErrorMessage && (
         <ErrorAlert
           title="Không thể làm mới dữ liệu"
           message={historyErrorMessage}
@@ -143,18 +107,35 @@ export default function ParentAttendancePage() {
         />
       )}
 
-      {/* Vùng [2]: Bảng lịch sử điểm danh */}
-      <AttendanceHistoryTable
-        items={pagedAttendances}
-        isLoading={attendancesQuery.isPending}
-        errorMessage={!hasHistoryData ? historyErrorMessage : null}
-        onRetry={handleRefresh}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        pageSize={PAGE_SIZE}
-        totalItems={totalItems}
-        onPageChange={setPage}
-      />
+      {/* Nội dung trang theo từng trạng thái */}
+      {isChildrenInitialLoading ? (
+        <LoadingSpinner label="Đang tải danh sách con..." />
+      ) : isChildrenInitialError ? (
+        <ErrorAlert
+          title="Không thể tải danh sách con"
+          message={childrenErrorMessage!}
+          onRetry={handleRefresh}
+        />
+      ) : childrenList.length === 0 ? (
+        /* Tài khoản phụ huynh chưa được liên kết với trẻ nào (ui-screens.md Bảng 2.3) */
+        <EmptyState
+          title="Chưa liên kết trẻ"
+          message="Tài khoản chưa được liên kết với trẻ nào. Liên hệ văn phòng nhà trường."
+        />
+      ) : (
+        /* Vùng [2]: Bảng lịch sử điểm danh */
+        <AttendanceHistoryTable
+          items={pagedAttendances}
+          isLoading={attendancesQuery.isPending}
+          errorMessage={historyErrorMessage}
+          onRetry={handleRefresh}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          pageSize={PAGE_SIZE}
+          totalItems={totalItems}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   );
 }

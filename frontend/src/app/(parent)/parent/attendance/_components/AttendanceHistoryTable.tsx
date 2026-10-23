@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
 import {
   EmptyState,
   ErrorAlert,
+  LoadingSpinner,
   Pagination,
   Table,
   TableBody,
@@ -18,6 +18,10 @@ import {
 import type { ChildAttendanceResponse } from "@/types/attendance";
 import { formatVietnamShortDate, formatVietnamTime } from "@/lib/datetime";
 import { AttendanceStatusBadge } from "./AttendanceStatusBadge";
+
+// SCR-PAR-02: Bố cục 3 cột (Ngày | Trạng thái | Giờ ghi nhận)
+const TABLE_COLUMNS = 3;
+const EMPTY_MESSAGE = "Chưa có bản ghi điểm danh nào của con.";
 
 interface AttendanceHistoryTableProps {
   items: ChildAttendanceResponse[];
@@ -42,9 +46,6 @@ export function AttendanceHistoryTable({
   totalItems,
   onPageChange,
 }: AttendanceHistoryTableProps) {
-  const TABLE_COLUMNS = 4;
-  const EMPTY_MESSAGE = "Chưa có bản ghi điểm danh nào của con.";
-
   return (
     <div className="space-y-4">
       {/* 1. Giao diện Desktop (Bảng Table) từ màn hình xl trở lên (design-system.md §6, khuôn SCR-ADM-02) */}
@@ -52,7 +53,6 @@ export function AttendanceHistoryTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-14 text-center">STT</TableHead>
               <TableHead className="min-w-[140px]">Ngày</TableHead>
               <TableHead className="min-w-[180px]">Trạng thái</TableHead>
               {/* SCR-PAR-02: Cột ghi 'Giờ ghi nhận', không ghi 'Giờ đến' (D23) */}
@@ -63,7 +63,7 @@ export function AttendanceHistoryTable({
           <TableBody>
             {isLoading ? (
               <TableLoading colSpan={TABLE_COLUMNS} rowCount={5} />
-            ) : errorMessage ? (
+            ) : errorMessage && items.length === 0 ? (
               <TableError colSpan={TABLE_COLUMNS} message={errorMessage} onRetry={onRetry} />
             ) : items.length === 0 ? (
               <TableEmpty
@@ -72,17 +72,13 @@ export function AttendanceHistoryTable({
                 message={EMPTY_MESSAGE}
               />
             ) : (
-              items.map((item, index) => {
-                const rowNumber = (currentPage - 1) * pageSize + index + 1;
+              items.map((item) => {
                 // SCR-PAR-02: Dòng vắng hiện '—' thay vì giờ (D23)
                 const recordedTimeDisplay =
                   item.status === "Present" ? formatVietnamTime(item.checkInTimeUtc) : "—";
 
                 return (
                   <TableRow key={item.id}>
-                    <TableCell className="text-center font-medium text-outline text-xs tabular-nums">
-                      {rowNumber}
-                    </TableCell>
                     <TableCell>
                       <span className="font-semibold text-on-surface text-sm">
                         {formatVietnamShortDate(item.attendanceDate)}
@@ -105,21 +101,8 @@ export function AttendanceHistoryTable({
       {/* 2. Giao diện Mobile & Tablet (Danh sách thẻ Card) dưới màn hình xl (design-system.md §6) */}
       <div className="xl:hidden">
         {isLoading ? (
-          <div className="space-y-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="animate-pulse rounded-2xl border border-slate-200/90 bg-surface-container-lowest p-4 space-y-3 shadow-xs"
-              >
-                <div className="flex justify-between items-center">
-                  <div className="h-4 bg-slate-200 rounded-full w-24" />
-                  <div className="h-6 bg-slate-200 rounded-full w-20" />
-                </div>
-                <div className="h-3 bg-slate-100 rounded-full w-36" />
-              </div>
-            ))}
-          </div>
-        ) : errorMessage ? (
+          <LoadingSpinner label="Đang tải lịch sử điểm danh..." />
+        ) : errorMessage && items.length === 0 ? (
           <ErrorAlert
             title="Không thể tải lịch sử điểm danh"
             message={errorMessage}
@@ -139,7 +122,7 @@ export function AttendanceHistoryTable({
               return (
                 <div
                   key={item.id}
-                  className="rounded-2xl border border-slate-200/90 bg-surface-container-lowest p-4 shadow-xs space-y-2.5"
+                  className="rounded-2xl border border-slate-200/90 bg-surface-container-lowest p-3 shadow-xs space-y-2"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-bold text-on-surface">

@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import type { AttendanceStatus } from "@/types/attendance";
 import { ATTENDANCE_STATUS_LABELS } from "@/types/attendance";
 
