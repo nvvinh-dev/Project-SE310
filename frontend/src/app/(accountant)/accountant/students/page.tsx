@@ -8,6 +8,7 @@ import {
   ErrorAlert,
   Input,
   LoadingSpinner,
+  NoticeBanner,
   Pagination,
   Table,
   TableBody,
@@ -26,7 +27,6 @@ import type { ChildResponse, GuardianResponse } from "@/types/child";
 import { useChildren } from "./_lib/children-api";
 import { ChildFormModal } from "./_components/ChildFormModal";
 import { GuardiansModal } from "./_components/GuardiansModal";
-import { NoticeBanner } from "./_components/NoticeBanner";
 import { UnlinkGuardianDialog } from "./_components/UnlinkGuardianDialog";
 
 // Cỡ trang mặc định của frontend-conventions.md §3.4; SCR-ACC-04 không ghi cỡ riêng

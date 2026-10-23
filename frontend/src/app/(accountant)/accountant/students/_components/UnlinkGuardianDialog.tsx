@@ -1,9 +1,7 @@
 "use client";
 
-import { ConfirmDialog } from "@/components";
+import { ApiErrorAlert, ConfirmDialog } from "@/components";
 import type { ChildResponse, GuardianResponse } from "@/types/child";
-// Tạm dùng bản của SCR-ADM-02; chuyển sang bản trong src/components/ khi bản đó vào develop
-import { ApiErrorAlert } from "@/app/(admin)/admin/users/_components/ApiErrorAlert";
 import { useUnlinkGuardian } from "../_lib/children-api";
 
 interface UnlinkGuardianDialogProps {

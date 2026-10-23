@@ -2,13 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { Button, EmptyState, ErrorAlert, Icons, Input, LoadingSpinner, Modal } from "@/components";
+import {
+  ApiErrorAlert,
+  Button,
+  EmptyState,
+  ErrorAlert,
+  Icons,
+  Input,
+  LoadingSpinner,
+  Modal,
+  NoticeBanner,
+} from "@/components";
 import { toApiError } from "@/lib/axios";
 import type { ChildResponse, GuardianResponse } from "@/types/child";
-// Tạm dùng bản của SCR-ADM-02; chuyển sang bản trong src/components/ khi bản đó vào develop
-import { ApiErrorAlert } from "@/app/(admin)/admin/users/_components/ApiErrorAlert";
 import { useChildGuardians, useLinkGuardian, useParentAccounts } from "../_lib/children-api";
-import { NoticeBanner } from "./NoticeBanner";
 
 // Chờ ngừng gõ một chút rồi mới tìm, để không gọi API ở mỗi phím
 const SEARCH_DELAY_MS = 300;

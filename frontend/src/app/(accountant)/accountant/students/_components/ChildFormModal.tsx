@@ -1,11 +1,9 @@
 "use client";
 
 import { useForm, useWatch } from "react-hook-form";
-import { Button, Input, Modal } from "@/components";
+import { ApiErrorAlert, Button, Input, Modal } from "@/components";
 import { getTodayVietnamDateString } from "@/lib/datetime";
 import type { ChildResponse } from "@/types/child";
-// Tạm dùng bản của SCR-ADM-02; chuyển sang bản trong src/components/ khi bản đó vào develop
-import { ApiErrorAlert } from "@/app/(admin)/admin/users/_components/ApiErrorAlert";
 import { useCreateChild, useUpdateChild } from "../_lib/children-api";
 import {
   type ChildFormValues,
