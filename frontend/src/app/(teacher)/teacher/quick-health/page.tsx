@@ -241,27 +241,11 @@ export default function QuickHealthPage() {
 
       {/* Cảnh báo khi tải lại danh sách trẻ ngầm bị lỗi (giữ nguyên form và dữ liệu cũ) */}
       {childrenQuery.isError && hasData && (
-        <div
-          role="alert"
-          className="rounded-2xl bg-amber-100 p-4 text-xs text-amber-800 flex items-center justify-between gap-3 shadow-xs"
-        >
-          <div className="flex items-center gap-2.5">
-            <span className="text-amber-600 shrink-0" aria-hidden="true">
-              <Icons.Alert />
-            </span>
-            <span>
-              Không thể làm mới danh sách trẻ: {toApiError(childrenQuery.error).message}. Danh sách hiện tại vẫn được giữ nguyên.
-            </span>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => childrenQuery.refetch()}
-            disabled={childrenQuery.isFetching}
-          >
-            Thử lại
-          </Button>
-        </div>
+        <ErrorAlert
+          title="Không tải lại được danh sách"
+          message={toApiError(childrenQuery.error).message}
+          onRetry={() => childrenQuery.refetch()}
+        />
       )}
 
       {/* Thông báo lỗi từ API */}

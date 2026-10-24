@@ -81,7 +81,7 @@ export function QuickHealthStatusForm({
         void handleSubmit(onFormSubmit)(e);
       }}
       noValidate
-      className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-5 sm:p-6 shadow-sm space-y-6"
+      className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-4 shadow-sm space-y-6"
     >
       <div className="border-b border-slate-100 pb-4">
         <h2 className="text-base font-bold text-on-surface">

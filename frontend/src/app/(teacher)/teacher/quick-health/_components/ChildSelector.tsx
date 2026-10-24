@@ -33,7 +33,7 @@ export function ChildSelector({
   }));
 
   return (
-    <div className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-5 sm:p-6 shadow-sm">
+    <div className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-4 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="w-full sm:max-w-md">
           <Select
@@ -60,7 +60,7 @@ export function ChildSelector({
               <button
                 type="button"
                 onClick={() => setShowHealthNoteModal(true)}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-amber-100 text-amber-800 text-xs font-semibold hover:bg-amber-100/80 transition-colors cursor-pointer shadow-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl border border-amber-200 bg-amber-100 text-amber-800 text-xs font-semibold hover:bg-amber-100/80 transition-colors cursor-pointer shadow-xs focus:outline-none focus:ring-2 focus:ring-primary"
                 title="Bấm để xem chi tiết lưu ý sức khỏe của trẻ"
               >
                 <span className="p-1 rounded-full bg-amber-100 text-amber-600" aria-hidden="true">

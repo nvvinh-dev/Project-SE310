@@ -170,7 +170,7 @@ export function IncidentForm({
         }
       }}
       noValidate
-      className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-5 sm:p-6 shadow-sm space-y-6"
+      className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-4 shadow-sm space-y-6"
     >
       <div className="border-b border-slate-100 pb-4">
         <h2 className="text-base font-bold text-on-surface">
@@ -185,7 +185,7 @@ export function IncidentForm({
       {pendingIncidentId && (
         <div
           role="alert"
-          className="rounded-2xl bg-amber-100 p-4 text-xs text-amber-800 space-y-2 shadow-xs"
+          className="rounded-2xl border border-amber-200 bg-amber-100 p-4 text-xs text-amber-800 space-y-2 shadow-xs"
         >
           <div className="flex items-start gap-2.5">
             <span className="text-amber-600 mt-0.5 shrink-0" aria-hidden="true">
@@ -327,7 +327,7 @@ export function IncidentForm({
       {/* Lời nhắc quy trình khẩn cấp của nhà trường (đặt ngay trên nút bấm theo bố cục [4] ui-screens.md) */}
       <div
         role="note"
-        className="rounded-2xl bg-amber-100 p-3.5 text-xs text-amber-800 leading-relaxed flex items-start gap-2.5 shadow-xs"
+        className="rounded-2xl border border-amber-200 bg-amber-100 p-4 text-xs text-amber-800 leading-relaxed flex items-start gap-2.5 shadow-xs"
       >
         <span className="text-amber-600 mt-0.5 shrink-0" aria-hidden="true">
           <Icons.Alert />
