@@ -121,10 +121,7 @@ export default function TeacherPickupPage() {
       );
     } catch (err) {
       const apiErr = toApiError(err);
-      // Khi 409 hoặc 404, báo lỗi lên trang chính và để modal đóng nhằm đồng bộ dữ liệu mới
-      if (apiErr.status === 409 || apiErr.status === 404) {
-        setWriteError(apiErr.message);
-      }
+      setWriteError(apiErr.message);
       throw err;
     }
   };
@@ -150,9 +147,7 @@ export default function TeacherPickupPage() {
       );
     } catch (err) {
       const apiErr = toApiError(err);
-      if (apiErr.status === 409 || apiErr.status === 404) {
-        setWriteError(apiErr.message);
-      }
+      setWriteError(apiErr.message);
       throw err;
     }
   };
@@ -268,7 +263,6 @@ export default function TeacherPickupPage() {
           onClose={() => setSelectedChildId(null)}
           onPickupDirect={handlePickupDirect}
           onPickupPhoneConfirmed={handlePickupPhoneConfirmed}
-          isSubmitting={createPickupMutation.isPending}
         />
       )}
     </div>

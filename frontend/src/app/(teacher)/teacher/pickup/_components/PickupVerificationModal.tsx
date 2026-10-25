@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
-  ApiErrorAlert,
   Button,
   ErrorAlert,
   Icons,
@@ -32,7 +31,6 @@ interface PickupVerificationModalProps {
     pickerFullName: string,
     pickupPersonId: string
   ) => Promise<void>;
-  isSubmitting: boolean;
 }
 
 export function PickupVerificationModal({
@@ -41,7 +39,6 @@ export function PickupVerificationModal({
   onClose,
   onPickupDirect,
   onPickupPhoneConfirmed,
-  isSubmitting,
 }: PickupVerificationModalProps) {
   const childId = child?.id ?? null;
   const {
@@ -53,7 +50,7 @@ export function PickupVerificationModal({
   } = usePickupPersons(isOpen ? childId : null);
 
   const [showPhoneForm, setShowPhoneForm] = useState(false);
-  const [modalError, setModalError] = useState<unknown | null>(null);
+  const [submittingAction, setSubmittingAction] = useState<"primary" | "backup" | "phone" | null>(null);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   const {
@@ -70,6 +67,8 @@ export function PickupVerificationModal({
 
   if (!child) return null;
 
+  const isSubmitting = submittingAction !== null;
+
   // Lấy người đón chính (priority 1) và người dự phòng (priority 2)
   const primaryPerson = pickupPersons.find((p) => p.priority === 1);
   const backupPerson = pickupPersons.find((p) => p.priority === 2);
@@ -85,39 +84,34 @@ export function PickupVerificationModal({
   };
 
   // Giao cho người đón chính hoặc người dự phòng đã đăng ký
-  const handleDirectClick = async (person: PickupPersonResponse) => {
-    setModalError(null);
+  const handleDirectClick = async (
+    person: PickupPersonResponse,
+    action: "primary" | "backup"
+  ) => {
+    setSubmittingAction(action);
     try {
       await onPickupDirect(person);
       onClose();
-    } catch (err) {
-      const apiErr = toApiError(err);
-      // 409 hoặc 404: đóng modal để trang chính hiện thông báo và cập nhật dữ liệu mới nhất
-      if (apiErr.status === 409 || apiErr.status === 404) {
-        onClose();
-      } else {
-        setModalError(err);
-      }
+    } catch {
+      onClose();
+    } finally {
+      setSubmittingAction(null);
     }
   };
 
   // Submit form người khác đến đón (đã gọi xác nhận)
   const onPhoneSubmit = async (values: PhoneConfirmedFormValues) => {
-    setModalError(null);
+    setSubmittingAction("phone");
     try {
       await onPickupPhoneConfirmed(
         values.pickerFullName.trim(),
         values.pickupPersonId
       );
       onClose();
-    } catch (err) {
-      const apiErr = toApiError(err);
-      // 409 hoặc 404: đóng modal để trang chính hiện thông báo và cập nhật dữ liệu mới nhất
-      if (apiErr.status === 409 || apiErr.status === 404) {
-        onClose();
-      } else {
-        setModalError(err);
-      }
+    } catch {
+      onClose();
+    } finally {
+      setSubmittingAction(null);
     }
   };
 
@@ -128,12 +122,8 @@ export function PickupVerificationModal({
       size="xl"
       title={`Xác minh người đón — ${child.fullName}`}
       description="Đối chiếu thông tin và ảnh khuôn mặt người đến đón với người phụ huynh đã đăng ký."
-      className="max-w-3xl"
     >
       <div className="space-y-5">
-        {/* Thông báo lỗi phía trong modal khi validate hoặc lỗi khác */}
-        {modalError != null && <ApiErrorAlert error={modalError} />}
-
         {/* Trạng thái tải thông tin người đón */}
         {isLoading && (
           <div className="py-8">
@@ -174,22 +164,19 @@ export function PickupVerificationModal({
               </div>
             ) : (
               <>
-                {/* Khung người đón chính [3] và người dự phòng [4] */}
+                {/* Khung người đón chính và người dự phòng */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* [3] Người đón chính */}
+                  {/* Người đón chính */}
                   <div className="rounded-2xl border-2 border-primary/30 bg-surface-container-lowest p-4 sm:p-5 shadow-xs flex flex-col justify-between space-y-4">
                     <div className="space-y-3.5">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-bold uppercase tracking-wider text-primary">
-                          [3] Người đón chính
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-fixed/40 text-primary">
-                          Ưu tiên 1
+                          Người đón chính
                         </span>
                       </div>
 
                       {/* Ảnh khuôn mặt */}
-                      <div className="relative w-32 h-32 sm:w-36 sm:h-36 mx-auto rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs flex items-center justify-center">
+                      <div className="relative w-32 h-32 sm:w-36 sm:h-36 mx-auto rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-xs flex items-center justify-center">
                         {imageErrors[primaryPerson.id] ? (
                           <button
                             type="button"
@@ -248,7 +235,8 @@ export function PickupVerificationModal({
                     <div className="pt-2">
                       <Button
                         variant="primary"
-                        onClick={() => handleDirectClick(primaryPerson)}
+                        onClick={() => handleDirectClick(primaryPerson, "primary")}
+                        isLoading={submittingAction === "primary"}
                         disabled={isSubmitting}
                         className="w-full justify-center min-h-11 text-sm font-semibold"
                       >
@@ -257,21 +245,18 @@ export function PickupVerificationModal({
                     </div>
                   </div>
 
-                  {/* [4] Người dự phòng */}
+                  {/* Người dự phòng */}
                   {backupPerson ? (
                     <div className="rounded-2xl border border-slate-200 bg-surface-container-lowest p-4 sm:p-5 shadow-xs flex flex-col justify-between space-y-4">
                       <div className="space-y-3.5">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs font-bold uppercase tracking-wider text-outline">
-                            [4] Người dự phòng
-                          </span>
-                          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-outline">
-                            Ưu tiên 2
+                            Người dự phòng
                           </span>
                         </div>
 
                         {/* Ảnh khuôn mặt */}
-                        <div className="relative w-32 h-32 sm:w-36 sm:h-36 mx-auto rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs flex items-center justify-center">
+                        <div className="relative w-32 h-32 sm:w-36 sm:h-36 mx-auto rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-xs flex items-center justify-center">
                           {imageErrors[backupPerson.id] ? (
                             <button
                               type="button"
@@ -330,7 +315,8 @@ export function PickupVerificationModal({
                       <div className="pt-2">
                         <Button
                           variant="outline"
-                          onClick={() => handleDirectClick(backupPerson)}
+                          onClick={() => handleDirectClick(backupPerson, "backup")}
+                          isLoading={submittingAction === "backup"}
                           disabled={isSubmitting}
                           className="w-full justify-center min-h-11 text-sm font-semibold"
                         >
@@ -345,7 +331,7 @@ export function PickupVerificationModal({
                         <Icons.User />
                       </div>
                       <span className="text-xs font-bold uppercase tracking-wider text-outline">
-                        [4] Người dự phòng
+                        Người dự phòng
                       </span>
                       <p className="text-sm font-semibold text-outline">
                         Chưa đăng ký người đón dự phòng
@@ -357,51 +343,28 @@ export function PickupVerificationModal({
                   )}
                 </div>
 
-                {/* [5] Người khác đến đón — đã gọi xác nhận */}
+                {/* Người khác đến đón — đã gọi xác nhận */}
                 <div className="pt-2">
                   {!showPhoneForm ? (
-                    <div className="p-4 rounded-2xl border border-amber-300/80 bg-amber-50/50 space-y-2">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-bold text-amber-950">
-                            Người đến đón không khớp ảnh hay thông tin trên?
-                          </p>
-                          <p className="text-xs text-amber-900 mt-0.5">
-                            Giáo viên tự gọi cho người đón chính hoặc người dự phòng bằng số điện thoại trên để xác minh.
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          onClick={() => setShowPhoneForm(true)}
-                          disabled={isSubmitting}
-                          className="border-amber-400 bg-white hover:bg-amber-100/70 text-amber-950 font-semibold shrink-0"
-                        >
-                          Người khác đến đón — đã gọi xác nhận
-                        </Button>
-                      </div>
-                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowPhoneForm(true)}
+                      disabled={isSubmitting}
+                      className="w-full justify-center min-h-11 text-sm font-semibold"
+                    >
+                      Người khác đến đón — đã gọi xác nhận
+                    </Button>
                   ) : (
                     /* Form xác nhận qua điện thoại */
                     <form
                       onSubmit={handleSubmit(onPhoneSubmit)}
-                      className="rounded-2xl border border-amber-300 bg-amber-50/60 p-4 sm:p-5 space-y-4"
+                      noValidate
+                      className="rounded-2xl border border-slate-200 bg-surface-container-low/40 p-4 sm:p-5 space-y-4"
                     >
-                      <div className="flex items-center justify-between gap-2 border-b border-amber-200/80 pb-2.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-amber-800 font-bold text-xs uppercase tracking-wider">
-                            [5] Xác nhận qua điện thoại
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowPhoneForm(false);
-                            reset();
-                          }}
-                          className="text-xs text-outline hover:text-on-surface underline cursor-pointer"
-                        >
-                          Thu gọn
-                        </button>
+                      <div className="border-b border-slate-200/80 pb-2.5">
+                        <h4 className="font-bold text-sm text-on-surface">
+                          Xác nhận qua điện thoại
+                        </h4>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -463,10 +426,11 @@ export function PickupVerificationModal({
                         <Button
                           variant="primary"
                           type="submit"
+                          isLoading={submittingAction === "phone"}
                           disabled={isSubmitting}
-                          className="min-w-32"
+                          className="min-w-36"
                         >
-                          {isSubmitting ? "Đang ghi..." : "Xác nhận và giao trẻ"}
+                          Xác nhận và giao trẻ
                         </Button>
                       </div>
                     </form>

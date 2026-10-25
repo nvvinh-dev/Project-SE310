@@ -18,7 +18,7 @@ export function PickupRow({ item, onOpenVerification }: PickupRowProps) {
     const pickupDetails = formatPickupDetails(pickup);
 
     return (
-      <li className="rounded-2xl border border-slate-200/90 bg-surface-container-lowest p-3.5 sm:p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+      <li className="rounded-2xl border border-slate-200/90 bg-surface-container-lowest p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="space-y-1">
           <span className="font-bold text-base text-on-surface">
             {child.fullName}
@@ -34,7 +34,7 @@ export function PickupRow({ item, onOpenVerification }: PickupRowProps) {
   // 2. Trẻ có mặt: Nguyễn Văn A Có mặt (Xác minh người đón ›)
   if (attendance?.status === "Present") {
     return (
-      <li className="rounded-2xl border border-slate-200/90 bg-surface-container-lowest p-3.5 sm:p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <li className="rounded-2xl border border-slate-200/90 bg-surface-container-lowest p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <span className="font-bold text-base text-on-surface">
             {child.fullName}
@@ -82,7 +82,7 @@ export function PickupRow({ item, onOpenVerification }: PickupRowProps) {
   }
 
   return (
-    <li className="rounded-2xl border border-slate-200/70 bg-surface-container-low/40 p-3.5 sm:p-4 shadow-2xs flex items-center justify-between gap-2.5">
+    <li className="rounded-2xl border border-slate-200/70 bg-surface-container-low/40 p-3.5 sm:p-4 shadow-xs flex items-center justify-between gap-2.5">
       <div className="flex items-center gap-2.5 flex-wrap">
         <span className="font-semibold text-base text-on-surface">
           {child.fullName}
