@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import {
+  ApiErrorAlert,
   Button,
   ErrorAlert,
   Icons,
@@ -52,6 +53,8 @@ export function PickupVerificationModal({
   const [showPhoneForm, setShowPhoneForm] = useState(false);
   const [submittingAction, setSubmittingAction] = useState<"primary" | "backup" | "phone" | null>(null);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [phoneFormError, setPhoneFormError] = useState<unknown | null>(null);
+  const retriedPersonsRef = useRef<Set<string>>(new Set());
 
   const {
     register,
@@ -74,13 +77,14 @@ export function PickupVerificationModal({
   const backupPerson = pickupPersons.find((p) => p.priority === 2);
 
   // Xử lý khi ảnh tải lỗi (URL ký hết hạn sau 60 phút - ui-screens.md SCR-TCH-04 Hành vi 8, D53)
+  // Tự động gọi lại GET để nhận URL mới; nếu đã thử tự động một lần mà vẫn lỗi thì hiện fallback
   const handleImageError = (personId: string) => {
-    setImageErrors((prev) => ({ ...prev, [personId]: true }));
-  };
-
-  const handleRetryImage = async (personId: string) => {
-    setImageErrors((prev) => ({ ...prev, [personId]: false }));
-    await refetch();
+    if (!retriedPersonsRef.current.has(personId)) {
+      retriedPersonsRef.current.add(personId);
+      void refetch();
+    } else {
+      setImageErrors((prev) => ({ ...prev, [personId]: true }));
+    }
   };
 
   // Giao cho người đón chính hoặc người dự phòng đã đăng ký
@@ -101,6 +105,7 @@ export function PickupVerificationModal({
 
   // Submit form người khác đến đón (đã gọi xác nhận)
   const onPhoneSubmit = async (values: PhoneConfirmedFormValues) => {
+    setPhoneFormError(null);
     setSubmittingAction("phone");
     try {
       await onPickupPhoneConfirmed(
@@ -108,8 +113,9 @@ export function PickupVerificationModal({
         values.pickupPersonId
       );
       onClose();
-    } catch {
-      onClose();
+    } catch (err) {
+      // Giữ modal và hiển thị lỗi qua ApiErrorAlert trên form để giáo viên chỉnh sửa (ui-screens.md §4.3)
+      setPhoneFormError(err);
     } finally {
       setSubmittingAction(null);
     }
@@ -178,19 +184,11 @@ export function PickupVerificationModal({
                       {/* Ảnh khuôn mặt */}
                       <div className="relative w-32 h-32 sm:w-36 sm:h-36 mx-auto rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-xs flex items-center justify-center">
                         {imageErrors[primaryPerson.id] ? (
-                          <button
-                            type="button"
-                            onClick={() => void handleRetryImage(primaryPerson.id)}
-                            title="Bấm để tải lại ảnh"
-                            className="w-full h-full flex flex-col items-center justify-center text-outline hover:text-on-surface hover:bg-slate-200/50 transition-colors p-2 cursor-pointer"
-                          >
-                            <span className="p-2 rounded-full bg-slate-200 text-slate-500">
+                          <div className="w-full h-full flex items-center justify-center text-outline">
+                            <span className="p-3 rounded-full bg-slate-200 text-slate-500">
                               <Icons.User />
                             </span>
-                            <span className="text-[11px] mt-1 inline-flex items-center gap-1 font-medium">
-                              <Icons.Refresh /> Tải lại ảnh
-                            </span>
-                          </button>
+                          </div>
                         ) : (
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img
@@ -255,19 +253,11 @@ export function PickupVerificationModal({
                         {/* Ảnh khuôn mặt */}
                         <div className="relative w-32 h-32 sm:w-36 sm:h-36 mx-auto rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-xs flex items-center justify-center">
                           {imageErrors[backupPerson.id] ? (
-                            <button
-                              type="button"
-                              onClick={() => void handleRetryImage(backupPerson.id)}
-                              title="Bấm để tải lại ảnh"
-                              className="w-full h-full flex flex-col items-center justify-center text-outline hover:text-on-surface hover:bg-slate-200/50 transition-colors p-2 cursor-pointer"
-                            >
-                              <span className="p-2 rounded-full bg-slate-200 text-slate-500">
+                            <div className="w-full h-full flex items-center justify-center text-outline">
+                              <span className="p-3 rounded-full bg-slate-200 text-slate-500">
                                 <Icons.User />
                               </span>
-                              <span className="text-[11px] mt-1 inline-flex items-center gap-1 font-medium">
-                                <Icons.Refresh /> Tải lại ảnh
-                              </span>
-                            </button>
+                            </div>
                           ) : (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
@@ -342,7 +332,10 @@ export function PickupVerificationModal({
                   {!showPhoneForm ? (
                     <Button
                       variant="outline"
-                      onClick={() => setShowPhoneForm(true)}
+                      onClick={() => {
+                        setShowPhoneForm(true);
+                        setPhoneFormError(null);
+                      }}
                       disabled={isSubmitting}
                       className="w-full justify-center min-h-11 text-sm font-semibold"
                     >
@@ -360,6 +353,11 @@ export function PickupVerificationModal({
                           Xác nhận qua điện thoại
                         </h4>
                       </div>
+
+                      {/* Khung lỗi API phía trên form (ui-screens.md §4.2 & §4.3) */}
+                      {phoneFormError ? (
+                        <ApiErrorAlert error={phoneFormError} />
+                      ) : null}
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* Ô nhập họ tên người đến đón */}
@@ -411,6 +409,7 @@ export function PickupVerificationModal({
                           type="button"
                           onClick={() => {
                             setShowPhoneForm(false);
+                            setPhoneFormError(null);
                             reset();
                           }}
                           disabled={isSubmitting}
@@ -424,7 +423,7 @@ export function PickupVerificationModal({
                           disabled={isSubmitting}
                           className="min-w-36"
                         >
-                          Giao cho người này
+                          Xác nhận và giao trẻ
                         </Button>
                       </div>
                     </form>

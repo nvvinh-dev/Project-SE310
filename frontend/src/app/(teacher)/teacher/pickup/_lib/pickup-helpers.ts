@@ -21,9 +21,9 @@ export function calculatePickupStats(items: PickupRowItem[]): PickupStats {
   for (const item of items) {
     if (item.attendance?.status === "Present") {
       totalPresent++;
-      if (item.pickup) {
-        totalPickedUp++;
-      }
+    }
+    if (item.pickup) {
+      totalPickedUp++;
     }
   }
 

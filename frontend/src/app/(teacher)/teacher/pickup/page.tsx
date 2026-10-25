@@ -48,7 +48,10 @@ export default function TeacherPickupPage() {
   const pickups = useMemo(() => pickupsQuery.data ?? [], [pickupsQuery.data]);
 
   // Đã có dữ liệu trước đó hay chưa (dùng cho quy ước refetch lỗi không xóa trắng - PR #21 commit 696fc20)
-  const hasData = childrenQuery.data !== undefined;
+  const hasData =
+    childrenQuery.data !== undefined &&
+    attendancesQuery.data !== undefined &&
+    pickupsQuery.data !== undefined;
 
   // Map theo childId để tra cứu O(1)
   const attendanceMap = useMemo(() => {
@@ -128,22 +131,16 @@ export default function TeacherPickupPage() {
     if (!selectedChild) return;
     setWriteError(null);
 
-    try {
-      await createPickupMutation.mutateAsync({
-        childId: selectedChild.id,
-        pickupMethod: "PhoneConfirmed",
-        pickupPersonId,
-        pickerFullName,
-      });
+    await createPickupMutation.mutateAsync({
+      childId: selectedChild.id,
+      pickupMethod: "PhoneConfirmed",
+      pickupPersonId,
+      pickerFullName,
+    });
 
-      setSuccessNotice(
-        `Đã ghi nhận giao trẻ ${selectedChild.fullName} cho ${pickerFullName} (xác nhận qua điện thoại).`
-      );
-    } catch (err) {
-      const apiErr = toApiError(err);
-      setWriteError(apiErr.message);
-      throw err;
-    }
+    setSuccessNotice(
+      `Đã ghi nhận giao trẻ ${selectedChild.fullName} cho ${pickerFullName} (xác nhận qua điện thoại).`
+    );
   };
 
   // Trạng thái tải lần đầu (khi chưa có dữ liệu)
