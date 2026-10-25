@@ -86,19 +86,13 @@ export default function TeacherPickupPage() {
   }, [selectedChildId, children]);
 
   // Xử lý làm mới
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
     setWriteError(null);
-    try {
-      await Promise.all([
-        childrenQuery.refetch(),
-        attendancesQuery.refetch(),
-        pickupsQuery.refetch(),
-      ]);
-    } finally {
-      setIsRefreshing(false);
-    }
+    await Promise.all([
+      childrenQuery.refetch(),
+      attendancesQuery.refetch(),
+      pickupsQuery.refetch(),
+    ]);
   }, [childrenQuery, attendancesQuery, pickupsQuery]);
 
   // Giao cho người đón chính hoặc người dự phòng (Primary / Backup)
@@ -240,8 +234,6 @@ export default function TeacherPickupPage() {
       <PickupProgressCard
         todayStr={todayStr}
         stats={stats}
-        onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
       />
 
       {/* Vùng [2]: Danh sách trẻ hôm nay */}

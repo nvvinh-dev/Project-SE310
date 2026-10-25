@@ -214,12 +214,9 @@ export function PickupVerificationModal({
                         <div className="text-xs space-y-1 text-on-surface-variant">
                           <p className="flex items-center justify-center sm:justify-start gap-1.5">
                             <span className="font-semibold text-outline">SĐT:</span>
-                            <a
-                              href={`tel:${primaryPerson.phoneNumber}`}
-                              className="font-medium text-secondary hover:underline"
-                            >
+                            <span className="font-medium text-on-surface">
                               {primaryPerson.phoneNumber}
-                            </a>
+                            </span>
                           </p>
                           <p className="flex items-center justify-center sm:justify-start gap-1.5">
                             <span className="font-semibold text-outline">CCCD:</span>
@@ -294,12 +291,9 @@ export function PickupVerificationModal({
                           <div className="text-xs space-y-1 text-on-surface-variant">
                             <p className="flex items-center justify-center sm:justify-start gap-1.5">
                               <span className="font-semibold text-outline">SĐT:</span>
-                              <a
-                                href={`tel:${backupPerson.phoneNumber}`}
-                                className="font-medium text-secondary hover:underline"
-                              >
+                              <span className="font-medium text-on-surface">
                                 {backupPerson.phoneNumber}
-                              </a>
+                              </span>
                             </p>
                             <p className="flex items-center justify-center sm:justify-start gap-1.5">
                               <span className="font-semibold text-outline">CCCD:</span>
@@ -430,7 +424,7 @@ export function PickupVerificationModal({
                           disabled={isSubmitting}
                           className="min-w-36"
                         >
-                          Xác nhận và giao trẻ
+                          Giao cho người này
                         </Button>
                       </div>
                     </form>
