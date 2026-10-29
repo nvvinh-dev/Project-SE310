@@ -47,7 +47,7 @@ export default function TeacherPickupPage() {
   const attendances = useMemo(() => attendancesQuery.data ?? [], [attendancesQuery.data]);
   const pickups = useMemo(() => pickupsQuery.data ?? [], [pickupsQuery.data]);
 
-  // Đã có dữ liệu trước đó hay chưa (dùng cho quy ước refetch lỗi không xóa trắng - PR #21 commit 696fc20)
+  // Đã có dữ liệu trước đó hay chưa (giữ dữ liệu cũ khi refetch lỗi - ui-screens §4.2, frontend-conventions §3.3)
   const hasData =
     childrenQuery.data !== undefined &&
     attendancesQuery.data !== undefined &&
@@ -106,21 +106,15 @@ export default function TeacherPickupPage() {
     const pickupMethod = person.priority === 1 ? "Primary" : "Backup";
     const personRoleLabel = person.priority === 1 ? "Người đón chính" : "Người dự phòng";
 
-    try {
-      await createPickupMutation.mutateAsync({
-        childId: selectedChild.id,
-        pickupMethod,
-        pickupPersonId: person.id,
-      });
+    await createPickupMutation.mutateAsync({
+      childId: selectedChild.id,
+      pickupMethod,
+      pickupPersonId: person.id,
+    });
 
-      setSuccessNotice(
-        `Đã ghi nhận giao trẻ ${selectedChild.fullName} cho ${person.fullName} (${personRoleLabel}).`
-      );
-    } catch (err) {
-      const apiErr = toApiError(err);
-      setWriteError(apiErr.message);
-      throw err;
-    }
+    setSuccessNotice(
+      `Đã ghi nhận giao trẻ ${selectedChild.fullName} cho ${person.fullName} (${personRoleLabel}).`
+    );
   };
 
   // Giao cho người khác đến đón (đã gọi xác nhận - PhoneConfirmed)
@@ -173,7 +167,7 @@ export default function TeacherPickupPage() {
     pickupsQuery.error,
   ]);
 
-  // Cảnh báo khi làm mới thất bại nhưng đã có dữ liệu trước đó (commit 696fc20 - PR #21)
+  // Cảnh báo khi làm mới thất bại nhưng đã có dữ liệu trước đó (ui-screens §4.2, frontend-conventions §3.3)
   const refreshErrorMessage = useMemo(() => {
     if (!hasData) return null;
     if (childrenQuery.isError) {
@@ -199,7 +193,7 @@ export default function TeacherPickupPage() {
   const isClassEmpty = !isInitialLoading && !initialErrorMessage && children.length === 0;
 
   return (
-    <div className="py-6 sm:py-8 space-y-5 sm:space-y-6">
+    <div className="py-8 space-y-4 sm:space-y-6">
       {/* Thông báo thành công (tự ẩn sau 6 giây) */}
       {successNotice && (
         <NoticeBanner
@@ -218,7 +212,7 @@ export default function TeacherPickupPage() {
         />
       )}
 
-      {/* Cảnh báo khi làm mới danh sách ngầm bị lỗi (giữ nguyên dữ liệu cũ theo quy ước commit 696fc20) */}
+      {/* Cảnh báo khi làm mới danh sách ngầm bị lỗi (giữ nguyên dữ liệu cũ - ui-screens §4.2, frontend-conventions §3.3) */}
       {refreshErrorMessage && (
         <ErrorAlert
           title="Không tải lại được danh sách"
@@ -231,6 +225,7 @@ export default function TeacherPickupPage() {
       <PickupProgressCard
         todayStr={todayStr}
         stats={stats}
+        hasData={hasData}
       />
 
       {/* Vùng [2]: Danh sách trẻ hôm nay */}

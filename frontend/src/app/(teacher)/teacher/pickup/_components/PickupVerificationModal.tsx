@@ -34,6 +34,111 @@ interface PickupVerificationModalProps {
   ) => Promise<void>;
 }
 
+interface PickupPersonCardProps {
+  person: PickupPersonResponse;
+  roleLabel: string;
+  isPrimary?: boolean;
+  imageError: boolean;
+  onImageError: (personId: string) => void;
+  onSelect: () => void;
+  isSubmitting: boolean;
+  isLoadingAction: boolean;
+}
+
+/**
+ * Thẻ hiển thị thông tin và ảnh khuôn mặt người đón (Người đón chính / Người dự phòng)
+ */
+function PickupPersonCard({
+  person,
+  roleLabel,
+  isPrimary = false,
+  imageError,
+  onImageError,
+  onSelect,
+  isSubmitting,
+  isLoadingAction,
+}: PickupPersonCardProps) {
+  return (
+    <div
+      className={`rounded-2xl ${
+        isPrimary
+          ? "border-2 border-primary/30 bg-surface-container-lowest"
+          : "border border-slate-200 bg-surface-container-lowest"
+      } p-4 sm:p-5 shadow-xs flex flex-col justify-between space-y-4`}
+    >
+      <div className="space-y-3.5">
+        <div className="flex items-center justify-between gap-2">
+          <span
+            className={`text-xs font-bold uppercase tracking-wider ${
+              isPrimary ? "text-primary" : "text-outline"
+            }`}
+          >
+            {roleLabel}
+          </span>
+        </div>
+
+        {/* Ảnh khuôn mặt */}
+        <div className="relative w-32 h-32 sm:w-36 sm:h-36 mx-auto rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-xs flex items-center justify-center">
+          {imageError ? (
+            <div className="w-full h-full flex items-center justify-center text-outline">
+              <span className="p-3 rounded-full bg-slate-200 text-slate-500">
+                <Icons.User />
+              </span>
+            </div>
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={person.facePhotoUrl}
+              alt={`Ảnh khuôn mặt ${person.fullName}`}
+              onError={() => onImageError(person.id)}
+              className="w-full h-full object-cover"
+            />
+          )}
+        </div>
+
+        {/* Thông tin người đón */}
+        <div className="space-y-1.5 text-center sm:text-left">
+          <p className="text-base font-bold text-on-surface">
+            {person.fullName}
+            <span className="font-normal text-on-surface-variant ml-1.5 text-sm">
+              · {person.relationship}
+            </span>
+          </p>
+
+          <div className="text-xs space-y-1 text-on-surface-variant">
+            <p className="flex items-center justify-center sm:justify-start gap-1.5">
+              <span className="font-semibold text-outline">SĐT:</span>
+              <span className="font-medium text-on-surface">
+                {person.phoneNumber}
+              </span>
+            </p>
+            <p className="flex items-center justify-center sm:justify-start gap-1.5">
+              <span className="font-semibold text-outline">CCCD:</span>
+              <span className="font-mono text-on-surface">
+                {person.citizenIdNumber}
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Nút giao cho người này */}
+      <div className="pt-2">
+        <Button
+          variant={isPrimary ? "primary" : "outline"}
+          onClick={onSelect}
+          isLoading={isLoadingAction}
+          disabled={isSubmitting}
+          aria-label={`Giao trẻ cho ${person.fullName} (${roleLabel})`}
+          className="w-full justify-center min-h-11 text-sm font-semibold"
+        >
+          Giao cho người này
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function PickupVerificationModal({
   child,
   isOpen,
@@ -43,16 +148,20 @@ export function PickupVerificationModal({
 }: PickupVerificationModalProps) {
   const childId = child?.id ?? null;
   const {
-    data: pickupPersons = [],
+    data: pickupPersonsData,
     isLoading,
     isError,
     error,
     refetch,
   } = usePickupPersons(isOpen ? childId : null);
 
+  const pickupPersons = pickupPersonsData ?? [];
+  const hasPickupPersonsData = pickupPersonsData !== undefined;
+
   const [showPhoneForm, setShowPhoneForm] = useState(false);
   const [submittingAction, setSubmittingAction] = useState<"primary" | "backup" | "phone" | null>(null);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [directError, setDirectError] = useState<unknown | null>(null);
   const [phoneFormError, setPhoneFormError] = useState<unknown | null>(null);
   const retriedPersonsRef = useRef<Set<string>>(new Set());
 
@@ -92,12 +201,14 @@ export function PickupVerificationModal({
     person: PickupPersonResponse,
     action: "primary" | "backup"
   ) => {
+    setDirectError(null);
     setSubmittingAction(action);
     try {
       await onPickupDirect(person);
       onClose();
-    } catch {
-      onClose();
+    } catch (err) {
+      // Giữ hộp thoại và hiện lỗi bên trong bằng ApiErrorAlert (ui-screens §4.3, frontend-conventions §4)
+      setDirectError(err);
     } finally {
       setSubmittingAction(null);
     }
@@ -126,19 +237,22 @@ export function PickupVerificationModal({
       isOpen={isOpen}
       onClose={onClose}
       size="xl"
+      closeOnBackdropClick={!isSubmitting}
+      closeOnEscape={!isSubmitting}
+      showCloseButton={!isSubmitting}
       title={`Xác minh người đón — ${child.fullName}`}
       description="Đối chiếu thông tin và ảnh khuôn mặt người đến đón với người phụ huynh đã đăng ký."
     >
       <div className="space-y-5">
-        {/* Trạng thái tải thông tin người đón */}
-        {isLoading && (
+        {/* Trạng thái tải lần đầu khi chưa có dữ liệu */}
+        {isLoading && !hasPickupPersonsData && (
           <div className="py-8">
             <LoadingSpinner label="Đang tải thông tin người đón đã đăng ký..." />
           </div>
         )}
 
-        {/* Lỗi khi tải thông tin người đón */}
-        {isError && (
+        {/* Lỗi tải lần đầu khi chưa có dữ liệu (thay thế toàn bộ nội dung - ui-screens §4.2) */}
+        {isError && !hasPickupPersonsData && (
           <ErrorAlert
             title="Không tải được thông tin người đón"
             message={toApiError(error).message}
@@ -146,9 +260,22 @@ export function PickupVerificationModal({
           />
         )}
 
-        {/* Dữ liệu người đón đã nạp xong */}
-        {!isLoading && !isError && (
+        {/* Đã có dữ liệu (kể cả khi lần làm mới ngầm bị lỗi - giữ nguyên dữ liệu cũ, chỉ hiện ErrorAlert phía trên) */}
+        {hasPickupPersonsData && (
           <>
+            {isError && (
+              <ErrorAlert
+                title="Không tải lại được thông tin người đón"
+                message={toApiError(error).message}
+                onRetry={refetch}
+              />
+            )}
+
+            {/* Lỗi khi bấm Giao cho người này trực tiếp (ui-screens §4.3, frontend-conventions §4) */}
+            {directError ? (
+              <ApiErrorAlert error={directError} />
+            ) : null}
+
             {/* Trường hợp trẻ chưa có người đón chính (AC-PICKUP-14, SCR-TCH-04 Hành vi 6) */}
             {!primaryPerson ? (
               <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 text-center space-y-2">
@@ -173,141 +300,28 @@ export function PickupVerificationModal({
                 {/* Khung người đón chính và người dự phòng */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Người đón chính */}
-                  <div className="rounded-2xl border-2 border-primary/30 bg-surface-container-lowest p-4 sm:p-5 shadow-xs flex flex-col justify-between space-y-4">
-                    <div className="space-y-3.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold uppercase tracking-wider text-primary">
-                          Người đón chính
-                        </span>
-                      </div>
-
-                      {/* Ảnh khuôn mặt */}
-                      <div className="relative w-32 h-32 sm:w-36 sm:h-36 mx-auto rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-xs flex items-center justify-center">
-                        {imageErrors[primaryPerson.id] ? (
-                          <div className="w-full h-full flex items-center justify-center text-outline">
-                            <span className="p-3 rounded-full bg-slate-200 text-slate-500">
-                              <Icons.User />
-                            </span>
-                          </div>
-                        ) : (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img
-                            src={primaryPerson.facePhotoUrl}
-                            alt={`Ảnh khuôn mặt ${primaryPerson.fullName}`}
-                            onError={() => handleImageError(primaryPerson.id)}
-                            className="w-full h-full object-cover"
-                          />
-                        )}
-                      </div>
-
-                      {/* Thông tin người đón chính */}
-                      <div className="space-y-1.5 text-center sm:text-left">
-                        <p className="text-base font-bold text-on-surface">
-                          {primaryPerson.fullName}
-                          <span className="font-normal text-on-surface-variant ml-1.5 text-sm">
-                            · {primaryPerson.relationship}
-                          </span>
-                        </p>
-
-                        <div className="text-xs space-y-1 text-on-surface-variant">
-                          <p className="flex items-center justify-center sm:justify-start gap-1.5">
-                            <span className="font-semibold text-outline">SĐT:</span>
-                            <span className="font-medium text-on-surface">
-                              {primaryPerson.phoneNumber}
-                            </span>
-                          </p>
-                          <p className="flex items-center justify-center sm:justify-start gap-1.5">
-                            <span className="font-semibold text-outline">CCCD:</span>
-                            <span className="font-mono text-on-surface">
-                              {primaryPerson.citizenIdNumber}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Nút giao cho người này */}
-                    <div className="pt-2">
-                      <Button
-                        variant="primary"
-                        onClick={() => handleDirectClick(primaryPerson, "primary")}
-                        isLoading={submittingAction === "primary"}
-                        disabled={isSubmitting}
-                        className="w-full justify-center min-h-11 text-sm font-semibold"
-                      >
-                        Giao cho người này
-                      </Button>
-                    </div>
-                  </div>
+                  <PickupPersonCard
+                    person={primaryPerson}
+                    roleLabel="Người đón chính"
+                    isPrimary
+                    imageError={Boolean(imageErrors[primaryPerson.id])}
+                    onImageError={handleImageError}
+                    onSelect={() => handleDirectClick(primaryPerson, "primary")}
+                    isSubmitting={isSubmitting}
+                    isLoadingAction={submittingAction === "primary"}
+                  />
 
                   {/* Người dự phòng */}
                   {backupPerson ? (
-                    <div className="rounded-2xl border border-slate-200 bg-surface-container-lowest p-4 sm:p-5 shadow-xs flex flex-col justify-between space-y-4">
-                      <div className="space-y-3.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-bold uppercase tracking-wider text-outline">
-                            Người dự phòng
-                          </span>
-                        </div>
-
-                        {/* Ảnh khuôn mặt */}
-                        <div className="relative w-32 h-32 sm:w-36 sm:h-36 mx-auto rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-xs flex items-center justify-center">
-                          {imageErrors[backupPerson.id] ? (
-                            <div className="w-full h-full flex items-center justify-center text-outline">
-                              <span className="p-3 rounded-full bg-slate-200 text-slate-500">
-                                <Icons.User />
-                              </span>
-                            </div>
-                          ) : (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={backupPerson.facePhotoUrl}
-                              alt={`Ảnh khuôn mặt ${backupPerson.fullName}`}
-                              onError={() => handleImageError(backupPerson.id)}
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                        </div>
-
-                        {/* Thông tin người dự phòng */}
-                        <div className="space-y-1.5 text-center sm:text-left">
-                          <p className="text-base font-bold text-on-surface">
-                            {backupPerson.fullName}
-                            <span className="font-normal text-on-surface-variant ml-1.5 text-sm">
-                              · {backupPerson.relationship}
-                            </span>
-                          </p>
-
-                          <div className="text-xs space-y-1 text-on-surface-variant">
-                            <p className="flex items-center justify-center sm:justify-start gap-1.5">
-                              <span className="font-semibold text-outline">SĐT:</span>
-                              <span className="font-medium text-on-surface">
-                                {backupPerson.phoneNumber}
-                              </span>
-                            </p>
-                            <p className="flex items-center justify-center sm:justify-start gap-1.5">
-                              <span className="font-semibold text-outline">CCCD:</span>
-                              <span className="font-mono text-on-surface">
-                                {backupPerson.citizenIdNumber}
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Nút giao cho người này */}
-                      <div className="pt-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => handleDirectClick(backupPerson, "backup")}
-                          isLoading={submittingAction === "backup"}
-                          disabled={isSubmitting}
-                          className="w-full justify-center min-h-11 text-sm font-semibold"
-                        >
-                          Giao cho người này
-                        </Button>
-                      </div>
-                    </div>
+                    <PickupPersonCard
+                      person={backupPerson}
+                      roleLabel="Người dự phòng"
+                      imageError={Boolean(imageErrors[backupPerson.id])}
+                      onImageError={handleImageError}
+                      onSelect={() => handleDirectClick(backupPerson, "backup")}
+                      isSubmitting={isSubmitting}
+                      isLoadingAction={submittingAction === "backup"}
+                    />
                   ) : (
                     /* Chưa đăng ký người đón dự phòng */
                     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-6 flex flex-col items-center justify-center text-center space-y-2">
@@ -335,6 +349,7 @@ export function PickupVerificationModal({
                       onClick={() => {
                         setShowPhoneForm(true);
                         setPhoneFormError(null);
+                        setDirectError(null);
                       }}
                       disabled={isSubmitting}
                       className="w-full justify-center min-h-11 text-sm font-semibold"
@@ -360,10 +375,11 @@ export function PickupVerificationModal({
                       ) : null}
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Ô nhập họ tên người đến đón */}
+                        {/* Ô nhập họ tên người đến đón (autoFocus theo design-system §7) */}
                         <Input
                           label="Họ tên người đến đón"
                           required
+                          autoFocus
                           placeholder="Nhập họ tên người đến đón..."
                           disabled={isSubmitting}
                           error={errors.pickerFullName?.message}
@@ -413,6 +429,7 @@ export function PickupVerificationModal({
                             reset();
                           }}
                           disabled={isSubmitting}
+                          className="min-h-11"
                         >
                           Hủy
                         </Button>
@@ -421,7 +438,7 @@ export function PickupVerificationModal({
                           type="submit"
                           isLoading={submittingAction === "phone"}
                           disabled={isSubmitting}
-                          className="min-w-36"
+                          className="min-w-36 min-h-11"
                         >
                           Xác nhận và giao trẻ
                         </Button>

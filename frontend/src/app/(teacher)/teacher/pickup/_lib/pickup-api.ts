@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
+import { getTodayVietnamDateString } from "@/lib/datetime";
 import type { ApiResponse } from "@/types/auth";
 import type {
   CreatePickupRequest,
@@ -78,15 +79,15 @@ export function useCreatePickup() {
       return res.data.data;
     },
     onSuccess: (created) => {
-      // Đưa ngay bản ghi đón về vào danh sách để trạng thái trẻ đổi ngay lập tức
+      // Đưa ngay bản ghi đón về vào danh sách hôm nay để trạng thái trẻ đổi ngay lập tức
       if (created) {
-        // Cập nhật mọi query pickups đang có liên quan
-        queryClient.setQueriesData<PickupResponse[]>(
-          { queryKey: PICKUPS_QUERY_KEY },
-          (old) => {
-            if (!old) return [created];
-            return [...old.filter((p) => p.childId !== created.childId), created];
-          }
+        const todayStr = getTodayVietnamDateString();
+        queryClient.setQueryData<PickupResponse[]>(
+          pickupsQueryKey(todayStr),
+          (old) =>
+            old
+              ? [...old.filter((p) => p.childId !== created.childId), created]
+              : old
         );
       }
       void queryClient.invalidateQueries({ queryKey: PICKUPS_QUERY_KEY });

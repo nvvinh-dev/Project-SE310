@@ -40,12 +40,10 @@ export function calculatePickupStats(items: PickupRowItem[]): PickupStats {
  */
 export function formatPickupDetails(pickup: PickupResponse): string {
   const timeStr = formatVietnamTime(pickup.pickupTimeUtc);
-  const methodLabel = PICKUP_METHOD_LABELS[pickup.pickupMethod] || pickup.pickupMethod;
-  const parts = [`Đã đón ${timeStr}`, pickup.pickerFullName, methodLabel];
+  const baseMethod = PICKUP_METHOD_LABELS[pickup.pickupMethod] || pickup.pickupMethod;
+  const methodLabel = pickup.confirmedByName
+    ? `${baseMethod} (Xác nhận bởi ${pickup.confirmedByName})`
+    : baseMethod;
 
-  if (pickup.confirmedByName) {
-    parts.push(`(Xác nhận bởi ${pickup.confirmedByName})`);
-  }
-
-  return parts.join(" · ");
+  return [`Đã đón ${timeStr}`, pickup.pickerFullName, methodLabel].join(" · ");
 }
