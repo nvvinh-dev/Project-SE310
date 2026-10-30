@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { ErrorAlert, NoticeBanner } from "@/components";
-import type { AttendanceResponse } from "@/types/attendance";
+import type { AttendanceResponse, HomeroomChildResponse } from "@/types/attendance";
 import type { PickupPersonResponse, PickupResponse } from "@/types/pickup";
 import {
   useHomeroomChildren,
@@ -30,11 +30,10 @@ export default function TeacherPickupPage() {
   const createPickupMutation = useCreatePickup();
 
   // Local state
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [selectedChild, setSelectedChild] = useState<HomeroomChildResponse | null>(null);
 
-  // Dải thông báo (ui-screens.md §4.2)
+  // Dải thông báo thành công (ui-screens.md §4.2)
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
-  const [writeError, setWriteError] = useState<string | null>(null);
 
   // Dải thành công tự ẩn sau 6 giây
   useEffect(() => {
@@ -82,15 +81,8 @@ export default function TeacherPickupPage() {
   // Vùng [1]: Tiến độ đón về hôm nay
   const stats = useMemo(() => calculatePickupStats(allItems), [allItems]);
 
-  // Trẻ đang được mở khung xác minh
-  const selectedChild = useMemo(() => {
-    if (!selectedChildId) return null;
-    return children.find((c) => c.id === selectedChildId) ?? null;
-  }, [selectedChildId, children]);
-
   // Xử lý làm mới
   const handleRefresh = useCallback(async () => {
-    setWriteError(null);
     await Promise.all([
       childrenQuery.refetch(),
       attendancesQuery.refetch(),
@@ -101,7 +93,6 @@ export default function TeacherPickupPage() {
   // Giao cho người đón chính hoặc người dự phòng (Primary / Backup)
   const handlePickupDirect = async (person: PickupPersonResponse): Promise<void> => {
     if (!selectedChild) return;
-    setWriteError(null);
 
     const pickupMethod = person.priority === 1 ? "Primary" : "Backup";
     const personRoleLabel = person.priority === 1 ? "Người đón chính" : "Người dự phòng";
@@ -123,7 +114,6 @@ export default function TeacherPickupPage() {
     pickupPersonId: string
   ): Promise<void> => {
     if (!selectedChild) return;
-    setWriteError(null);
 
     await createPickupMutation.mutateAsync({
       childId: selectedChild.id,
@@ -203,15 +193,6 @@ export default function TeacherPickupPage() {
         />
       )}
 
-      {/* Thông báo lỗi thao tác ghi (không tự ẩn) */}
-      {writeError && (
-        <NoticeBanner
-          message={writeError}
-          onClose={() => setWriteError(null)}
-          role="alert"
-        />
-      )}
-
       {/* Cảnh báo khi làm mới danh sách ngầm bị lỗi (giữ nguyên dữ liệu cũ - ui-screens §4.2, frontend-conventions §3.3) */}
       {refreshErrorMessage && (
         <ErrorAlert
@@ -235,7 +216,7 @@ export default function TeacherPickupPage() {
         isLoading={isInitialLoading}
         errorMessage={initialErrorMessage}
         onRetry={handleRefresh}
-        onOpenVerification={(childId) => setSelectedChildId(childId)}
+        onOpenVerification={(child) => setSelectedChild(child)}
       />
 
       {/* Khung xác minh người đón [3, 4, 5] */}
@@ -243,8 +224,8 @@ export default function TeacherPickupPage() {
         <PickupVerificationModal
           key={selectedChild.id}
           child={selectedChild}
-          isOpen={Boolean(selectedChildId)}
-          onClose={() => setSelectedChildId(null)}
+          isOpen={Boolean(selectedChild)}
+          onClose={() => setSelectedChild(null)}
           onPickupDirect={handlePickupDirect}
           onPickupPhoneConfirmed={handlePickupPhoneConfirmed}
         />

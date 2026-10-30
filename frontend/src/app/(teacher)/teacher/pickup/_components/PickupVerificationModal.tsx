@@ -278,11 +278,11 @@ export function PickupVerificationModal({
 
             {/* Trường hợp trẻ chưa có người đón chính (AC-PICKUP-14, SCR-TCH-04 Hành vi 6) */}
             {!primaryPerson ? (
-              <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 text-center space-y-2">
-                <div className="inline-flex p-3 rounded-full bg-amber-100 text-amber-800">
+              <div className="rounded-2xl border border-amber-200 bg-amber-100 p-5 text-center space-y-2">
+                <div className="inline-flex p-3 rounded-full bg-white/70 text-amber-800">
                   <Icons.Alert />
                 </div>
-                <h4 className="text-base font-bold text-amber-900">
+                <h4 className="text-base font-bold text-amber-800">
                   Phụ huynh chưa đăng ký người đón chính
                 </h4>
                 <p className="text-xs sm:text-sm text-amber-800 max-w-md mx-auto">
@@ -334,7 +334,7 @@ export function PickupVerificationModal({
                       <p className="text-sm font-semibold text-outline">
                         Chưa đăng ký người đón dự phòng
                       </p>
-                      <p className="text-xs text-outline/80 max-w-xs">
+                      <p className="text-xs text-outline max-w-xs">
                         Phụ huynh chưa đăng ký người đón dự phòng.
                       </p>
                     </div>

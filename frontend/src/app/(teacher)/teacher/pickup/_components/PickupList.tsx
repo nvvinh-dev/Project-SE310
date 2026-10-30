@@ -2,6 +2,7 @@
 
 import React from "react";
 import { EmptyState, ErrorAlert, LoadingSpinner } from "@/components";
+import type { HomeroomChildResponse } from "@/types/attendance";
 import type { PickupRowItem } from "../_lib/pickup-helpers";
 import { PickupRow } from "./PickupRow";
 
@@ -11,7 +12,7 @@ interface PickupListProps {
   isLoading: boolean;
   errorMessage: string | null;
   onRetry: () => void;
-  onOpenVerification: (childId: string) => void;
+  onOpenVerification: (child: HomeroomChildResponse) => void;
 }
 
 export function PickupList({
