@@ -8,4 +8,8 @@ public interface IDashboardRepository
 {
     // Số trẻ của từng lớp, xếp theo nhóm tuổi: Mầm, Chồi, Lá
     Task<IReadOnlyList<ClassChildCountResponse>> GetClassChildCountsAsync();
+
+    // Số bản ghi điểm danh và số bản ghi Present của từng lớp có attendance_date trong
+    // [fromDate, toDateExclusive), xếp theo nhóm tuổi: Mầm, Chồi, Lá
+    Task<IReadOnlyList<ClassAttendanceCount>> GetClassAttendanceCountsAsync(DateOnly fromDate, DateOnly toDateExclusive);
 }
