@@ -278,8 +278,8 @@ export function PickupVerificationModal({
 
             {/* Trường hợp trẻ chưa có người đón chính (AC-PICKUP-14, SCR-TCH-04 Hành vi 6) */}
             {!primaryPerson ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-100 p-5 text-center space-y-2">
-                <div className="inline-flex p-3 rounded-full bg-white/70 text-amber-800">
+              <div className="rounded-2xl border border-amber-600/30 bg-amber-100 p-5 text-center space-y-2">
+                <div className="inline-flex p-3 rounded-full bg-surface-container-lowest/70 text-amber-800">
                   <Icons.Alert />
                 </div>
                 <h4 className="text-base font-bold text-amber-800">
