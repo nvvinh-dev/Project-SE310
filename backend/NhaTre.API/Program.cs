@@ -191,6 +191,7 @@ builder.Services.AddScoped<IHealthRepository, HealthRepository>();
 builder.Services.AddScoped<IHealthService, HealthService>();
 builder.Services.AddScoped<IValidator<QuickHealthStatusRequest>, QuickHealthStatusRequestValidator>();
 builder.Services.AddScoped<IValidator<GrowthMeasurementRequest>, GrowthMeasurementRequestValidator>();
+builder.Services.AddScoped<IValidator<UpdateHealthNotesRequest>, UpdateHealthNotesRequestValidator>();
 builder.Services.AddScoped<IIncidentRepository, IncidentRepository>();
 builder.Services.AddScoped<IIncidentService, IncidentService>();
 builder.Services.AddScoped<IValidator<CreateIncidentRequest>, CreateIncidentRequestValidator>();
