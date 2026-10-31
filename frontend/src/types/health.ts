@@ -54,3 +54,40 @@ export interface QuickHealthStatusResponse {
   temperatureCelsius: number | null;
   notes: string;
 }
+
+// Lịch sử gộp Y tế xem (FR-HEALTH-04, D39 mục 9)
+export type HealthHistoryItemType = "Incident" | "QuickHealthStatus" | "GrowthMeasurement";
+
+export interface BaseHealthHistoryItem {
+  id: string;
+  type: HealthHistoryItemType;
+  occurredAtUtc: string;
+}
+
+export interface IncidentHistoryItemResponse extends BaseHealthHistoryItem {
+  type: "Incident";
+  description: string;
+}
+
+export interface QuickHealthStatusHistoryItemResponse extends BaseHealthHistoryItem {
+  type: "QuickHealthStatus";
+  mood: HealthMood;
+  temperatureCelsius: number | null;
+  notes: string;
+}
+
+export interface GrowthMeasurementHistoryItemResponse extends BaseHealthHistoryItem {
+  type: "GrowthMeasurement";
+  heightCm: number | null;
+  weightKg: number | null;
+}
+
+export type HealthHistoryItemResponse =
+  | IncidentHistoryItemResponse
+  | QuickHealthStatusHistoryItemResponse
+  | GrowthMeasurementHistoryItemResponse;
+
+export interface HealthHistoryResponse {
+  child: SchoolChildResponse;
+  items: HealthHistoryItemResponse[];
+}
