@@ -70,6 +70,24 @@ export function addDaysToDateString(dateStr: string, days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
+// Ngày thứ Hai của tuần chứa dateStr (yyyy-MM-dd). Tuần tính từ thứ Hai tới Chủ nhật, khớp weekStartDate
+// của thực đơn tuần. getUTCDay(): 0 = Chủ nhật ... 6 = thứ Bảy
+export function getMondayOfWeek(dateStr: string): string {
+  const day = new Date(`${dateStr}T00:00:00Z`).getUTCDay();
+  return addDaysToDateString(dateStr, -((day + 6) % 7));
+}
+
+// Tuần từ thứ Hai weekStartDate tới Chủ nhật → "12/10 – 18/10/2026". Tuần vắt qua năm mới thì ghi năm ở cả
+// hai đầu: "29/12/2025 – 04/01/2026"
+export function formatWeekRange(weekStartDate: string): string {
+  const weekEndDate = addDaysToDateString(weekStartDate, 6);
+  const start =
+    weekStartDate.slice(0, 4) === weekEndDate.slice(0, 4)
+      ? formatVietnamShortDate(weekStartDate).slice(0, 5)
+      : formatVietnamShortDate(weekStartDate);
+  return `${start} – ${formatVietnamShortDate(weekEndDate)}`;
+}
+
 // Trường chỉ có ngày (yyyy-MM-dd) → "Thứ Sáu, 16/10/2026". Gắn +07:00 để không lệch ngày
 export function formatVietnamDisplayDate(dateStr: string): string {
   return new Intl.DateTimeFormat("vi-VN", {
