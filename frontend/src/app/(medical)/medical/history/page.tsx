@@ -36,18 +36,23 @@ export default function MedicalHistoryPage() {
   } = useHealthHistory(activeSelectedChild?.id ?? null);
 
   // Khi tải lịch sử bị lỗi (đặc biệt là 404 trẻ không còn tồn tại): làm mới danh sách trẻ toàn trường
-  // theo ui-screens.md §4.2 và frontend-conventions.md §5
+  // theo ui-screens.md §4.2 và frontend-conventions.md §5 (dùng exact: true để tránh invalidate nhầm query con)
   useEffect(() => {
     if (isHistoryError) {
-      void queryClient.invalidateQueries({ queryKey: SCHOOL_CHILDREN_QUERY_KEY });
+      void queryClient.invalidateQueries({
+        queryKey: SCHOOL_CHILDREN_QUERY_KEY,
+        exact: true,
+      });
     }
   }, [isHistoryError, queryClient]);
 
   // SCR-MED-02 Vùng 2: Lưu ý sức khỏe đọc từ schoolChildren theo id trẻ đang chọn, để khi SCR-MED-03
-  // cập nhật danh sách thì SCR-MED-02 lập tức thấy lưu ý mới mà không cần nạp lại toàn trang
+  // cập nhật danh sách thì SCR-MED-02 lập tức thấy lưu ý mới mà không cần nạp lại toàn trang.
+  // Ưu tiên bản ghi trong schoolChildren để khi lưu ý bị xóa (về null) không bị fallback ngược về lưu ý cũ.
   const selectedSchoolChild = schoolChildren?.find((c) => c.id === activeSelectedChild?.id);
-  const currentHealthNotes =
-    selectedSchoolChild?.healthNotes ?? activeSelectedChild?.healthNotes ?? null;
+  const currentHealthNotes = selectedSchoolChild
+    ? selectedSchoolChild.healthNotes
+    : (activeSelectedChild?.healthNotes ?? null);
 
   return (
     <div className="space-y-6 py-8">

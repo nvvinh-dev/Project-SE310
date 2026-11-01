@@ -125,7 +125,7 @@ export function IncidentPhotosModal({
                             src={photo.url}
                             alt={`Ảnh sự cố ${index + 1}`}
                             onError={() => handleImageError(photo.id)}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
                           />
                         )}
                       </div>
