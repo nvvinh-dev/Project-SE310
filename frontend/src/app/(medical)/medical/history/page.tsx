@@ -85,6 +85,7 @@ export default function MedicalHistoryPage() {
 
       {/* Vùng [4]: Ảnh của sự cố (ui-screens.md Vùng 4, AC-HEALTH-18, D53) */}
       <IncidentPhotosModal
+        key={viewingIncidentId ?? "none"}
         isOpen={Boolean(viewingIncidentId)}
         onClose={() => setViewingIncidentId(null)}
         incidentId={viewingIncidentId}
