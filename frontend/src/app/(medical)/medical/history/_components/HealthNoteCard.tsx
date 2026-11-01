@@ -5,21 +5,19 @@ import { Icons } from "@/components";
 
 interface HealthNoteCardProps {
   healthNotes: string | null | undefined;
-  childId?: string;
 }
 
-// Vùng [2]: Lưu ý sức khỏe của trẻ đang chọn (ui-screens.md dòng 898, 910)
-// Nếu có lưu ý: hiển thị tông cảnh báo với Icons.Alert (design-system.md §3.2)
-// Nếu không có: hiển thị "Không có lưu ý"
-export function HealthNoteCard({ healthNotes, childId }: HealthNoteCardProps) {
+// SCR-MED-02 Vùng 2: Lưu ý sức khỏe của trẻ đang chọn
+// Nếu có lưu ý: hiển thị tông Cảnh báo (bg-amber-100 text-amber-800 border-amber-600/30, icon Alert)
+// Nếu không có: hiển thị "Không có lưu ý" với màu trung tính text-outline
+export function HealthNoteCard({ healthNotes }: HealthNoteCardProps) {
   const hasNotes = Boolean(healthNotes && healthNotes.trim().length > 0);
-  const editHref = childId ? `/medical/health-notes?childId=${childId}` : "/medical/health-notes";
 
   return (
     <div
       className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-3xl p-4 shadow-xs border transition-colors ${
         hasNotes
-          ? "border-amber-600/30 bg-amber-50/70"
+          ? "border-amber-600/30 bg-amber-100"
           : "border-slate-200/90 bg-surface-container-lowest"
       }`}
     >
@@ -34,10 +32,10 @@ export function HealthNoteCard({ healthNotes, childId }: HealthNoteCardProps) {
           </div>
         )}
 
-        <div className="text-sm">
+        <div className="text-sm min-w-0">
           <span className="font-semibold text-on-surface">Lưu ý sức khỏe:&nbsp;</span>
           {hasNotes ? (
-            <span className="text-amber-900 font-medium whitespace-pre-line">
+            <span className="text-amber-800 font-medium whitespace-pre-wrap break-words">
               {healthNotes}
             </span>
           ) : (
@@ -47,7 +45,7 @@ export function HealthNoteCard({ healthNotes, childId }: HealthNoteCardProps) {
       </div>
 
       <Link
-        href={editHref}
+        href="/medical/health-notes"
         className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline shrink-0 self-end sm:self-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg px-2 py-1"
       >
         <span>Sửa lưu ý</span>

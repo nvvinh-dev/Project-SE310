@@ -8,21 +8,23 @@ import { TimelineItem } from "./TimelineItem";
 interface TimelineListProps {
   selectedChildId: string | null;
   items: HealthHistoryItemResponse[] | undefined;
-  isLoading: boolean;
+  isPending: boolean;
   isError: boolean;
   error: unknown;
   refetch: () => void;
+  onViewPhotos: (incidentId: string) => void;
 }
 
-// Vùng [3]: Trục thời gian hiển thị lịch sử gộp (ui-screens.md dòng 899-903, 911)
-// Đảm bảo đủ 3 trạng thái: Đang tải / Lỗi / Rỗng theo AC-NFR-04 và §4.2
+// SCR-MED-02 Vùng 3: Trục thời gian hiển thị lịch sử gộp
+// Đảm bảo đủ 3 trạng thái: Đang tải / Lỗi / Rỗng theo AC-NFR-04 và ui-screens.md §4.2
 export function TimelineList({
   selectedChildId,
   items,
-  isLoading,
+  isPending,
   isError,
   error,
   refetch,
+  onViewPhotos,
 }: TimelineListProps) {
   // 1. Chưa chọn trẻ
   if (!selectedChildId) {
@@ -37,8 +39,8 @@ export function TimelineList({
     );
   }
 
-  // 2. Đang tải lần đầu (chưa có dữ liệu trong cache)
-  if (isLoading && !items) {
+  // 2. Đang tải lần đầu khi chưa có dữ liệu trong cache (dùng isPending theo frontend-conventions §3.3)
+  if (isPending && !items) {
     return (
       <div className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-8 shadow-xs">
         <LoadingSpinner label="Đang tải lịch sử sức khỏe và sự cố..." />
@@ -48,12 +50,11 @@ export function TimelineList({
 
   // 3. Lỗi tải lần đầu (không có dữ liệu cũ)
   if (isError && !items) {
-    const apiError = toApiError(error);
     return (
       <div className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-6 shadow-xs">
         <ErrorAlert
           title="Không thể tải lịch sử sức khỏe"
-          message={apiError.message || "Đã xảy ra lỗi khi kết nối tới máy chủ."}
+          message={toApiError(error).message}
           onRetry={refetch}
         />
       </div>
@@ -86,11 +87,8 @@ export function TimelineList({
 
       {isError && (
         <ErrorAlert
-          title="Lỗi khi làm mới"
-          message={
-            toApiError(error).message ||
-            "Không thể cập nhật dữ liệu mới nhất. Đang hiển thị bản ghi đã lưu tạm."
-          }
+          title="Không tải lại được lịch sử sức khỏe"
+          message={toApiError(error).message}
           onRetry={refetch}
           className="mb-4"
         />
@@ -102,7 +100,8 @@ export function TimelineList({
           <TimelineItem
             key={item.id}
             item={item}
-            isLast={index === (items.length - 1)}
+            isLast={index === items.length - 1}
+            onViewPhotos={onViewPhotos}
           />
         ))}
       </div>

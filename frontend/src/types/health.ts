@@ -67,6 +67,7 @@ export interface BaseHealthHistoryItem {
 export interface IncidentHistoryItemResponse extends BaseHealthHistoryItem {
   type: "Incident";
   description: string;
+  photoCount: number;
 }
 
 export interface QuickHealthStatusHistoryItemResponse extends BaseHealthHistoryItem {
