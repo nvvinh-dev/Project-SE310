@@ -1,6 +1,6 @@
 "use client";
 
-import { Icons } from "@/components";
+import { Button, Icons } from "@/components";
 import { formatMeasurementDateTime } from "@/lib/datetime";
 import {
   HEALTH_MOOD_LABELS,
@@ -103,14 +103,15 @@ function IncidentDetail({
 
       {item.photoCount > 0 && (
         <div className="pt-1">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
+            icon={<Icons.Camera />}
             onClick={() => onViewPhotos?.(item.id)}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg py-1 px-1.5 bg-primary-fixed/30 hover:bg-primary-fixed/50 transition-colors"
           >
-            <Icons.Camera />
-            <span>Xem ảnh ({item.photoCount})</span>
-          </button>
+            Xem ảnh ({item.photoCount})
+          </Button>
         </div>
       )}
     </div>
@@ -166,16 +167,16 @@ function GrowthMeasurementDetail({
 
   return (
     <div className="text-sm font-medium text-on-surface flex items-baseline gap-1.5">
-      {hasHeight && (
-        <span>{item.heightCm!.toLocaleString("vi-VN")} cm</span>
+      {item.heightCm !== null && item.heightCm !== undefined && (
+        <span>{item.heightCm.toLocaleString("vi-VN")} cm</span>
       )}
       {hasHeight && hasWeight && (
         <span className="text-slate-400" aria-hidden="true">
           ·
         </span>
       )}
-      {hasWeight && (
-        <span>{item.weightKg!.toLocaleString("vi-VN")} kg</span>
+      {item.weightKg !== null && item.weightKg !== undefined && (
+        <span>{item.weightKg.toLocaleString("vi-VN")} kg</span>
       )}
     </div>
   );

@@ -1,15 +1,17 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button, ErrorAlert, Icons, LoadingSpinner, Modal } from "@/components";
 import { toApiError } from "@/lib/axios";
 import { formatMeasurementDateTime } from "@/lib/datetime";
-import { useIncident } from "../_lib/history-api";
+import { healthHistoryQueryKey, useIncident } from "../_lib/history-api";
 
 interface IncidentPhotosModalProps {
   isOpen: boolean;
   onClose: () => void;
   incidentId: string | null;
+  childId: string | null;
 }
 
 // SCR-MED-02 Vùng 4: Ảnh của sự cố (ui-screens.md Vùng 4 & Hành vi, AC-HEALTH-18, D53)
@@ -18,16 +20,36 @@ export function IncidentPhotosModal({
   isOpen,
   onClose,
   incidentId,
+  childId,
 }: IncidentPhotosModalProps) {
-  const { data: incident, isLoading, isError, error, refetch } = useIncident(incidentId);
+  const queryClient = useQueryClient();
+  const { data: incident, isLoading, isError, error, refetch, isFetching } = useIncident(incidentId);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const retriedPhotosRef = useRef<Set<string>>(new Set());
+  const isRefetchingRef = useRef(false);
 
-  // Khi ảnh tải lỗi (URL ký hết hạn - D53): tự động gọi lại API để nhận URL mới
+  // Khi mở sự cố bị lỗi (đặc biệt là 404 sự cố không tồn tại):
+  // làm mới dòng thời gian của trẻ theo ui-screens.md §4.2 và frontend-conventions.md §5
+  useEffect(() => {
+    if (isError && childId) {
+      void queryClient.invalidateQueries({
+        queryKey: healthHistoryQueryKey(childId),
+        exact: true,
+      });
+    }
+  }, [isError, childId, queryClient]);
+
+  // Khi ảnh tải lỗi (URL ký hết hạn - D53): tự động gọi lại API để nhận URL mới.
+  // Bỏ qua lần gọi lại nếu đang có một lần tải dở để tránh trùng lặp khi nhiều ảnh cùng hết hạn.
   const handleImageError = (photoId: string) => {
     if (!retriedPhotosRef.current.has(photoId)) {
       retriedPhotosRef.current.add(photoId);
-      void refetch();
+      if (!isFetching && !isRefetchingRef.current) {
+        isRefetchingRef.current = true;
+        void refetch().finally(() => {
+          isRefetchingRef.current = false;
+        });
+      }
     } else {
       setImageErrors((prev) => ({ ...prev, [photoId]: true }));
     }
@@ -51,7 +73,7 @@ export function IncidentPhotosModal({
       title="Ảnh của sự cố"
       description={
         incident
-          ? `Ghi nhận lúc ${formatMeasurementDateTime(incident.occurredAtUtc)}`
+          ? `Xảy ra lúc ${formatMeasurementDateTime(incident.occurredAtUtc)}`
           : undefined
       }
     >
@@ -105,7 +127,7 @@ export function IncidentPhotosModal({
                       >
                         {isPhotoBroken ? (
                           <div className="flex flex-col items-center justify-center p-4 text-center space-y-2 text-outline">
-                            <span className="p-2.5 rounded-full bg-slate-200 text-slate-500">
+                            <span className="p-2.5 rounded-full bg-slate-200 text-slate-500" aria-hidden="true">
                               <Icons.Alert />
                             </span>
                             <span className="text-xs text-error font-medium">

@@ -94,6 +94,7 @@ export default function MedicalHistoryPage() {
         isOpen={Boolean(viewingIncidentId)}
         onClose={() => setViewingIncidentId(null)}
         incidentId={viewingIncidentId}
+        childId={activeSelectedChild?.id ?? null}
       />
     </div>
   );
