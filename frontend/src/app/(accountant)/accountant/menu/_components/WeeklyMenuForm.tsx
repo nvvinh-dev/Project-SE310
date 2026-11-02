@@ -24,9 +24,8 @@ interface WeeklyMenuFormProps {
   onDirtyChange: (isDirty: boolean) => void;
 }
 
-// 7 ô thứ Hai tới Chủ nhật. Trang gắn key theo tuần và id thực đơn nên form chỉ nạp giá trị ban đầu một lần;
-// lần tải lại nền của cùng thực đơn không xóa phần Kế toán đang gõ. Nút Lưu nằm trên thanh chọn tuần, nối vào
-// form bằng formId
+// 7 ô thứ Hai tới Chủ nhật. Trang gắn key theo tuần và id thực đơn: đổi tuần, hay thực đơn vừa được tạo, thì form
+// nạp lại từ đầu. Nút Lưu nằm trên thanh chọn tuần, nối vào form bằng formId
 export function WeeklyMenuForm({
   formId,
   weekStartDate,
@@ -35,14 +34,21 @@ export function WeeklyMenuForm({
   onSave,
   onDirtyChange,
 }: WeeklyMenuFormProps) {
+  // Tải lại được nội dung mới của cùng thực đơn (Kế toán khác vừa sửa, trang tự tải lại khi quay về tab hay quay
+  // lại tuần đã xem) thì điền theo bản mới (SCR-ACC-06, Hành vi 1). Ô đang sửa giữ phần đang gõ, ô chưa đụng nhận
+  // giá trị mới, để lần Lưu sau không gửi lại bản cũ của những ngày Kế toán không sửa
   const {
     register,
     handleSubmit,
     reset,
     setError,
+    clearErrors,
     control,
     formState: { errors, isDirty },
-  } = useForm<WeeklyMenuFormValues>({ defaultValues: toWeeklyMenuFormValues(menu) });
+  } = useForm<WeeklyMenuFormValues>({
+    values: toWeeklyMenuFormValues(menu),
+    resetOptions: { keepDirtyValues: true },
+  });
 
   const descriptions = useWatch({ control, name: "descriptions" });
 
@@ -62,12 +68,19 @@ export function WeeklyMenuForm({
 
     try {
       const saved = await onSave(entries);
-      // Hiện đúng bản backend đã lưu (mô tả đã trim) và coi đó là mốc chưa thay đổi mới
-      reset(toWeeklyMenuFormValues(saved));
+      // Hiện đúng bản backend đã lưu (mô tả đã trim) và coi đó là mốc chưa thay đổi mới. reset() tự gộp
+      // resetOptions nên phải tắt keepDirtyValues, nếu không ô vừa lưu vẫn giữ bản chưa trim và còn "thay đổi"
+      reset(toWeeklyMenuFormValues(saved), { keepDirtyValues: false });
     } catch {
-      // Lỗi API hiện ở ApiErrorAlert phía trên form; giữ nguyên phần đang gõ để sửa rồi lưu lại
+      // Lỗi API hiện ở ApiErrorAlert phía trên form. 400 giữ phần đang gõ để sửa rồi lưu lại; 409 thì trang tải
+      // lại thực đơn đã có, key của form đổi từ "new" sang id nên form nạp lại thực đơn đó (Hành vi 2)
     }
   });
+
+  // Lỗi "phải có ít nhất một ngày" là lỗi của cả form, không tự mất như lỗi từng ô: gõ vào ô nào thì ẩn đi
+  const clearEmptyMenuError = () => {
+    if (errors.root) clearErrors("root");
+  };
 
   return (
     <form id={formId} onSubmit={onSubmit} noValidate className="space-y-4">
@@ -89,7 +102,10 @@ export function WeeklyMenuForm({
           currentValue={descriptions?.[index] ?? ""}
           disabled={isSaving}
           error={errors.descriptions?.[index]?.message}
-          {...register(`descriptions.${index}`, menuDescriptionRules(dayOfWeek))}
+          {...register(`descriptions.${index}`, {
+            ...menuDescriptionRules(dayOfWeek),
+            onChange: clearEmptyMenuError,
+          })}
         />
       ))}
     </form>

@@ -29,9 +29,12 @@ export function WeekPicker({ weekStartDate, onChange, disabled = false }: WeekPi
             label="Tuần bắt đầu"
             value={weekStartDate}
             disabled={disabled}
-            // Đang gõ dở ngày thì value rỗng: giữ tuần đang xem
+            max="9999-12-31"
+            // Đang gõ dở ngày thì value rỗng; năm quá 4 chữ số (ô ngày cho gõ tới 6 chữ số) thì Date của JS
+            // không đọc được và cộng ngày sẽ ném RangeError. Cả hai trường hợp giữ tuần đang xem
             onChange={(event) => {
-              if (event.target.value) onChange(getMondayOfWeek(event.target.value));
+              const value = event.target.value;
+              if (/^\d{4}-\d{2}-\d{2}$/.test(value)) onChange(getMondayOfWeek(value));
             }}
           />
         </div>

@@ -43,7 +43,8 @@ export default function WeeklyMenuPage() {
     setWeekStartDate(nextWeekStartDate);
     setPendingWeekStartDate(null);
     setIsDirty(false);
-    // Lỗi lưu thuộc tuần vừa rời, không còn đúng với tuần mới
+    // Dải thông báo lưu thành công hay thất bại thuộc tuần vừa rời, không còn đúng với tuần mới (Hành vi 6)
+    setNotice(null);
     createMenu.reset();
     updateMenu.reset();
   };
@@ -58,7 +59,8 @@ export default function WeeklyMenuPage() {
     changeWeek(nextWeekStartDate);
   };
 
-  // Tuần chưa có thực đơn thì tạo (Hành vi 2), đã có thì sửa (Hành vi 3). Lỗi ném lại cho form giữ phần đang gõ
+  // Tuần chưa có thực đơn thì tạo (Hành vi 2), đã có thì sửa (Hành vi 3). Lỗi ném lại để form không reset; riêng
+  // 409 thì form được nạp lại thực đơn đã có, phần đang gõ mất
   const saveMenu = async (entries: MenuEntryRequest[]) => {
     setNotice(null);
     createMenu.reset();
@@ -119,7 +121,8 @@ export default function WeeklyMenuPage() {
 
           <ApiErrorAlert error={saveError} />
 
-          {/* Đổi tuần hay thực đơn vừa được tạo (kể cả do Kế toán khác, sau 409) thì nạp lại form từ đầu */}
+          {/* Đổi tuần hay thực đơn vừa được tạo (kể cả do Kế toán khác, sau 409) thì nạp lại form từ đầu; nội
+              dung mới của cùng thực đơn thì form tự điền theo (WeeklyMenuForm) */}
           <WeeklyMenuForm
             key={`${weekStartDate}:${menu?.id ?? "new"}`}
             formId={FORM_ID}
