@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { SchoolChildResponse } from "@/types/health";
-import { ChildSelector } from "../health/_components/ChildSelector";
+import { ChildSelector } from "../../_components/ChildSelector";
 import { SCHOOL_CHILDREN_QUERY_KEY, useSchoolChildren } from "../health/_lib/health-api";
 import { HealthNoteCard } from "./_components/HealthNoteCard";
 import { IncidentPhotosModal } from "./_components/IncidentPhotosModal";
@@ -74,7 +74,10 @@ export default function MedicalHistoryPage() {
 
       {/* Vùng [2]: Lưu ý sức khỏe của trẻ đang chọn (ui-screens.md Vùng 2) */}
       {activeSelectedChild && (
-        <HealthNoteCard healthNotes={currentHealthNotes} />
+        <HealthNoteCard
+          healthNotes={currentHealthNotes}
+          childId={activeSelectedChild.id}
+        />
       )}
 
       {/* Vùng [3]: Dòng thời gian gộp (Sự cố, Sức khỏe nhanh, Số đo) (ui-screens.md Vùng 3) */}

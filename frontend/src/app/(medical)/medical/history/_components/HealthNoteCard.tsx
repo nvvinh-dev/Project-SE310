@@ -5,12 +5,13 @@ import { Icons } from "@/components";
 
 interface HealthNoteCardProps {
   healthNotes: string | null | undefined;
+  childId?: string;
 }
 
 // SCR-MED-02 Vùng 2: Lưu ý sức khỏe của trẻ đang chọn
 // Nếu có lưu ý: hiển thị tông Cảnh báo (bg-amber-100 text-amber-800 border-amber-600/30, icon Alert)
 // Nếu không có: hiển thị "Không có lưu ý" với màu trung tính text-outline
-export function HealthNoteCard({ healthNotes }: HealthNoteCardProps) {
+export function HealthNoteCard({ healthNotes, childId }: HealthNoteCardProps) {
   const hasNotes = Boolean(healthNotes && healthNotes.trim().length > 0);
 
   return (
@@ -45,7 +46,7 @@ export function HealthNoteCard({ healthNotes }: HealthNoteCardProps) {
       </div>
 
       <Link
-        href="/medical/health-notes"
+        href={childId ? `/medical/health-notes?childId=${childId}` : "/medical/health-notes"}
         className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline shrink-0 self-end sm:self-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg px-2 py-1"
       >
         <span>Sửa lưu ý</span>
