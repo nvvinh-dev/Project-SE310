@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   EmptyState,
@@ -31,9 +31,12 @@ export default function MedicalIncidentsPage() {
   const totalPages = data ? Math.ceil(data.totalCount / PAGE_SIZE) : 0;
 
   // Trang đang xem lớn hơn số trang thì hiện trang cuối (frontend-conventions.md §3.4)
-  if (totalPages > 0 && page > totalPages) {
-    setPage(totalPages);
-  }
+  useEffect(() => {
+    if (totalPages > 0 && page > totalPages) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const items = data?.items ?? [];
   const isEmpty = !isPending && !isError && data != null && data.totalCount === 0;
@@ -100,13 +103,13 @@ export default function MedicalIncidentsPage() {
       {/* Vùng [2]: Phân trang ở server và điều hướng sang SCR-MED-02 (ui-screens.md SCR-MED-04 Bố cục & Vùng 2) */}
       <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-2">
         <div className="w-full sm:w-auto">
-          {items.length > 0 && data && totalPages > 1 && (
+          {!isPending && !isError && totalPages > 1 && (
             <Pagination
               currentPage={page}
               totalPages={totalPages}
-              totalItems={data.totalCount}
+              totalItems={data?.totalCount ?? 0}
               pageSize={PAGE_SIZE}
-              onPageChange={(newPage) => setPage(newPage)}
+              onPageChange={setPage}
             />
           )}
         </div>

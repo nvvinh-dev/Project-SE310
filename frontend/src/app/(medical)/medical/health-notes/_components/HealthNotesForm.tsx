@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Button, Textarea } from "@/components";
 import type { SchoolChildResponse } from "@/types/health";
@@ -26,6 +26,7 @@ export function HealthNotesForm({
   className = "",
 }: HealthNotesFormProps) {
   const updateMutation = useUpdateHealthNotes(selectedChild?.id ?? null);
+  const prevChildIdRef = useRef<string | undefined>(selectedChild?.id);
 
   const {
     register,
@@ -41,13 +42,22 @@ export function HealthNotesForm({
   });
 
   // Đồng bộ giá trị textarea khi người dùng chọn trẻ khác trong danh sách
-  // Không reset form nếu mutation vừa gặp lỗi (SCR-MED-03: giữ nguyên nội dung người dùng vừa gõ để không bị mất dữ liệu)
   useEffect(() => {
+    // Khi chuyển sang trẻ khác: xóa trạng thái lỗi cũ và nạp dữ liệu lưu ý của trẻ mới
+    if (prevChildIdRef.current !== selectedChild?.id) {
+      prevChildIdRef.current = selectedChild?.id;
+      updateMutation.reset();
+      reset({ healthNotes: selectedChild?.healthNotes ?? "" });
+      return;
+    }
+
+    // Nếu cùng 1 trẻ và vừa gặp lỗi submit: giữ nguyên chữ người dùng đang gõ
     if (updateMutation.isError) {
       return;
     }
+
     reset({ healthNotes: selectedChild?.healthNotes ?? "" });
-  }, [selectedChild?.id, selectedChild?.healthNotes, reset, updateMutation.isError]);
+  }, [selectedChild?.id, selectedChild?.healthNotes, reset, updateMutation]);
 
   const currentNotes = useWatch({
     control,
