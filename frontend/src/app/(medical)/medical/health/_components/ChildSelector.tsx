@@ -6,16 +6,14 @@ import { toApiError } from "@/lib/axios";
 import { formatVietnamShortDate } from "@/lib/datetime";
 import { normalizeForSearch } from "@/lib/text";
 import type { SchoolChildResponse } from "@/types/health";
-import { useSchoolChildren } from "../medical/health/_lib/health-api";
+import { useSchoolChildren } from "../_lib/health-api";
 
-export interface ChildSelectorProps {
+interface ChildSelectorProps {
   selectedChild: SchoolChildResponse | null;
   onSelectChild: (child: SchoolChildResponse | null) => void;
   className?: string;
 }
 
-// Component chọn trẻ toàn trường dùng chung cho các màn hình Cổng Y Tế (SCR-MED-01, SCR-MED-02, SCR-MED-03)
-// Đặt tại (medical)/_components theo frontend-conventions.md §1
 export function ChildSelector({
   selectedChild,
   onSelectChild,

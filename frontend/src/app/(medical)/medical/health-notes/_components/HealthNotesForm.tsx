@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { ApiErrorAlert, Button, Textarea } from "@/components";
+import { Button, Textarea } from "@/components";
 import type { SchoolChildResponse } from "@/types/health";
 import { useUpdateHealthNotes } from "../_lib/health-notes-api";
 import {
@@ -13,15 +13,18 @@ import {
 interface HealthNotesFormProps {
   selectedChild: SchoolChildResponse | null;
   onSuccess: (updatedChild: SchoolChildResponse) => void;
+  onError: (err: unknown) => void;
+  onStartSubmit: () => void;
   className?: string;
 }
 
 export function HealthNotesForm({
   selectedChild,
   onSuccess,
+  onError,
+  onStartSubmit,
   className = "",
 }: HealthNotesFormProps) {
-  const [apiError, setApiError] = useState<unknown>(null);
   const updateMutation = useUpdateHealthNotes(selectedChild?.id ?? null);
 
   const {
@@ -37,16 +40,26 @@ export function HealthNotesForm({
     mode: "onTouched",
   });
 
+  // Đồng bộ giá trị textarea khi người dùng chọn trẻ khác trong danh sách
+  // Không reset form nếu mutation vừa gặp lỗi (SCR-MED-03: giữ nguyên nội dung người dùng vừa gõ để không bị mất dữ liệu)
+  useEffect(() => {
+    if (updateMutation.isError) {
+      return;
+    }
+    reset({ healthNotes: selectedChild?.healthNotes ?? "" });
+  }, [selectedChild?.id, selectedChild?.healthNotes, reset, updateMutation.isError]);
+
   const currentNotes = useWatch({
     control,
     name: "healthNotes",
     defaultValue: selectedChild?.healthNotes ?? "",
   });
   const trimmedLength = currentNotes?.trim().length ?? 0;
+  const isLengthExceeded = trimmedLength > 1000;
   const isFormDisabled = !selectedChild || updateMutation.isPending;
 
   const onSubmit = (data: HealthNotesFormValues) => {
-    setApiError(null);
+    onStartSubmit();
 
     // Bỏ khoảng trắng hai đầu theo frontend-conventions.md §4 & D39 mục 14; rỗng thì gửi ""
     const cleanNotes = data.healthNotes?.trim() ?? "";
@@ -61,7 +74,7 @@ export function HealthNotesForm({
           }
         },
         onError: (err) => {
-          setApiError(err);
+          onError(err);
         },
       }
     );
@@ -81,12 +94,6 @@ export function HealthNotesForm({
           </p>
         </div>
       </div>
-
-      {apiError != null && (
-        <div className="mb-4">
-          <ApiErrorAlert error={apiError} />
-        </div>
-      )}
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
         <Textarea
@@ -112,9 +119,7 @@ export function HealthNotesForm({
         <div className="flex justify-end -mt-2">
           <span
             className={`text-xs font-medium ${
-              trimmedLength > 1000
-                ? "text-error font-bold"
-                : "text-outline"
+              isLengthExceeded ? "text-error font-bold" : "text-outline"
             }`}
           >
             {trimmedLength}/1000
@@ -126,7 +131,7 @@ export function HealthNotesForm({
             type="submit"
             variant="primary"
             isLoading={updateMutation.isPending}
-            disabled={isFormDisabled}
+            disabled={isFormDisabled || isLengthExceeded}
           >
             Lưu
           </Button>

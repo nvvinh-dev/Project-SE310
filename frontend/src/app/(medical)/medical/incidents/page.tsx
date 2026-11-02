@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
-  Button,
   EmptyState,
   ErrorAlert,
   Icons,
@@ -17,10 +15,9 @@ import { useIncidentNotifications } from "./_lib/incidents-api";
 
 const PAGE_SIZE = 20;
 
-// SCR-MED-04 — Thông báo sự cố (ui-screens.md)
+// SCR-MED-04 — Thông báo sự cố (ui-screens.md §8)
 // Vai trò: Y tế (Medical) · Thông báo in-app không đánh dấu đã đọc và không xóa (D25, D39 mục 6)
 export default function MedicalIncidentsPage() {
-  const router = useRouter();
   const [page, setPage] = useState(1);
 
   const {
@@ -32,15 +29,14 @@ export default function MedicalIncidentsPage() {
   } = useIncidentNotifications(page, PAGE_SIZE);
 
   const totalPages = data ? Math.ceil(data.totalCount / PAGE_SIZE) : 0;
-  const items = data?.items ?? [];
 
   // Trang đang xem lớn hơn số trang thì hiện trang cuối (frontend-conventions.md §3.4)
-  useEffect(() => {
-    if (totalPages > 0 && page > totalPages) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
+  if (totalPages > 0 && page > totalPages) {
+    setPage(totalPages);
+  }
+
+  const items = data?.items ?? [];
+  const isEmpty = !isPending && !isError && data != null && data.totalCount === 0;
 
   return (
     <div className="space-y-6 py-8">
@@ -79,17 +75,12 @@ export default function MedicalIncidentsPage() {
         </div>
       )}
 
-      {/* Trạng thái rỗng (ui-screens.md: "Chưa có thông báo sự cố nào.") */}
-      {!isPending && !isError && items.length === 0 && (
+      {/* Trạng thái rỗng (ui-screens.md: "Chưa có thông báo sự cố nào.", không có nút trong EmptyState) */}
+      {isEmpty && (
         <div className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-8 shadow-xs">
           <EmptyState
             title="Chưa có thông báo sự cố nào."
-            message="Khi giáo viên ghi nhận sự cố mới cho trẻ, thông báo sẽ xuất hiện tại đây."
             icon={<Icons.Empty />}
-            actionText="Mở lịch sử sức khỏe"
-            onAction={() => {
-              router.push("/medical/history");
-            }}
           />
         </div>
       )}
@@ -121,13 +112,14 @@ export default function MedicalIncidentsPage() {
         </div>
 
         {!isPending && (
-          <Link href="/medical/history" className="shrink-0 self-end sm:self-auto">
-            <Button variant="outline" className="flex items-center gap-1.5">
-              Mở lịch sử sức khỏe
-              <span className="text-outline">
-                <Icons.ChevronRight />
-              </span>
-            </Button>
+          <Link
+            href="/medical/history"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-surface-container-lowest px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container-low shrink-0 self-end sm:self-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors"
+          >
+            Mở lịch sử sức khỏe
+            <span className="text-outline">
+              <Icons.ChevronRight />
+            </span>
           </Link>
         )}
       </div>

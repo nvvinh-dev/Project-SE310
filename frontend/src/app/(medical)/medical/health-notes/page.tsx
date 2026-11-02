@@ -1,30 +1,20 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { LoadingSpinner, NoticeBanner } from "@/components";
+import { useEffect, useState } from "react";
+import { ApiErrorAlert, Icons, NoticeBanner } from "@/components";
 import type { SchoolChildResponse } from "@/types/health";
-import { ChildSelector } from "../../_components/ChildSelector";
+import { ChildSelector } from "../health/_components/ChildSelector";
 import { useSchoolChildren } from "../health/_lib/health-api";
 import { HealthNotesForm } from "./_components/HealthNotesForm";
 
-// SCR-MED-03 — Lưu ý sức khỏe (ui-screens.md)
-// Vai trò: Y tế (Medical) · Tuyệt đối không chứa thông tin lớp hay điểm danh (D40 mục 3, D45)
-function MedicalHealthNotesContent() {
-  const searchParams = useSearchParams();
-  const queryChildId = searchParams.get("childId");
-
-  const [selectedChildOverride, setSelectedChildOverride] = useState<SchoolChildResponse | null | undefined>(undefined);
+// SCR-MED-03 — Lưu ý sức khỏe (ui-screens.md §8)
+// Vai trò: Y tế (Medical) · Route: /medical/health-notes (không có query parameter)
+// Tuyệt đối không chứa thông tin lớp hay điểm danh (D40 mục 3, D45)
+export default function MedicalHealthNotesPage() {
+  const [selectedChild, setSelectedChild] = useState<SchoolChildResponse | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<unknown>(null);
   const { data: schoolChildren } = useSchoolChildren();
-
-  // Khởi tạo trẻ được chọn từ query param ?childId= nếu người dùng chưa chủ động đổi trẻ (LOGIC-01)
-  const queryMatchedChild = useMemo(() => {
-    if (!queryChildId || !schoolChildren) return null;
-    return schoolChildren.find((c) => c.id === queryChildId) ?? null;
-  }, [queryChildId, schoolChildren]);
-
-  const selectedChild = selectedChildOverride !== undefined ? selectedChildOverride : queryMatchedChild;
 
   // Bỏ chọn nếu trẻ không còn trong danh sách sau khi tải lại (ví dụ nhận 404 trẻ bị xóa)
   const isSelectedChildValid =
@@ -47,11 +37,22 @@ function MedicalHealthNotesContent() {
   }, [successNotice]);
 
   const handleSuccess = (updatedChild: SchoolChildResponse) => {
-    setSelectedChildOverride(updatedChild);
+    setSelectedChild(updatedChild);
+    setSubmitError(null);
     const actionMessage = updatedChild.healthNotes?.trim()
       ? `Đã cập nhật lưu ý sức khỏe cho trẻ ${updatedChild.fullName}.`
       : `Đã xóa lưu ý sức khỏe của trẻ ${updatedChild.fullName}.`;
     setSuccessNotice(actionMessage);
+  };
+
+  const handleError = (err: unknown) => {
+    setSuccessNotice(null);
+    setSubmitError(err);
+  };
+
+  const handleStartSubmit = () => {
+    setSuccessNotice(null);
+    setSubmitError(null);
   };
 
   return (
@@ -64,7 +65,7 @@ function MedicalHealthNotesContent() {
         </p>
       </div>
 
-      {/* Dải thông báo thành công (design-system.md §5.1, ui-screens.md §4.2) */}
+      {/* Dải thông báo thành công (ui-screens.md §4.2) */}
       {successNotice && (
         <NoticeBanner
           message={successNotice}
@@ -73,39 +74,41 @@ function MedicalHealthNotesContent() {
         />
       )}
 
+      {/* Dải thông báo lỗi ghi dữ liệu role="alert", không tự ẩn (ui-screens.md §4.2) */}
+      {submitError != null && (
+        <div className="relative">
+          <ApiErrorAlert error={submitError} />
+          <button
+            type="button"
+            onClick={() => setSubmitError(null)}
+            aria-label="Đóng thông báo lỗi"
+            className="absolute top-3 right-3 p-1 rounded-full text-outline hover:bg-surface-container-low hover:text-on-surface transition-colors cursor-pointer"
+          >
+            <Icons.Close />
+          </button>
+        </div>
+      )}
+
       {/* Vùng [1]: Chọn trẻ toàn trường (ui-screens.md SCR-MED-03 Vùng 1) */}
       <div className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-4 shadow-xs">
         <ChildSelector
           selectedChild={currentChild}
           onSelectChild={(child) => {
-            setSelectedChildOverride(child);
+            setSelectedChild(child);
             setSuccessNotice(null);
+            setSubmitError(null);
           }}
         />
       </div>
 
       {/* Vùng [2]: Form ghi và cập nhật lưu ý sức khỏe (ui-screens.md SCR-MED-03 Vùng 2) */}
+      {/* Không gắn key={currentChild?.id} để tránh unmount form nuốt mất lỗi 404 và mất chữ đã nhập */}
       <HealthNotesForm
-        key={currentChild?.id ?? "none"}
         selectedChild={currentChild}
         onSuccess={handleSuccess}
+        onError={handleError}
+        onStartSubmit={handleStartSubmit}
       />
     </div>
-  );
-}
-
-export default function MedicalHealthNotesPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="space-y-6 py-8">
-          <div className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-12 shadow-xs">
-            <LoadingSpinner label="Đang tải..." />
-          </div>
-        </div>
-      }
-    >
-      <MedicalHealthNotesContent />
-    </Suspense>
   );
 }

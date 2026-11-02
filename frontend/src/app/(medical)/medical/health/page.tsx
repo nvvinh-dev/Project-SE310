@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { NoticeBanner } from "@/components";
 import type { SchoolChildResponse } from "@/types/health";
-import { ChildSelector } from "../../_components/ChildSelector";
+import { ChildSelector } from "./_components/ChildSelector";
 import { GrowthMeasurementForm } from "./_components/GrowthMeasurementForm";
 import { GrowthMeasurementHistory } from "./_components/GrowthMeasurementHistory";
 import { useSchoolChildren } from "./_lib/health-api";
