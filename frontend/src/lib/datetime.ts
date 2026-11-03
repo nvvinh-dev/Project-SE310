@@ -122,3 +122,36 @@ export function formatMeasurementDateTime(utcDateStr: string): string {
     return utcDateStr;
   }
 }
+
+
+/**
+ * Lấy ngày thứ Hai của tuần chứa dateStr (yyyy-MM-dd).
+ * Theo chuẩn ISO 8601: Thứ Hai là ngày 1, Chủ nhật là ngày 7.
+ */
+export function getMondayOfWeek(dateStr: string): string {
+  const date = new Date(`${dateStr}T00:00:00Z`);
+  const day = date.getUTCDay(); // 0 = Chủ nhật, 1 = Thứ Hai, ..., 6 = Thứ Bảy
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  return addDaysToDateString(dateStr, diffToMonday);
+}
+
+/**
+ * Lấy ngày Chủ nhật của tuần (từ ngày thứ Hai dạng yyyy-MM-dd).
+ */
+export function getSundayOfWeek(mondayStr: string): string {
+  return addDaysToDateString(mondayStr, 6);
+}
+
+/**
+ * Định dạng dải ngày của một tuần theo wireframe SCR-PAR-07:
+ * Ví dụ: "Tuần 12/10 – 18/10/2026"
+ */
+export function formatWeekRangeDisplay(mondayStr: string): string {
+  const sundayStr = getSundayOfWeek(mondayStr);
+  const [mYear, mMonth, mDay] = mondayStr.split("-");
+  const [sYear, sMonth, sDay] = sundayStr.split("-");
+  if (mYear === sYear) {
+    return `Tuần ${mDay}/${mMonth} – ${sDay}/${sMonth}/${sYear}`;
+  }
+  return `Tuần ${mDay}/${mMonth}/${mYear} – ${sDay}/${sMonth}/${sYear}`;
+}
