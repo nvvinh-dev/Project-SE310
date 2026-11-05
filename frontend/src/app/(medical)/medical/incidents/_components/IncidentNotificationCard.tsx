@@ -29,7 +29,7 @@ export function IncidentNotificationCard({
       </div>
 
       {/* Nội dung thông báo nguyên văn do backend soạn (D25, ui-screens.md §4.4) */}
-      <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-on-surface">
+      <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-on-surface">
         {notification.message}
       </p>
     </div>

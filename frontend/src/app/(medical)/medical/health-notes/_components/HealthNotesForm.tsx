@@ -7,6 +7,7 @@ import type { SchoolChildResponse } from "@/types/health";
 import { useUpdateHealthNotes } from "../_lib/health-notes-api";
 import {
   type HealthNotesFormValues,
+  MAX_HEALTH_NOTES_LENGTH,
   validateHealthNotes,
 } from "../_lib/health-notes-rules";
 
@@ -33,7 +34,7 @@ export function HealthNotesForm({
     handleSubmit,
     control,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<HealthNotesFormValues>({
     defaultValues: {
       healthNotes: selectedChild?.healthNotes ?? "",
@@ -42,22 +43,20 @@ export function HealthNotesForm({
   });
 
   // Đồng bộ giá trị textarea khi người dùng chọn trẻ khác trong danh sách
+  // hoặc khi dữ liệu trẻ thay đổi mà người dùng chưa sửa dở (ui-screens.md §4.3)
   useEffect(() => {
-    // Khi chuyển sang trẻ khác: xóa trạng thái lỗi cũ và nạp dữ liệu lưu ý của trẻ mới
+    // Khi chuyển sang trẻ khác: nạp dữ liệu lưu ý của trẻ mới
     if (prevChildIdRef.current !== selectedChild?.id) {
       prevChildIdRef.current = selectedChild?.id;
-      updateMutation.reset();
       reset({ healthNotes: selectedChild?.healthNotes ?? "" });
       return;
     }
 
-    // Nếu cùng 1 trẻ và vừa gặp lỗi submit: giữ nguyên chữ người dùng đang gõ
-    if (updateMutation.isError) {
-      return;
+    // Nếu cùng 1 trẻ: chỉ cập nhật nếu người dùng chưa sửa dở (tránh mất chữ khi tải lại nền)
+    if (!isDirty) {
+      reset({ healthNotes: selectedChild?.healthNotes ?? "" });
     }
-
-    reset({ healthNotes: selectedChild?.healthNotes ?? "" });
-  }, [selectedChild?.id, selectedChild?.healthNotes, reset, updateMutation]);
+  }, [selectedChild?.id, selectedChild?.healthNotes, isDirty, reset]);
 
   const currentNotes = useWatch({
     control,
@@ -65,7 +64,7 @@ export function HealthNotesForm({
     defaultValue: selectedChild?.healthNotes ?? "",
   });
   const trimmedLength = currentNotes?.trim().length ?? 0;
-  const isLengthExceeded = trimmedLength > 1000;
+  const isLengthExceeded = trimmedLength > MAX_HEALTH_NOTES_LENGTH;
   const isFormDisabled = !selectedChild || updateMutation.isPending;
 
   const onSubmit = (data: HealthNotesFormValues) => {
@@ -115,7 +114,7 @@ export function HealthNotesForm({
               : "Chưa chọn trẻ..."
           }
           disabled={isFormDisabled}
-          helperText="Để trống nếu trẻ không có lưu ý (sẽ xóa lưu ý hiện tại của trẻ). Tối đa 1000 ký tự."
+          helperText={`Để trống nếu trẻ không có lưu ý (sẽ xóa lưu ý hiện tại của trẻ). Tối đa ${MAX_HEALTH_NOTES_LENGTH} ký tự.`}
           rows={5}
           error={errors.healthNotes?.message}
           {...register("healthNotes", {
@@ -132,7 +131,7 @@ export function HealthNotesForm({
               isLengthExceeded ? "text-error font-bold" : "text-outline"
             }`}
           >
-            {trimmedLength}/1000
+            {trimmedLength}/{MAX_HEALTH_NOTES_LENGTH}
           </span>
         </div>
 
@@ -142,6 +141,7 @@ export function HealthNotesForm({
             variant="primary"
             isLoading={updateMutation.isPending}
             disabled={isFormDisabled || isLengthExceeded}
+            className="min-h-11"
           >
             Lưu
           </Button>

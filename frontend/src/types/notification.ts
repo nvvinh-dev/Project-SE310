@@ -13,8 +13,3 @@ export interface NotificationPageResponse {
   pageSize: number;
   totalCount: number;
 }
-
-export interface NotificationListQuery {
-  page?: number;
-  pageSize?: number;
-}

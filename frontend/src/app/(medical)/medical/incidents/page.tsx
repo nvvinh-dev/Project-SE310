@@ -30,16 +30,16 @@ export default function MedicalIncidentsPage() {
 
   const totalPages = data ? Math.ceil(data.totalCount / PAGE_SIZE) : 0;
 
-  // Trang đang xem lớn hơn số trang thì hiện trang cuối (frontend-conventions.md §3.4)
+  // Trang đang xem lớn hơn số trang thì hiện trang cuối: Math.min(page, totalPages) (frontend-conventions.md §3.4)
   useEffect(() => {
     if (totalPages > 0 && page > totalPages) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPage(totalPages);
+      setPage(Math.min(page, totalPages));
     }
   }, [page, totalPages]);
 
   const items = data?.items ?? [];
-  const isEmpty = !isPending && !isError && data != null && data.totalCount === 0;
+  const isEmpty = !isPending && data != null && data.totalCount === 0;
 
   return (
     <div className="space-y-6 py-8">
@@ -103,7 +103,7 @@ export default function MedicalIncidentsPage() {
       {/* Vùng [2]: Phân trang ở server và điều hướng sang SCR-MED-02 (ui-screens.md SCR-MED-04 Bố cục & Vùng 2) */}
       <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-2">
         <div className="w-full sm:w-auto">
-          {!isPending && !isError && totalPages > 1 && (
+          {!isPending && totalPages > 1 && (
             <Pagination
               currentPage={page}
               totalPages={totalPages}
@@ -117,7 +117,7 @@ export default function MedicalIncidentsPage() {
         {!isPending && (
           <Link
             href="/medical/history"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-surface-container-lowest px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container-low shrink-0 self-end sm:self-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-slate-300 bg-surface-container-lowest px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container-low shrink-0 self-end sm:self-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors"
           >
             Mở lịch sử sức khỏe
             <span className="text-outline">

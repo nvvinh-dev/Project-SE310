@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient, toApiError } from "@/lib/axios";
+import { apiClient } from "@/lib/axios";
 import type { ApiResponse } from "@/types/auth";
 import type { SchoolChildResponse, UpdateHealthNotesRequest } from "@/types/health";
 import { SCHOOL_CHILDREN_QUERY_KEY } from "../../health/_lib/health-api";
@@ -27,20 +27,17 @@ export function useUpdateHealthNotes(childId: string | null) {
       queryClient.setQueryData<SchoolChildResponse[]>(
         SCHOOL_CHILDREN_QUERY_KEY,
         (oldList) => {
-          if (!oldList) return [updatedChild];
+          if (!oldList) return oldList;
           return oldList.map((c) => (c.id === updatedChild.id ? updatedChild : c));
         }
       );
     },
-    onError: (err) => {
-      const apiError = toApiError(err);
-      // Trẻ không tồn tại → 404: làm mới danh sách để loại bỏ trẻ khỏi ô chọn (ui-screens.md §4.2, SCR-MED-03)
-      if (apiError.status === 404) {
-        void queryClient.invalidateQueries({
-          queryKey: SCHOOL_CHILDREN_QUERY_KEY,
-          exact: true,
-        });
-      }
+    onError: () => {
+      // Làm mới danh sách trẻ toàn trường cho mọi lỗi (frontend-conventions.md §3.2, §5)
+      // Không rẽ nhánh theo status === 404 và không dùng exact: true để làm mới theo tiền tố
+      void queryClient.invalidateQueries({
+        queryKey: SCHOOL_CHILDREN_QUERY_KEY,
+      });
     },
   });
 }

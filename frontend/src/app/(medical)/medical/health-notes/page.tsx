@@ -14,6 +14,7 @@ export default function MedicalHealthNotesPage() {
   const [selectedChild, setSelectedChild] = useState<SchoolChildResponse | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<unknown>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: schoolChildren } = useSchoolChildren();
 
   // Bỏ chọn nếu trẻ không còn trong danh sách sau khi tải lại (ví dụ nhận 404 trẻ bị xóa)
@@ -37,6 +38,7 @@ export default function MedicalHealthNotesPage() {
   }, [successNotice]);
 
   const handleSuccess = (updatedChild: SchoolChildResponse) => {
+    setIsSubmitting(false);
     setSelectedChild(updatedChild);
     setSubmitError(null);
     const actionMessage = updatedChild.healthNotes?.trim()
@@ -46,11 +48,13 @@ export default function MedicalHealthNotesPage() {
   };
 
   const handleError = (err: unknown) => {
+    setIsSubmitting(false);
     setSuccessNotice(null);
     setSubmitError(err);
   };
 
   const handleStartSubmit = () => {
+    setIsSubmitting(true);
     setSuccessNotice(null);
     setSubmitError(null);
   };
@@ -93,16 +97,19 @@ export default function MedicalHealthNotesPage() {
       <div className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-4 shadow-xs">
         <ChildSelector
           selectedChild={currentChild}
+          disabled={isSubmitting}
           onSelectChild={(child) => {
+            if (isSubmitting) return;
             setSelectedChild(child);
             setSuccessNotice(null);
-            setSubmitError(null);
+            // Theo ui-screens.md §4.2: Dải lỗi ghi dữ liệu chỉ mất khi bấm đóng hoặc bắt đầu một thao tác ghi khác.
+            // Không xóa submitError tại đây khi đổi trẻ.
           }}
         />
       </div>
 
       {/* Vùng [2]: Form ghi và cập nhật lưu ý sức khỏe (ui-screens.md SCR-MED-03 Vùng 2) */}
-      {/* Không gắn key={currentChild?.id} để tránh unmount form nuốt mất lỗi 404 và mất chữ đã nhập */}
+      {/* Không gắn key={currentChild?.id} để tránh unmount form nuốt mất lỗi 404 từ API (khi gặp 404 trẻ bị xóa, cache school-children làm mới khiến activeSelectedChild về null, form về trạng thái chưa chọn trẻ và dải lỗi alert phía trên được giữ nguyên cho người dùng đọc) */}
       <HealthNotesForm
         selectedChild={currentChild}
         onSuccess={handleSuccess}

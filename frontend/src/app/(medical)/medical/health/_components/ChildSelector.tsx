@@ -11,12 +11,14 @@ import { useSchoolChildren } from "../_lib/health-api";
 interface ChildSelectorProps {
   selectedChild: SchoolChildResponse | null;
   onSelectChild: (child: SchoolChildResponse | null) => void;
+  disabled?: boolean;
   className?: string;
 }
 
 export function ChildSelector({
   selectedChild,
   onSelectChild,
+  disabled = false,
   className = "",
 }: ChildSelectorProps) {
   const { data: children, isLoading, isError, error, refetch } = useSchoolChildren();
@@ -64,6 +66,7 @@ export function ChildSelector({
   };
 
   const handleOpenDropdown = () => {
+    if (disabled) return;
     setIsOpen(true);
     setTimeout(() => {
       searchInputRef.current?.focus();
@@ -71,6 +74,8 @@ export function ChildSelector({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (disabled) return;
+
     if (e.key === "Escape") {
       setIsOpen(false);
       return;
@@ -128,7 +133,8 @@ export function ChildSelector({
             id={inputId}
             type="button"
             onClick={handleOpenDropdown}
-            className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors ml-3 shrink-0 px-2 py-1 rounded-lg hover:bg-surface-container-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+            disabled={disabled}
+            className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors ml-3 shrink-0 px-2 py-1 rounded-lg hover:bg-surface-container-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
           >
             Đổi trẻ khác ▾
           </button>
@@ -143,15 +149,19 @@ export function ChildSelector({
             aria-expanded={isOpen}
             aria-controls={`${inputId}-listbox`}
             aria-autocomplete="list"
+            disabled={disabled}
             value={searchTerm}
             onChange={(e) => {
+              if (disabled) return;
               setSearchTerm(e.target.value);
               if (!isOpen) setIsOpen(true);
             }}
-            onFocus={() => setIsOpen(true)}
+            onFocus={() => {
+              if (!disabled) setIsOpen(true);
+            }}
             onKeyDown={handleKeyDown}
             placeholder="Tìm theo họ tên..."
-            className="w-full rounded-2xl border border-slate-300 bg-surface-container-lowest px-4 py-2.5 pr-10 text-sm text-on-surface transition-all placeholder:text-outline/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full rounded-2xl border border-slate-300 bg-surface-container-lowest px-4 py-2.5 pr-10 text-sm text-on-surface transition-all placeholder:text-outline/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-surface-container-low"
           />
           <div className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant flex items-center">
             <Icons.Search />
