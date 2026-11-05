@@ -24,7 +24,7 @@ export const WeeklyMenuDisplay = ({ items }: WeeklyMenuDisplayProps) => {
           {/* Cột mô tả món ăn */}
           <div className="flex-1 min-w-0 pt-0.5">
             {item.hasMenu && item.description ? (
-              <p className="text-sm text-on-surface whitespace-pre-wrap leading-relaxed">
+              <p className="text-sm text-on-surface whitespace-pre-wrap break-words leading-relaxed">
                 {item.description}
               </p>
             ) : (

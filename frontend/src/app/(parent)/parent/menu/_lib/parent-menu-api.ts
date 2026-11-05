@@ -1,8 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import { apiClient } from "@/lib/axios";
+import { apiClient, toApiError } from "@/lib/axios";
 import type { ApiResponse } from "@/types/auth";
 import type { WeeklyMenuResponse } from "@/types/menu";
 
@@ -34,7 +33,7 @@ export function useWeeklyMenu(weekStartDate: string) {
       } catch (err: unknown) {
         // Tuần chưa có thực đơn: backend trả 404 "Chưa có thực đơn cho tuần này."
         // ui-screens.md SCR-PAR-07: hiển thị "Nhà trường chưa đăng thực đơn cho tuần này.", không phải lỗi.
-        if (axios.isAxiosError(err) && err.response?.status === 404) {
+        if (toApiError(err).status === 404) {
           return null;
         }
         throw err;

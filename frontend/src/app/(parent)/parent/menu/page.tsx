@@ -49,17 +49,19 @@ export default function ParentWeeklyMenuPage() {
     return apiError.message;
   }, [menuQuery.error]);
 
-  const hasMenuData = Boolean(menuData);
-  const isInitialLoading = menuQuery.isPending && menuQuery.data === undefined;
-  const isInitialError = menuQuery.isError && !hasMenuData;
-  const hasStaleData = hasMenuData;
+  // Trạng thái theo frontend-conventions.md §3.3 và ui-screens.md §4.2:
+  // - isInitialLoading: chưa có dữ liệu và đang tải lần đầu
+  // - isInitialError: chưa có dữ liệu nào trong cache (undefined) và gặp lỗi
+  // - hasStaleData: đã có dữ liệu trong cache (kể cả tuần rỗng null), khi tải lại lỗi thì giữ nguyên và cảnh báo phía trên
+  const isInitialLoading = menuQuery.isPending;
+  const isInitialError = menuQuery.isError && menuData === undefined;
+  const hasStaleData = menuData !== undefined;
 
   return (
     <div className="py-8 space-y-6">
       {/* Vùng [1]: Tiêu đề trang & Thanh chọn tuần */}
       <WeeklyMenuHeader
         weekStartDate={weekStartDate}
-        isLoading={menuQuery.isFetching}
         onPreviousWeek={handlePreviousWeek}
         onNextWeek={handleNextWeek}
       />
@@ -79,7 +81,7 @@ export default function ParentWeeklyMenuPage() {
       ) : isInitialError ? (
         <ErrorAlert
           title="Không thể tải thực đơn"
-          message={errorMessage ?? "Đã xảy ra lỗi, vui lòng thử lại."}
+          message={errorMessage ?? ""}
           onRetry={() => menuQuery.refetch()}
         />
       ) : menuData === null ? (

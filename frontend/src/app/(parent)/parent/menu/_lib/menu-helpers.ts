@@ -1,7 +1,12 @@
-import { DAY_OF_WEEK_LABELS, type MenuEntryResponse } from "@/types/menu";
+import {
+  DAY_OF_WEEK_LABELS,
+  MENU_DAYS_OF_WEEK,
+  type MenuDayOfWeek,
+  type MenuEntryResponse,
+} from "@/types/menu";
 
 export interface DailyMenuDisplayItem {
-  dayOfWeek: number;
+  dayOfWeek: MenuDayOfWeek;
   dayLabel: string;
   description: string | null;
   hasMenu: boolean;
@@ -18,13 +23,13 @@ export const buildWeeklySchedule = (
 ): DailyMenuDisplayItem[] => {
   const schedule: DailyMenuDisplayItem[] = [];
 
-  for (let dayOfWeek = 1; dayOfWeek <= 7; dayOfWeek++) {
+  for (const dayOfWeek of MENU_DAYS_OF_WEEK) {
     const entry = entries.find((e) => e.dayOfWeek === dayOfWeek);
     const description = entry ? entry.description.trim() : null;
 
     schedule.push({
       dayOfWeek,
-      dayLabel: DAY_OF_WEEK_LABELS[dayOfWeek] ?? `Thứ ${dayOfWeek}`,
+      dayLabel: DAY_OF_WEEK_LABELS[dayOfWeek],
       description,
       hasMenu: Boolean(description && description.length > 0),
     });
