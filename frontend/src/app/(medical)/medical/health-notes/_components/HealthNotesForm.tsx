@@ -16,6 +16,7 @@ interface HealthNotesFormProps {
   onSuccess: (updatedChild: SchoolChildResponse) => void;
   onError: (err: unknown) => void;
   onStartSubmit: () => void;
+  onSettled?: () => void;
   className?: string;
 }
 
@@ -24,6 +25,7 @@ export function HealthNotesForm({
   onSuccess,
   onError,
   onStartSubmit,
+  onSettled,
   className = "",
 }: HealthNotesFormProps) {
   const updateMutation = useUpdateHealthNotes(selectedChild?.id ?? null);
@@ -80,10 +82,20 @@ export function HealthNotesForm({
           if (updatedChild) {
             reset({ healthNotes: updatedChild.healthNotes ?? "" });
             onSuccess(updatedChild);
+          } else if (selectedChild) {
+            const fallbackChild: SchoolChildResponse = {
+              ...selectedChild,
+              healthNotes: cleanNotes.length > 0 ? cleanNotes : null,
+            };
+            reset({ healthNotes: cleanNotes });
+            onSuccess(fallbackChild);
           }
         },
         onError: (err) => {
           onError(err);
+        },
+        onSettled: () => {
+          onSettled?.();
         },
       }
     );

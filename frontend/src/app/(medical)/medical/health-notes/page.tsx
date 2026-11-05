@@ -115,6 +115,7 @@ export default function MedicalHealthNotesPage() {
         onSuccess={handleSuccess}
         onError={handleError}
         onStartSubmit={handleStartSubmit}
+        onSettled={() => setIsSubmitting(false)}
       />
     </div>
   );

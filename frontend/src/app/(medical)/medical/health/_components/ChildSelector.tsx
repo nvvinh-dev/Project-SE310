@@ -183,7 +183,7 @@ export function ChildSelector({
               </span>
               Đang tải danh sách trẻ...
             </div>
-          ) : isError ? (
+          ) : isError && !children ? (
             <div className="p-3 text-center">
               <p className="text-xs text-error font-medium mb-1">
                 {toApiError(error).message}
@@ -196,7 +196,23 @@ export function ChildSelector({
                 Thử lại
               </button>
             </div>
-          ) : filteredChildren.length === 0 ? (
+          ) : (
+            <>
+              {isError && (
+                <div className="border-b border-error/15 bg-error/10 px-4 py-2 flex items-center justify-between text-xs text-error">
+                  <span className="truncate pr-2">
+                    Không tải lại được dữ liệu mới nhất: {toApiError(error).message}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => refetch()}
+                    className="font-semibold underline hover:text-error/80 shrink-0 cursor-pointer"
+                  >
+                    Thử lại
+                  </button>
+                </div>
+              )}
+              {filteredChildren.length === 0 ? (
             <div className="p-4 text-center text-xs text-on-surface-variant">
               {searchTerm ? "Không tìm thấy trẻ nào khớp với từ khóa." : "Danh sách trẻ rỗng."}
             </div>
@@ -234,6 +250,8 @@ export function ChildSelector({
                 </button>
               );
             })
+          )}
+            </>
           )}
         </div>
       )}
