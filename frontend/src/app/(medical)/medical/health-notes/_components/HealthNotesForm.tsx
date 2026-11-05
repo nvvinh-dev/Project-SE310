@@ -82,13 +82,6 @@ export function HealthNotesForm({
           if (updatedChild) {
             reset({ healthNotes: updatedChild.healthNotes ?? "" });
             onSuccess(updatedChild);
-          } else if (selectedChild) {
-            const fallbackChild: SchoolChildResponse = {
-              ...selectedChild,
-              healthNotes: cleanNotes.length > 0 ? cleanNotes : null,
-            };
-            reset({ healthNotes: cleanNotes });
-            onSuccess(fallbackChild);
           }
         },
         onError: (err) => {

@@ -38,7 +38,6 @@ export default function MedicalHealthNotesPage() {
   }, [successNotice]);
 
   const handleSuccess = (updatedChild: SchoolChildResponse) => {
-    setIsSubmitting(false);
     setSelectedChild(updatedChild);
     setSubmitError(null);
     const actionMessage = updatedChild.healthNotes?.trim()
@@ -48,7 +47,6 @@ export default function MedicalHealthNotesPage() {
   };
 
   const handleError = (err: unknown) => {
-    setIsSubmitting(false);
     setSuccessNotice(null);
     setSubmitError(err);
   };

@@ -200,7 +200,7 @@ export function ChildSelector({
             <>
               {isError && (
                 <div className="border-b border-error/15 bg-error/10 px-4 py-2 flex items-center justify-between text-xs text-error">
-                  <span className="truncate pr-2">
+                  <span className="pr-2">
                     Không tải lại được dữ liệu mới nhất: {toApiError(error).message}
                   </span>
                   <button
@@ -213,44 +213,44 @@ export function ChildSelector({
                 </div>
               )}
               {filteredChildren.length === 0 ? (
-            <div className="p-4 text-center text-xs text-on-surface-variant">
-              {searchTerm ? "Không tìm thấy trẻ nào khớp với từ khóa." : "Danh sách trẻ rỗng."}
-            </div>
-          ) : (
-            filteredChildren.map((child, index) => {
-              const isSelected = selectedChild?.id === child.id;
-              const isActive = activeIndex === index;
+                <div className="p-4 text-center text-xs text-on-surface-variant">
+                  {searchTerm ? "Không tìm thấy trẻ nào khớp với từ khóa." : "Danh sách trẻ rỗng."}
+                </div>
+              ) : (
+                filteredChildren.map((child, index) => {
+                  const isSelected = selectedChild?.id === child.id;
+                  const isActive = activeIndex === index;
 
-              return (
-                <button
-                  key={child.id}
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  onClick={() => handleSelect(child)}
-                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between cursor-pointer ${
-                    isActive
-                      ? "bg-surface-container-low"
-                      : isSelected
-                      ? "bg-primary/10 font-semibold text-primary"
-                      : "text-on-surface hover:bg-surface-container-low"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <span className="truncate">{child.fullName}</span>
-                    <span className="text-xs text-on-surface-variant shrink-0">
-                      (Sinh ngày: {formatVietnamShortDate(child.dateOfBirth)})
-                    </span>
-                  </div>
-                  {isSelected && (
-                    <span className="text-xs text-primary shrink-0 font-bold">
-                      ✓ Đang chọn
-                    </span>
-                  )}
-                </button>
-              );
-            })
-          )}
+                  return (
+                    <button
+                      key={child.id}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      onClick={() => handleSelect(child)}
+                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between cursor-pointer ${
+                        isActive
+                          ? "bg-surface-container-low"
+                          : isSelected
+                          ? "bg-primary/10 font-semibold text-primary"
+                          : "text-on-surface hover:bg-surface-container-low"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="truncate">{child.fullName}</span>
+                        <span className="text-xs text-on-surface-variant shrink-0">
+                          (Sinh ngày: {formatVietnamShortDate(child.dateOfBirth)})
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <span className="text-xs text-primary shrink-0 font-bold">
+                          ✓ Đang chọn
+                        </span>
+                      )}
+                    </button>
+                  );
+                })
+              )}
             </>
           )}
         </div>
