@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Icons } from "@/components";
-import { formatWeekRangeDisplay } from "@/lib/datetime";
+import { formatWeekRange } from "@/lib/datetime";
 
 interface WeeklyMenuHeaderProps {
   weekStartDate: string;
@@ -14,7 +14,7 @@ export const WeeklyMenuHeader = ({
   onPreviousWeek,
   onNextWeek,
 }: WeeklyMenuHeaderProps) => {
-  const weekLabel = formatWeekRangeDisplay(weekStartDate);
+  const weekLabel = `Tuần ${formatWeekRange(weekStartDate)}`;
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

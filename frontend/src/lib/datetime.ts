@@ -88,14 +88,6 @@ export function formatWeekRange(weekStartDate: string): string {
   return `${start} – ${formatVietnamShortDate(weekEndDate)}`;
 }
 
-/**
- * Định dạng dải ngày của một tuần theo wireframe SCR-PAR-07:
- * Ví dụ: "Tuần 12/10 – 18/10/2026"
- */
-export function formatWeekRangeDisplay(weekStartDate: string): string {
-  return `Tuần ${formatWeekRange(weekStartDate)}`;
-}
-
 // Trường chỉ có ngày (yyyy-MM-dd) → "Thứ Sáu, 16/10/2026". Gắn +07:00 để không lệch ngày
 export function formatVietnamDisplayDate(dateStr: string): string {
   return new Intl.DateTimeFormat("vi-VN", {

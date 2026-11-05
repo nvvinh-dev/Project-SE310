@@ -6,20 +6,10 @@ export type MenuDayOfWeek = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export const MENU_DAYS_OF_WEEK: readonly MenuDayOfWeek[] = [1, 2, 3, 4, 5, 6, 7];
 
-export const MENU_DAY_LABELS: Record<MenuDayOfWeek, string> = {
-  1: "Thứ Hai",
-  2: "Thứ Ba",
-  3: "Thứ Tư",
-  4: "Thứ Năm",
-  5: "Thứ Sáu",
-  6: "Thứ Bảy",
-  7: "Chủ nhật",
-};
-
 /**
- * Bảng nhãn thứ theo wireframe SCR-PAR-07 cho Phụ huynh.
+ * Bảng nhãn thứ trong tuần theo wireframe SCR-PAR-07 và SCR-ACC-06.
  */
-export const DAY_OF_WEEK_LABELS: Record<MenuDayOfWeek, string> = {
+export const MENU_DAY_LABELS: Record<MenuDayOfWeek, string> = {
   1: "Thứ 2",
   2: "Thứ 3",
   3: "Thứ 4",

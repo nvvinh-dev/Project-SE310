@@ -1,5 +1,5 @@
 import {
-  DAY_OF_WEEK_LABELS,
+  MENU_DAY_LABELS,
   MENU_DAYS_OF_WEEK,
   type MenuDayOfWeek,
   type MenuEntryResponse,
@@ -29,7 +29,7 @@ export const buildWeeklySchedule = (
 
     schedule.push({
       dayOfWeek,
-      dayLabel: DAY_OF_WEEK_LABELS[dayOfWeek],
+      dayLabel: MENU_DAY_LABELS[dayOfWeek],
       description,
       hasMenu: Boolean(description && description.length > 0),
     });
