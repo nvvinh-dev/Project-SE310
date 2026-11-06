@@ -28,4 +28,12 @@ public class DashboardController : ControllerBase
         var result = await _dashboardService.GetChildStatisticsAsync();
         return Ok(ApiResponse<ChildStatisticsResponse>.Ok(result));
     }
+
+    // FR-DASH-03: tỷ lệ có mặt của tháng hiện tại, toàn trường và tách theo 3 lớp (AC-DASH-03)
+    [HttpGet("attendance-statistics")]
+    public async Task<ActionResult<ApiResponse<AttendanceStatisticsResponse>>> GetAttendanceStatistics()
+    {
+        var result = await _dashboardService.GetAttendanceStatisticsAsync();
+        return Ok(ApiResponse<AttendanceStatisticsResponse>.Ok(result));
+    }
 }
