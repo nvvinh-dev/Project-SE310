@@ -131,11 +131,24 @@ export function useUpdateInvoice() {
   );
 }
 
-// FR-TUITION-06: server lấy số tiền của hóa đơn, thu đủ. Ghi nhận lần hai → 409 (AC-TUITION-11)
+// FR-TUITION-06: server lấy số tiền của hóa đơn, thu đủ. Ghi nhận lần hai → 409 (AC-TUITION-11). Thành công thì đổi
+// ngay hóa đơn sang "Đã thanh toán" trong mọi danh sách đang lưu, để dòng mất hai nút mà không chờ tải lại xong
+// (frontend-conventions.md §3.2); tải lại vẫn chạy trong onSettled
 export function useRecordPayment() {
+  const queryClient = useQueryClient();
+
   return useInvoiceMutation(
-    async ({ invoiceId, body }: { invoiceId: string; body: RecordPaymentRequest }) =>
-      unwrap(await apiClient.post<ApiResponse<PaymentResponse>>(`/api/invoices/${invoiceId}/record-payment`, body)),
+    async ({ invoiceId, body }: { invoiceId: string; body: RecordPaymentRequest }) => {
+      const payment = unwrap(
+        await apiClient.post<ApiResponse<PaymentResponse>>(`/api/invoices/${invoiceId}/record-payment`, body)
+      );
+      queryClient.setQueriesData<InvoiceResponse[]>({ queryKey: INVOICES_QUERY_KEY }, (invoices) =>
+        invoices?.map((invoice) =>
+          invoice.id === payment.invoiceId ? { ...invoice, status: "paid" as const } : invoice
+        )
+      );
+      return payment;
+    },
     { refreshChildrenAndFeeOnError: false }
   );
 }

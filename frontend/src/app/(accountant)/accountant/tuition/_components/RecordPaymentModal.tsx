@@ -159,8 +159,8 @@ interface ConfirmRecordPaymentDialogProps {
 // ngay trong hộp thoại; chỉ đóng khi thành công (khuôn ConfirmChangeRoleDialog). Hủy là quay lại bước 1
 function ConfirmRecordPaymentDialog({ invoice, values, isPending, error, onBack, onConfirm }: ConfirmRecordPaymentDialogProps) {
   const rows: { label: string; value: string; className: string }[] = [
-    { label: "Trẻ", value: invoice.childFullName, className: "font-semibold break-words" },
-    { label: "Mô tả", value: invoice.description, className: "whitespace-pre-wrap break-words" },
+    { label: "Trẻ", value: invoice.childFullName, className: "font-semibold wrap-anywhere" },
+    { label: "Mô tả", value: invoice.description, className: "whitespace-pre-wrap wrap-anywhere" },
     { label: "Số tiền", value: formatMoney(invoice.amount), className: "font-semibold" },
     { label: "Hình thức", value: PAYMENT_METHOD_LABELS[values.paymentMethod], className: "" },
   ];
@@ -178,12 +178,12 @@ function ConfirmRecordPaymentDialog({ invoice, values, isPending, error, onBack,
       cancelText="Quay lại"
       confirmText="Ghi nhận"
       message={
-        <div className="space-y-3 text-left">
+        <div className="w-full min-w-0 space-y-3 text-left">
           <dl className="rounded-2xl border border-slate-200/90 bg-surface-container-low/60 p-4 space-y-2">
             {rows.map((row) => (
               <div key={row.label} className="flex flex-col sm:flex-row sm:gap-3">
                 <dt className="sm:w-28 shrink-0 text-on-surface-variant">{row.label}</dt>
-                <dd className={`text-on-surface ${row.className}`}>{row.value}</dd>
+                <dd className={`min-w-0 text-on-surface ${row.className}`}>{row.value}</dd>
               </div>
             ))}
           </dl>

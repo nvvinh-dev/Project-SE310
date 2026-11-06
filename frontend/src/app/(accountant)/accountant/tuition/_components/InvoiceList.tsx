@@ -116,8 +116,8 @@ export function InvoiceList({
                   <TableCell className="text-on-surface-variant whitespace-nowrap">
                     {formatMeasurementDateTime(invoice.issuedAtUtc)}
                   </TableCell>
-                  <TableCell className="font-semibold break-words">{invoice.childFullName}</TableCell>
-                  <TableCell className="max-w-xs whitespace-pre-wrap break-words">{invoice.description}</TableCell>
+                  <TableCell className="font-semibold wrap-anywhere">{invoice.childFullName}</TableCell>
+                  <TableCell className="max-w-xs whitespace-pre-wrap wrap-anywhere">{invoice.description}</TableCell>
                   <TableCell className="font-semibold whitespace-nowrap">
                     {formatMoney(invoice.amount)}
                   </TableCell>
@@ -143,7 +143,7 @@ export function InvoiceList({
         ) : pageInvoices.length === 0 ? (
           <EmptyState title={emptyTitle} message={emptyMessage} />
         ) : (
-          <ul className="grid gap-3 md:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {pageInvoices.map((invoice) => (
               <li
                 key={invoice.id}
@@ -151,14 +151,14 @@ export function InvoiceList({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 space-y-0.5">
-                    <p className="font-semibold text-on-surface break-words">{invoice.childFullName}</p>
+                    <p className="font-semibold text-on-surface wrap-anywhere">{invoice.childFullName}</p>
                     <p className="text-xs text-on-surface-variant">
                       Lập lúc {formatMeasurementDateTime(invoice.issuedAtUtc)}
                     </p>
                   </div>
                   <InvoiceStatusBadge status={invoice.status} />
                 </div>
-                <p className="text-sm text-on-surface whitespace-pre-wrap break-words">{invoice.description}</p>
+                <p className="text-sm text-on-surface whitespace-pre-wrap wrap-anywhere">{invoice.description}</p>
                 <p className="text-lg font-bold text-on-surface">{formatMoney(invoice.amount)}</p>
                 {invoice.status === "unpaid" && (
                   <InvoiceActions invoice={invoice} onEdit={onEdit} onRecordPayment={onRecordPayment} />

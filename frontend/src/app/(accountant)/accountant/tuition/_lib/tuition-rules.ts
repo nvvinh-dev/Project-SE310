@@ -62,8 +62,11 @@ export const invoiceChildRules: FieldRules<InvoiceFormValues> = {
 // thập phân (PrecisionScale với ignoreTrailingZeros), số 0 ở đầu phần nguyên cũng không tính
 const DECIMAL_PATTERN = /^\d+(\.\d+)?$/;
 
+// Ô type="number" nhận cả dạng mũ như 1e5; đổi về số thập phân thường trước khi đếm chữ số. Số quá lớn thì
+// String() vẫn ra dạng mũ (1e+21) và bị coi là quá giới hạn
 function fitsAmountPrecision(value: string): boolean {
-  const text = value.trim();
+  const raw = value.trim();
+  const text = DECIMAL_PATTERN.test(raw) ? raw : String(Number(raw));
   if (!DECIMAL_PATTERN.test(text)) return false;
   const [integerPart, fractionPart = ""] = text.split(".");
   return integerPart.replace(/^0+/, "").length <= 10 && fractionPart.replace(/0+$/, "").length <= 2;

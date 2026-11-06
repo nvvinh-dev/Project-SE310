@@ -64,6 +64,11 @@ export default function TuitionPage() {
   const loadError = invoicesQuery.isError ? toApiError(invoicesQuery.error).message : null;
   const retryInvoices = () => void invoicesQuery.refetch();
 
+  // Danh sách trẻ cho ô lọc: cùng cách báo lỗi như danh sách hóa đơn (frontend-conventions.md §3.3). Chưa tải được
+  // lần nào thì ô lọc chỉ còn "Tất cả trẻ"; đã có thì giữ danh sách cũ
+  const childrenError = childrenQuery.isError ? toApiError(childrenQuery.error).message : null;
+  const retryChildren = () => void childrenQuery.refetch();
+
   // Đổi bộ lọc thì về trang 1 (frontend-conventions.md §3.4)
   const changeChildFilter = (value: string) => {
     setChildId(value);
@@ -121,7 +126,6 @@ export default function TuitionPage() {
                 value={childId}
                 disabled={childrenQuery.isPending}
                 onChange={(event) => changeChildFilter(event.target.value)}
-                helperText={childrenQuery.isError ? "Không tải được danh sách trẻ." : undefined}
               />
             </div>
             <div className="sm:w-52">
@@ -154,6 +158,18 @@ export default function TuitionPage() {
             )}
           </div>
         </div>
+
+        {childrenError && (
+          <ErrorAlert
+            title={
+              childrenQuery.data === undefined
+                ? "Không tải được danh sách trẻ để lọc"
+                : "Không tải lại được danh sách trẻ để lọc"
+            }
+            message={childrenError}
+            onRetry={retryChildren}
+          />
+        )}
 
         {loadError && invoices && (
           <ErrorAlert title="Không tải lại được danh sách hóa đơn" message={loadError} onRetry={retryInvoices} />
