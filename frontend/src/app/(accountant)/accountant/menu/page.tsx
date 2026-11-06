@@ -59,8 +59,9 @@ export default function WeeklyMenuPage() {
     changeWeek(nextWeekStartDate);
   };
 
-  // Tuần chưa có thực đơn thì tạo (Hành vi 2), đã có thì sửa (Hành vi 3). Lỗi ném lại để form không reset; riêng
-  // 409 thì form được nạp lại thực đơn đã có, phần đang gõ mất
+  // Tuần chưa có thực đơn thì tạo (Hành vi 2), đã có thì sửa (Hành vi 3). Lỗi ném lại để form không reset; 409
+  // thì trang tải lại thực đơn đã có, form điền các ô chưa sửa theo thực đơn đó và giữ phần đang gõ, Lưu lần sau
+  // gửi PUT
   const saveMenu = async (entries: MenuEntryRequest[]) => {
     setNotice(null);
     createMenu.reset();
@@ -121,10 +122,11 @@ export default function WeeklyMenuPage() {
 
           <ApiErrorAlert error={saveError} />
 
-          {/* Đổi tuần hay thực đơn vừa được tạo (kể cả do Kế toán khác, sau 409) thì nạp lại form từ đầu; nội
-              dung mới của cùng thực đơn thì form tự điền theo (WeeklyMenuForm) */}
+          {/* Chỉ đổi tuần mới nạp lại form từ đầu. Tải lại được bản mới của tuần đang xem, kể cả thực đơn Kế toán
+              khác vừa tạo cho tuần đang trống (sau 409 hay khi quay về tab), thì form tự điền theo và giữ phần đang
+              gõ (WeeklyMenuForm, Hành vi 7) */}
           <WeeklyMenuForm
-            key={`${weekStartDate}:${menu?.id ?? "new"}`}
+            key={weekStartDate}
             formId={FORM_ID}
             weekStartDate={weekStartDate}
             menu={menu}
