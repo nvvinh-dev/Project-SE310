@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Icons, LoadingSpinner, Modal } from "@/components";
+import { Button, ErrorAlert, Icons, LoadingSpinner, Modal } from "@/components";
 import { toApiError } from "@/lib/axios";
 import { formatMeasurementDateTime } from "@/lib/datetime";
 import { useChildIncidentDetail } from "../_lib/parent-health-api";
@@ -37,17 +37,13 @@ export function IncidentPhotosModal({
     setFailedPhotoIds((prev) => ({ ...prev, [photoId]: true }));
   };
 
-  // [BUG-01]: Tránh Race Condition, chỉ xóa failedPhotoId sau khi refetch thành công URL ký mới
+  // [BUG-01]: Tránh Race Condition, reset toàn bộ failedPhotoIds khi refetch thành công URL ký mới cho mọi ảnh
   const handleRetryPhoto = async (photoId: string) => {
     setRetryingPhotoId(photoId);
     try {
       const res = await detailQuery.refetch();
       if (res.isSuccess) {
-        setFailedPhotoIds((prev) => {
-          const next = { ...prev };
-          delete next[photoId];
-          return next;
-        });
+        setFailedPhotoIds({});
       }
     } finally {
       setRetryingPhotoId(null);
@@ -77,26 +73,18 @@ export function IncidentPhotosModal({
           </p>
         )}
 
-        {detailQuery.isLoading ? (
+        {/* Quy ước TanStack Query v5: isPending cho lần nạp đầu (frontend-conventions.md §3.3) */}
+        {detailQuery.isPending ? (
           <div className="py-8">
             <LoadingSpinner label="Đang tải ảnh sự cố..." />
           </div>
         ) : detailQuery.isError ? (
-          /* [BUG-03]: Đọc lỗi qua toApiError, không thay message backend bằng câu viết cứng */
-          <div className="p-4 text-center space-y-2 bg-error-container/30 rounded-2xl">
-            <p className="text-xs text-error font-medium">
-              {errorMessage ?? "Không thể tải chi tiết ảnh sự cố."}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              icon={<Icons.Refresh />}
-              onClick={() => void detailQuery.refetch()}
-            >
-              Thử lại
-            </Button>
-          </div>
+          /* [BUG-03] & [UI]: Dùng ErrorAlert chuẩn đọc lỗi qua toApiError (ui-screens.md §4.2) */
+          <ErrorAlert
+            title="Không thể tải ảnh sự cố"
+            message={errorMessage ?? ""}
+            onRetry={() => void detailQuery.refetch()}
+          />
         ) : photos.length === 0 ? (
           <p className="text-sm text-outline italic">Sự cố không có ảnh đính kèm.</p>
         ) : (

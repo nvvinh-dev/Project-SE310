@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { EmptyState, ErrorAlert, LoadingSpinner } from "@/components";
 import { toApiError } from "@/lib/axios";
 import {
-  MY_CHILDREN_QUERY_KEY,
   useChildHealth,
   useChildIncidents,
   useMyChildren,
@@ -25,7 +23,6 @@ const TABS: { id: HealthTab; label: string }[] = [
 ];
 
 export default function ParentHealthPage() {
-  const queryClient = useQueryClient();
   const [selectedChildId, setSelectedChildId] = useState<string>("");
   const [activeTab, setActiveTab] = useState<HealthTab>("quickHealth");
 
@@ -53,25 +50,8 @@ export default function ParentHealthPage() {
     [incidentsQuery.data]
   );
 
-  // [BUG-04]: Tự động làm mới danh sách con khi nhận lỗi 404 (trẻ vừa bị gỡ liên kết theo ui-screens.md §10)
-  const isHealth404 = healthQuery.error
-    ? toApiError(healthQuery.error).status === 404
-    : false;
-  const isIncident404 = incidentsQuery.error
-    ? toApiError(incidentsQuery.error).status === 404
-    : false;
-  const isChildNotFound = Boolean(activeChildId && (isHealth404 || isIncident404));
-
-  useEffect(() => {
-    if (isChildNotFound) {
-      void queryClient.invalidateQueries({
-        queryKey: MY_CHILDREN_QUERY_KEY,
-        exact: true,
-      });
-    }
-  }, [isChildNotFound, queryClient]);
-
-  // Thao tác làm mới thủ công / Thử lại trên ErrorAlert
+  // Thao tác làm mới thủ công / Thử lại trên ErrorAlert: tải lại danh sách con trước,
+  // nếu con bị gỡ liên kết (404) thì chuyển sang con hợp lệ khác (ui-screens.md §10, frontend-conventions.md §5)
   const handleRefresh = async () => {
     const childrenRes = await childrenQuery.refetch();
     if (childrenRes.isSuccess && childrenRes.data) {
@@ -149,10 +129,14 @@ export default function ParentHealthPage() {
         childrenList={childrenList}
         selectedChildId={activeChildId}
         onSelectChild={setSelectedChildId}
-        isLoading={healthQuery.isPending || incidentsQuery.isPending}
+        isLoading={
+          activeTab === "incidents"
+            ? incidentsQuery.isPending
+            : healthQuery.isPending
+        }
       />
 
-      {/* [OPT-02]: Cảnh báo lỗi làm mới danh sách con ở chế độ nền */}
+      {/* Cảnh báo lỗi làm mới danh sách con ở chế độ nền */}
       {!isChildrenInitialError && childrenErrorMessage && (
         <ErrorAlert
           title="Không thể làm mới danh sách con"
@@ -161,18 +145,16 @@ export default function ParentHealthPage() {
         />
       )}
 
-      {/* Cảnh báo lỗi làm mới khi vẫn giữ dữ liệu cũ trong cache theo từng tab */}
-      {activeTab !== "incidents" &&
-        hasHealthData &&
-        healthQuery.isError &&
-        healthErrorMessage && (
-          <ErrorAlert
-            title="Không thể làm mới dữ liệu sức khỏe"
-            message={healthErrorMessage}
-            onRetry={handleRefresh}
-          />
-        )}
+      {/* Cảnh báo lỗi làm mới sức khỏe khi vẫn giữ dữ liệu cũ trong cache (luôn hiển thị vì Vùng [2] ở trên cùng) */}
+      {hasHealthData && healthQuery.isError && healthErrorMessage && (
+        <ErrorAlert
+          title="Không thể làm mới dữ liệu sức khỏe"
+          message={healthErrorMessage}
+          onRetry={handleRefresh}
+        />
+      )}
 
+      {/* Cảnh báo lỗi làm mới sự cố khi vẫn giữ dữ liệu cũ trong cache (chỉ hiển thị ở tab Sự cố) */}
       {activeTab === "incidents" &&
         hasIncidentData &&
         incidentsQuery.isError &&
@@ -184,20 +166,10 @@ export default function ParentHealthPage() {
           />
         )}
 
-      {/* Vùng [2]: Lưu ý sức khỏe */}
-      {isHealthInitialLoading ? (
-        <LoadingSpinner label="Đang tải lưu ý sức khỏe..." />
-      ) : isHealthInitialError ? (
-        <ErrorAlert
-          title="Không thể tải lưu ý sức khỏe"
-          message={healthErrorMessage ?? ""}
-          onRetry={handleRefresh}
-        />
-      ) : (
-        <HealthNotesCard healthNotes={healthData?.healthNotes} />
-      )}
+      {/* Vùng [2]: Lưu ý sức khỏe - chỉ hiển thị khi đã có dữ liệu để tránh nhân đôi ErrorAlert */}
+      {hasHealthData && <HealthNotesCard healthNotes={healthData?.healthNotes} />}
 
-      {/* Vùng [3]: [BUG-02] Tách biệt thanh Tab độc lập để sự cố không bị che khuất khi API sức khỏe lỗi */}
+      {/* Vùng [3]: Tách biệt thanh Tab độc lập để sự cố không bị che khuất khi API sức khỏe lỗi */}
       <div className="space-y-4">
         <div
           className="flex flex-wrap gap-2"
@@ -255,7 +227,7 @@ export default function ParentHealthPage() {
             />
           ))}
 
-        {/* Tab 3: Sự cố (độc lập hoàn toàn với healthQuery) */}
+        {/* Tab 3: Sự cố (độc lập hoàn toàn với healthQuery, gắn key để reset modal khi đổi con) */}
         {activeTab === "incidents" &&
           (isIncidentInitialLoading ? (
             <LoadingSpinner label="Đang tải dữ liệu sự cố..." />
@@ -267,6 +239,7 @@ export default function ParentHealthPage() {
             />
           ) : (
             <IncidentTab
+              key={activeChildId}
               childId={activeChildId}
               items={incidentItems}
             />
