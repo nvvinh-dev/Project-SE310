@@ -20,7 +20,7 @@ export function IncidentTab({ childId, items }: IncidentTabProps) {
     return (
       <EmptyState
         title="Chưa có sự cố"
-        message="Chưa có ghi nhận sự cố nào của trẻ."
+        message="Chưa có ghi nhận sự cố nào của con."
       />
     );
   }
@@ -42,18 +42,18 @@ export function IncidentTab({ childId, items }: IncidentTabProps) {
                   {formatMeasurementDateTime(item.occurredAtUtc)}
                 </time>
 
-                <p className="text-sm text-on-surface whitespace-pre-wrap break-words leading-relaxed">
+                <p className="text-sm text-on-surface whitespace-pre-wrap wrap-anywhere min-w-0 leading-relaxed">
                   {item.description}
                 </p>
               </div>
 
-              {/* [OPT-01]: Hiển thị nút xem ảnh thanh lịch tương tự màn hình Y tế SCR-MED-02 */}
               {item.photoCount > 0 && (
                 <div className="shrink-0 self-end sm:self-start">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
+                    className="min-h-11"
                     icon={<Icons.Camera />}
                     onClick={() => setSelectedIncident(item)}
                     title={`Xem ảnh sự cố (${item.photoCount} ảnh)`}

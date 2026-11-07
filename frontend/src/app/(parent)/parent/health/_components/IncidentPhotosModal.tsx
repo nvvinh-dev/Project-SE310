@@ -24,8 +24,8 @@ export function IncidentPhotosModal({
   occurredAtUtc,
   description,
 }: IncidentPhotosModalProps) {
-  const [failedPhotoIds, setFailedPhotoIds] = useState<Record<string, boolean>>({});
-  const [retryingPhotoId, setRetryingPhotoId] = useState<string | null>(null);
+  const [failedPhotoUrls, setFailedPhotoUrls] = useState<Record<string, boolean>>({});
+  const [retryingPhotoUrl, setRetryingPhotoUrl] = useState<string | null>(null);
 
   const detailQuery = useChildIncidentDetail(childId, incidentId);
   const detail = detailQuery.data;
@@ -33,20 +33,26 @@ export function IncidentPhotosModal({
 
   if (!incidentId) return null;
 
-  const handleImageError = (photoId: string) => {
-    setFailedPhotoIds((prev) => ({ ...prev, [photoId]: true }));
+  const handleImageError = (url: string) => {
+    setFailedPhotoUrls((prev) => ({ ...prev, [url]: true }));
   };
 
-  // [BUG-01]: Tránh Race Condition, reset toàn bộ failedPhotoIds khi refetch thành công URL ký mới cho mọi ảnh
-  const handleRetryPhoto = async (photoId: string) => {
-    setRetryingPhotoId(photoId);
+  const handleRetryPhoto = async (url: string) => {
+    setRetryingPhotoUrl(url);
     try {
       const res = await detailQuery.refetch();
       if (res.isSuccess) {
-        setFailedPhotoIds({});
+        setFailedPhotoUrls({});
       }
     } finally {
-      setRetryingPhotoId(null);
+      setRetryingPhotoUrl(null);
+    }
+  };
+
+  const handleRefetch = async () => {
+    const res = await detailQuery.refetch();
+    if (res.isSuccess) {
+      setFailedPhotoUrls({});
     }
   };
 
@@ -72,7 +78,7 @@ export function IncidentPhotosModal({
     >
       <div className="space-y-4">
         {description && (
-          <p className="text-sm text-on-surface whitespace-pre-wrap break-words">
+          <p className="text-sm text-on-surface whitespace-pre-wrap wrap-anywhere min-w-0">
             {description}
           </p>
         )}
@@ -86,7 +92,7 @@ export function IncidentPhotosModal({
           <ErrorAlert
             title="Không thể tải ảnh sự cố"
             message={errorMessage ?? ""}
-            onRetry={() => void detailQuery.refetch()}
+            onRetry={() => void handleRefetch()}
           />
         ) : (
           <>
@@ -94,7 +100,7 @@ export function IncidentPhotosModal({
               <ErrorAlert
                 title="Không thể làm mới ảnh sự cố"
                 message={errorMessage ?? ""}
-                onRetry={() => void detailQuery.refetch()}
+                onRetry={() => void handleRefetch()}
               />
             )}
             {photos.length === 0 ? (
@@ -108,20 +114,21 @@ export function IncidentPhotosModal({
                     key={photo.id}
                     className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center min-h-[180px]"
                   >
-                    {failedPhotoIds[photo.id] ? (
+                    {failedPhotoUrls[photo.url] ? (
                       <div className="p-4 text-center space-y-2">
                         <p className="text-xs text-error font-medium">
-                          Không tải được ảnh (có thể do URL hết hạn).
+                          Không tải được ảnh (ảnh có thể đã hết hạn hiển thị).
                         </p>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
-                          isLoading={retryingPhotoId === photo.id}
+                          className="min-h-11"
+                          isLoading={retryingPhotoUrl === photo.url}
                           icon={<Icons.Refresh />}
-                          onClick={() => void handleRetryPhoto(photo.id)}
+                          onClick={() => void handleRetryPhoto(photo.url)}
                         >
-                          {retryingPhotoId === photo.id
+                          {retryingPhotoUrl === photo.url
                             ? "Đang tải lại..."
                             : "Thử lại"}
                         </Button>
@@ -133,7 +140,7 @@ export function IncidentPhotosModal({
                         src={photo.url}
                         alt={`Ảnh sự cố ${idx + 1}`}
                         className="w-full h-full max-h-[300px] object-contain"
-                        onError={() => handleImageError(photo.id)}
+                        onError={() => handleImageError(photo.url)}
                       />
                     )}
                   </div>
@@ -144,7 +151,13 @@ export function IncidentPhotosModal({
         )}
 
         <div className="flex justify-end pt-2">
-          <Button type="button" variant="outline" size="sm" onClick={onClose}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-11"
+            onClick={onClose}
+          >
             Đóng
           </Button>
         </div>

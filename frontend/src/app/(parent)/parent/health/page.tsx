@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState, ErrorAlert, LoadingSpinner } from "@/components";
 import { toApiError } from "@/lib/axios";
 import {
@@ -8,7 +8,7 @@ import {
   useChildIncidents,
   useMyChildren,
 } from "./_lib/parent-health-api";
-import { ChildSelectHeader } from "./_components/ChildSelectHeader";
+import { ChildSelectHeader } from "../attendance/_components/ChildSelectHeader";
 import { HealthNotesCard } from "./_components/HealthNotesCard";
 import { QuickHealthTab } from "./_components/QuickHealthTab";
 import { GrowthMeasurementTab } from "./_components/GrowthMeasurementTab";
@@ -66,6 +66,20 @@ export default function ParentHealthPage() {
       void incidentsQuery.refetch();
     }
   };
+
+  // Khi trẻ đang chọn bị gỡ liên kết (API trả 404), tự động tải lại danh sách con để đồng bộ dropdown
+  const handled404ChildIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const healthErr = healthQuery.error ? toApiError(healthQuery.error) : null;
+    const incidentErr = incidentsQuery.error ? toApiError(incidentsQuery.error) : null;
+    const is404 = healthErr?.status === 404 || incidentErr?.status === 404;
+
+    if (is404 && activeChildId && handled404ChildIdRef.current !== activeChildId) {
+      handled404ChildIdRef.current = activeChildId;
+      void childrenQuery.refetch();
+    }
+  }, [healthQuery.error, incidentsQuery.error, activeChildId, childrenQuery]);
 
   const isChildrenInitialLoading =
     childrenQuery.isPending && childrenQuery.data === undefined;
@@ -126,14 +140,10 @@ export default function ParentHealthPage() {
     <div className="py-8 space-y-6">
       {/* Vùng [1]: Tiêu đề trang và Chọn con */}
       <ChildSelectHeader
+        title="Sức khỏe và sự cố của con"
         childrenList={childrenList}
         selectedChildId={activeChildId}
         onSelectChild={setSelectedChildId}
-        isLoading={
-          activeTab === "incidents"
-            ? incidentsQuery.isPending
-            : healthQuery.isPending
-        }
       />
 
       {/* Cảnh báo lỗi làm mới danh sách trẻ ở chế độ nền */}
@@ -195,7 +205,7 @@ export default function ParentHealthPage() {
                 type="button"
                 role="tab"
                 aria-selected={isActive}
-                aria-controls={`panel-${tab.id}`}
+                aria-controls={isActive ? `panel-${tab.id}` : undefined}
                 onClick={() => setActiveTab(tab.id)}
                 className={`min-h-[44px] inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   isActive

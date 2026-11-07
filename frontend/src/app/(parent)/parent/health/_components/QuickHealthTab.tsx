@@ -18,7 +18,7 @@ export function QuickHealthTab({ items }: QuickHealthTabProps) {
     return (
       <EmptyState
         title="Chưa có bản ghi sức khỏe"
-        message="Chưa có bản ghi sức khỏe hằng ngày nào của trẻ."
+        message="Chưa có bản ghi sức khỏe hằng ngày nào của con."
       />
     );
   }
@@ -39,7 +39,8 @@ export function QuickHealthTab({ items }: QuickHealthTabProps) {
             key={item.id}
             className="rounded-2xl border border-slate-200/90 bg-surface-container-lowest p-4 shadow-xs"
           >
-            <div className="flex flex-wrap items-baseline gap-2 text-sm text-on-surface">
+            {/* Chống tràn ngang trên 375px khi có chuỗi dài không khoảng trắng với min-w-0 (testing-strategy.md §3.3 E) */}
+            <div className="flex flex-wrap items-baseline gap-2 text-sm text-on-surface min-w-0">
               <time
                 dateTime={item.recordedAtUtc}
                 className="text-xs font-medium text-on-surface-variant shrink-0 mr-1"
@@ -63,7 +64,7 @@ export function QuickHealthTab({ items }: QuickHealthTabProps) {
                   <span className="text-slate-400" aria-hidden="true">
                     ·
                   </span>
-                  <span className="text-on-surface-variant whitespace-pre-wrap break-words">
+                  <span className="text-on-surface-variant whitespace-pre-wrap wrap-anywhere min-w-0">
                     {item.notes}
                   </span>
                 </>
