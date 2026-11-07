@@ -75,7 +75,7 @@ export default function ParentHealthPage() {
     ? toApiError(childrenQuery.error).message
     : null;
 
-  const hasHealthData = Boolean(healthData);
+  const hasHealthData = healthQuery.data !== undefined;
   const isHealthInitialLoading = healthQuery.isPending && !hasHealthData;
   const isHealthInitialError = healthQuery.isError && !hasHealthData;
   const healthErrorMessage = healthQuery.error
@@ -166,8 +166,18 @@ export default function ParentHealthPage() {
           />
         )}
 
-      {/* Vùng [2]: Lưu ý sức khỏe - chỉ hiển thị khi đã có dữ liệu để tránh nhân đôi ErrorAlert */}
-      {hasHealthData && <HealthNotesCard healthNotes={healthData?.healthNotes} />}
+      {/* Vùng [2]: Lưu ý sức khỏe - đầy đủ 3 trạng thái theo đặc tả ui-screens.md §4.2 */}
+      {isHealthInitialLoading ? (
+        <LoadingSpinner label="Đang tải lưu ý sức khỏe..." />
+      ) : isHealthInitialError ? (
+        <ErrorAlert
+          title="Không thể tải thông tin sức khỏe"
+          message={healthErrorMessage ?? ""}
+          onRetry={handleRefresh}
+        />
+      ) : (
+        <HealthNotesCard healthNotes={healthData?.healthNotes} />
+      )}
 
       {/* Vùng [3]: Tách biệt thanh Tab độc lập để sự cố không bị che khuất khi API sức khỏe lỗi */}
       <div className="space-y-4">
@@ -199,33 +209,19 @@ export default function ParentHealthPage() {
 
         {/* Tab 1: Sức khỏe hằng ngày */}
         {activeTab === "quickHealth" &&
-          (isHealthInitialLoading ? (
-            <LoadingSpinner label="Đang tải thông tin sức khỏe..." />
-          ) : isHealthInitialError ? (
-            <ErrorAlert
-              title="Không thể tải thông tin sức khỏe"
-              message={healthErrorMessage ?? ""}
-              onRetry={handleRefresh}
-            />
-          ) : (
+          !isHealthInitialLoading &&
+          !isHealthInitialError && (
             <QuickHealthTab items={healthData?.quickHealthStatuses ?? []} />
-          ))}
+          )}
 
         {/* Tab 2: Chiều cao, cân nặng */}
         {activeTab === "growth" &&
-          (isHealthInitialLoading ? (
-            <LoadingSpinner label="Đang tải thông tin số đo..." />
-          ) : isHealthInitialError ? (
-            <ErrorAlert
-              title="Không thể tải thông tin số đo"
-              message={healthErrorMessage ?? ""}
-              onRetry={handleRefresh}
-            />
-          ) : (
+          !isHealthInitialLoading &&
+          !isHealthInitialError && (
             <GrowthMeasurementTab
               items={healthData?.growthMeasurements ?? []}
             />
-          ))}
+          )}
 
         {/* Tab 3: Sự cố (độc lập hoàn toàn với healthQuery, gắn key để reset modal khi đổi con) */}
         {activeTab === "incidents" &&

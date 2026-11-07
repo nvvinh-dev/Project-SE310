@@ -32,7 +32,7 @@ export function ChildSelectHeader({
         </h1>
         {singleChild && (
           <p className="text-sm text-on-surface-variant">
-            Con:{" "}
+            Đang xem hồ sơ của trẻ:{" "}
             <span className="font-semibold text-primary">
               {singleChild.fullName}
             </span>

@@ -54,6 +54,10 @@ export function IncidentPhotosModal({
     ? toApiError(detailQuery.error).message
     : null;
 
+  const isInitialLoading = detailQuery.isPending && photos.length === 0;
+  const isInitialError = detailQuery.isError && photos.length === 0;
+  const isStaleError = detailQuery.isError && photos.length > 0;
+
   return (
     <Modal
       isOpen={isOpen}
@@ -73,61 +77,70 @@ export function IncidentPhotosModal({
           </p>
         )}
 
-        {/* Quy ước TanStack Query v5: isPending cho lần nạp đầu (frontend-conventions.md §3.3) */}
-        {detailQuery.isPending ? (
+        {/* Quy ước TanStack Query v5 & ui-screens.md §4.2: isPending cho lần nạp đầu, giữ ảnh cũ khi lỗi tải lại */}
+        {isInitialLoading ? (
           <div className="py-8">
             <LoadingSpinner label="Đang tải ảnh sự cố..." />
           </div>
-        ) : detailQuery.isError ? (
-          /* [BUG-03] & [UI]: Dùng ErrorAlert chuẩn đọc lỗi qua toApiError (ui-screens.md §4.2) */
+        ) : isInitialError ? (
           <ErrorAlert
             title="Không thể tải ảnh sự cố"
             message={errorMessage ?? ""}
             onRetry={() => void detailQuery.refetch()}
           />
-        ) : photos.length === 0 ? (
-          <p className="text-sm text-outline italic">Sự cố không có ảnh đính kèm.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto p-1">
-            {photos.map((photo, idx) => (
-              <div
-                key={photo.id}
-                className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center min-h-[180px]"
-              >
-                {failedPhotoIds[photo.id] ? (
-                  <div className="p-4 text-center space-y-2">
-                    <p className="text-xs text-error font-medium">
-                      Không tải được ảnh (có thể do URL hết hạn).
-                    </p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={retryingPhotoId === photo.id}
-                      icon={
-                        retryingPhotoId === photo.id ? (
-                          <Icons.Spinner />
-                        ) : (
-                          <Icons.Refresh />
-                        )
-                      }
-                      onClick={() => void handleRetryPhoto(photo.id)}
-                    >
-                      {retryingPhotoId === photo.id ? "Đang tải lại..." : "Thử lại"}
-                    </Button>
+          <>
+            {isStaleError && (
+              <ErrorAlert
+                title="Không thể làm mới ảnh sự cố"
+                message={errorMessage ?? ""}
+                onRetry={() => void detailQuery.refetch()}
+              />
+            )}
+            {photos.length === 0 ? (
+              <p className="text-sm text-outline italic">
+                Sự cố không có ảnh đính kèm.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto p-1">
+                {photos.map((photo, idx) => (
+                  <div
+                    key={photo.id}
+                    className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center min-h-[180px]"
+                  >
+                    {failedPhotoIds[photo.id] ? (
+                      <div className="p-4 text-center space-y-2">
+                        <p className="text-xs text-error font-medium">
+                          Không tải được ảnh (có thể do URL hết hạn).
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          isLoading={retryingPhotoId === photo.id}
+                          icon={<Icons.Refresh />}
+                          onClick={() => void handleRetryPhoto(photo.id)}
+                        >
+                          {retryingPhotoId === photo.id
+                            ? "Đang tải lại..."
+                            : "Thử lại"}
+                        </Button>
+                      </div>
+                    ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        key={photo.url}
+                        src={photo.url}
+                        alt={`Ảnh sự cố ${idx + 1}`}
+                        className="w-full h-full max-h-[300px] object-contain"
+                        onError={() => handleImageError(photo.id)}
+                      />
+                    )}
                   </div>
-                ) : (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={photo.url}
-                    alt={`Ảnh sự cố ${idx + 1}`}
-                    className="w-full h-full max-h-[300px] object-contain"
-                    onError={() => handleImageError(photo.id)}
-                  />
-                )}
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
 
         <div className="flex justify-end pt-2">
