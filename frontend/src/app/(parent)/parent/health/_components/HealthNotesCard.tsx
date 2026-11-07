@@ -31,7 +31,7 @@ export function HealthNotesCard({ healthNotes }: HealthNotesCardProps) {
           <div className="text-sm">
             <span className="font-semibold text-on-surface">Lưu ý sức khỏe:&nbsp;</span>
             {hasNotes ? (
-              <span className="font-medium text-amber-900 whitespace-pre-wrap break-words">
+              <span className="font-medium text-amber-800 whitespace-pre-wrap break-words">
                 {healthNotes}
               </span>
             ) : (

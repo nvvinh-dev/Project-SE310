@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { EmptyState, Icons } from "@/components";
+import { EmptyState } from "@/components";
 import { formatMeasurementDateTime } from "@/lib/datetime";
 import type { IncidentResponse } from "@/types/incident";
 import { IncidentPhotosModal } from "./IncidentPhotosModal";
@@ -13,7 +13,10 @@ interface IncidentTabProps {
 
 // SCR-PAR-03 Vùng [3]: Tab Sự cố
 export function IncidentTab({ items, onRefreshPhotos }: IncidentTabProps) {
-  const [selectedIncident, setSelectedIncident] = useState<IncidentResponse | null>(null);
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
+
+  // Tìm sự cố đang xem từ items hiện tại để tự động nhận URL mới khi refetch (Lỗi 2.1)
+  const selectedIncident = items.find((i) => i.id === selectedIncidentId) ?? null;
 
   if (items.length === 0) {
     return (
@@ -33,50 +36,39 @@ export function IncidentTab({ items, onRefreshPhotos }: IncidentTabProps) {
             className="rounded-2xl border border-slate-200/90 bg-surface-container-lowest p-4 shadow-xs"
           >
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-              <div className="space-y-1.5 min-w-0">
-                <div className="flex items-center gap-2">
-                  <time
-                    dateTime={item.occurredAtUtc}
-                    className="text-xs font-medium text-on-surface-variant shrink-0"
-                  >
-                    {formatMeasurementDateTime(item.occurredAtUtc)}
-                  </time>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-error-container text-on-error-container">
-                    <span className="w-1.5 h-1.5 rounded-full bg-error" aria-hidden="true" />
-                    Sự cố
-                  </span>
-                </div>
+              <div className="flex flex-wrap items-baseline gap-2 text-sm text-on-surface min-w-0">
+                <time
+                  dateTime={item.occurredAtUtc}
+                  className="text-xs font-medium text-on-surface-variant shrink-0 mr-1"
+                >
+                  {formatMeasurementDateTime(item.occurredAtUtc)}
+                </time>
 
-                <p className="text-sm text-on-surface whitespace-pre-wrap break-words">
+                <p className="text-sm text-on-surface whitespace-pre-wrap break-words leading-relaxed">
                   {item.description}
                 </p>
               </div>
 
               {/* Wireframe: [ảnh][ảnh] */}
               {item.photos.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedIncident(item)}
-                  className="flex items-center gap-1.5 shrink-0 p-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  title="Xem ảnh sự cố"
-                >
-                  <div className="flex -space-x-2 overflow-hidden">
-                    {item.photos.slice(0, 3).map((photo, pIdx) => (
-                      /* eslint-disable-next-line @next/next/no-img-element */
+                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-start">
+                  {item.photos.map((photo, pIdx) => (
+                    <button
+                      key={photo.id}
+                      type="button"
+                      onClick={() => setSelectedIncidentId(item.id)}
+                      className="rounded-lg overflow-hidden border border-slate-200 hover:ring-2 hover:ring-primary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      title="Xem ảnh sự cố"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        key={photo.id}
                         src={photo.url}
                         alt={`Ảnh sự cố ${pIdx + 1}`}
-                        className="inline-block h-10 w-10 rounded-lg object-cover ring-2 ring-surface-container-lowest bg-slate-100"
+                        className="h-10 w-10 object-cover bg-slate-100"
                       />
-                    ))}
-                  </div>
-
-                  <span className="text-xs font-semibold text-primary px-1 flex items-center gap-1">
-                    <Icons.Camera />
-                    <span>{item.photos.length}</span>
-                  </span>
-                </button>
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           </div>
@@ -84,8 +76,9 @@ export function IncidentTab({ items, onRefreshPhotos }: IncidentTabProps) {
       </div>
 
       <IncidentPhotosModal
+        key={selectedIncidentId ?? "none"}
         isOpen={Boolean(selectedIncident)}
-        onClose={() => setSelectedIncident(null)}
+        onClose={() => setSelectedIncidentId(null)}
         incident={selectedIncident}
         onRefreshPhotos={onRefreshPhotos}
       />

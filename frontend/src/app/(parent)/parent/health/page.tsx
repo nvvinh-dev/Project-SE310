@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { EmptyState, ErrorAlert, LoadingSpinner } from "@/components";
 import { toApiError } from "@/lib/axios";
 import { useChildHealth, useChildIncidents, useMyChildren } from "./_lib/parent-health-api";
@@ -40,12 +40,26 @@ export default function ParentHealthPage() {
   const healthData = healthQuery.data;
   const incidentItems = useMemo(() => incidentsQuery.data ?? [], [incidentsQuery.data]);
 
+  // Lỗi 2.3: Khi gặp lỗi 404 (trẻ bị gỡ liên kết) -> tự làm mới danh sách con
+  useEffect(() => {
+    if (healthQuery.isError) {
+      void childrenQuery.refetch().then((res) => {
+        if (res.data && activeChildId && !res.data.some((c) => c.id === activeChildId)) {
+          setSelectedChildId(res.data[0]?.id ?? "");
+        }
+      });
+    }
+  }, [healthQuery.isError, childrenQuery, activeChildId]);
+
+  // Lỗi 2.2: Không xóa con đang chọn nếu refetch thất bại do mất mạng
   const handleRefresh = async () => {
     const childrenRes = await childrenQuery.refetch();
-    const latestChildren = childrenRes.data ?? [];
-    if (activeChildId && !latestChildren.some((c) => c.id === activeChildId)) {
-      setSelectedChildId(latestChildren[0]?.id ?? "");
-      return;
+    if (childrenRes.isSuccess && childrenRes.data) {
+      const latestChildren = childrenRes.data;
+      if (activeChildId && !latestChildren.some((c) => c.id === activeChildId)) {
+        setSelectedChildId(latestChildren[0]?.id ?? "");
+        return;
+      }
     }
     if (activeChildId) {
       void healthQuery.refetch();
@@ -53,7 +67,6 @@ export default function ParentHealthPage() {
     }
   };
 
-  // Xử lý trạng thái nạp theo ui-screens.md §4.2: chỉ lỗi toàn phần khi chưa có dữ liệu
   const isChildrenInitialLoading = childrenQuery.isPending && childrenQuery.data === undefined;
   const isChildrenInitialError = childrenQuery.isError && childrenQuery.data === undefined;
   const childrenErrorMessage = childrenQuery.error
@@ -65,6 +78,13 @@ export default function ParentHealthPage() {
   const isHealthInitialError = healthQuery.isError && !hasHealthData;
   const healthErrorMessage = healthQuery.error
     ? toApiError(healthQuery.error).message
+    : null;
+
+  const hasIncidentData = incidentsQuery.data !== undefined;
+  const isIncidentInitialLoading = incidentsQuery.isPending && !hasIncidentData;
+  const isIncidentInitialError = incidentsQuery.isError && !hasIncidentData;
+  const incidentErrorMessage = incidentsQuery.error
+    ? toApiError(incidentsQuery.error).message
     : null;
 
   if (isChildrenInitialLoading) {
@@ -100,7 +120,6 @@ export default function ParentHealthPage() {
 
   return (
     <div className="py-8 space-y-6">
-      {/* Vùng [1]: Tiêu đề trang & Ô chọn con (nếu > 1 con) */}
       <ChildSelectHeader
         childrenList={childrenList}
         selectedChildId={activeChildId}
@@ -117,7 +136,14 @@ export default function ParentHealthPage() {
         />
       )}
 
-      {/* Nội dung sức khỏe theo trạng thái */}
+      {hasIncidentData && incidentsQuery.isError && incidentErrorMessage && activeTab === "incidents" && (
+        <ErrorAlert
+          title="Không thể làm mới dữ liệu sự cố"
+          message={incidentErrorMessage}
+          onRetry={() => void incidentsQuery.refetch()}
+        />
+      )}
+
       {isHealthInitialLoading ? (
         <LoadingSpinner label="Đang tải thông tin sức khỏe..." />
       ) : isHealthInitialError ? (
@@ -128,10 +154,8 @@ export default function ParentHealthPage() {
         />
       ) : (
         <>
-          {/* Vùng [2]: Lưu ý sức khỏe */}
           <HealthNotesCard healthNotes={healthData?.healthNotes} />
 
-          {/* Vùng [3]: Điều hướng 3 tabs */}
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2" role="tablist" aria-label="Các mục sức khỏe của con">
               {TABS.map((tab) => {
@@ -155,7 +179,6 @@ export default function ParentHealthPage() {
               })}
             </div>
 
-            {/* Nội dung tab tương ứng */}
             {activeTab === "quickHealth" && (
               <QuickHealthTab items={healthData?.quickHealthStatuses ?? []} />
             )}
@@ -165,10 +188,20 @@ export default function ParentHealthPage() {
             )}
 
             {activeTab === "incidents" && (
-              <IncidentTab
-                items={incidentItems}
-                onRefreshPhotos={() => void incidentsQuery.refetch()}
-              />
+              isIncidentInitialLoading ? (
+                <LoadingSpinner label="Đang tải dữ liệu sự cố..." />
+              ) : isIncidentInitialError ? (
+                <ErrorAlert
+                  title="Không thể tải dữ liệu sự cố"
+                  message={incidentErrorMessage ?? ""}
+                  onRetry={() => void incidentsQuery.refetch()}
+                />
+              ) : (
+                <IncidentTab
+                  items={incidentItems}
+                  onRefreshPhotos={() => void incidentsQuery.refetch()}
+                />
+              )
             )}
           </div>
         </>

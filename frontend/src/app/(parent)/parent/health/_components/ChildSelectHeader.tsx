@@ -10,6 +10,7 @@ interface ChildSelectHeaderProps {
   isLoading?: boolean;
 }
 
+// SCR-PAR-03 Vùng [1]: Tiêu đề trang và Chọn con
 export function ChildSelectHeader({
   childrenList,
   selectedChildId,
@@ -22,13 +23,8 @@ export function ChildSelectHeader({
   }));
 
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-on-surface">Sức khỏe và sự cố của con</h1>
-        <p className="text-sm text-on-surface-variant">
-          Theo dõi lưu ý sức khỏe, tình trạng hằng ngày, số đo và sự cố của con
-        </p>
-      </div>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <h1 className="text-2xl font-bold text-on-surface">Sức khỏe và sự cố của con</h1>
 
       {/* ui-screens.md §10: Một con thì chọn sẵn và không cần ô chọn; nhiều con thì ô chọn ở đầu màn hình */}
       {childrenList.length > 1 && (

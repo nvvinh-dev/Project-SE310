@@ -10,7 +10,13 @@ interface GrowthMeasurementTabProps {
 
 // SCR-PAR-03 Vùng [3]: Tab Chiều cao, cân nặng
 export function GrowthMeasurementTab({ items }: GrowthMeasurementTabProps) {
-  if (items.length === 0) {
+  const validItems = items.filter(
+    (item) =>
+      (item.heightCm !== null && item.heightCm !== undefined) ||
+      (item.weightKg !== null && item.weightKg !== undefined)
+  );
+
+  if (validItems.length === 0) {
     return (
       <EmptyState
         title="Chưa có số đo"
@@ -21,13 +27,9 @@ export function GrowthMeasurementTab({ items }: GrowthMeasurementTabProps) {
 
   return (
     <div className="space-y-3">
-      {items.map((item) => {
+      {validItems.map((item) => {
         const hasHeight = item.heightCm !== null && item.heightCm !== undefined;
         const hasWeight = item.weightKg !== null && item.weightKg !== undefined;
-
-        if (!hasHeight && !hasWeight) {
-          return null;
-        }
 
         return (
           <div
