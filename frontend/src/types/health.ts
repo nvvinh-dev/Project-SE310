@@ -92,3 +92,27 @@ export interface HealthHistoryResponse {
   child: SchoolChildResponse;
   items: HealthHistoryItemResponse[];
 }
+
+// FR-HEALTH-05: Bản ghi sức khỏe nhanh phụ huynh xem (UC-HEALTH-04, D45)
+export interface ChildQuickHealthStatusResponse {
+  id: string;
+  recordedAtUtc: string;
+  mood: string;
+  temperatureCelsius: number | null;
+  notes: string;
+}
+
+// FR-HEALTH-05: Bản ghi số đo phụ huynh xem (UC-HEALTH-04, D45)
+export interface ChildGrowthMeasurementResponse {
+  id: string;
+  measuredAtUtc: string;
+  heightCm: number | null;
+  weightKg: number | null;
+}
+
+// FR-HEALTH-05: Sức khỏe tổng hợp của con phụ huynh xem (api/parent-health.md)
+export interface ChildHealthResponse {
+  healthNotes: string | null;
+  quickHealthStatuses: ChildQuickHealthStatusResponse[];
+  growthMeasurements: ChildGrowthMeasurementResponse[];
+}
