@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { EmptyState, Icons } from "@/components";
+import { Button, EmptyState, Icons } from "@/components";
 import { formatMeasurementDateTime } from "@/lib/datetime";
 import type { ChildIncidentSummaryResponse } from "@/types/incident";
 import { IncidentPhotosModal } from "./IncidentPhotosModal";
@@ -47,23 +47,19 @@ export function IncidentTab({ childId, items }: IncidentTabProps) {
                 </p>
               </div>
 
-              {/* Wireframe: [ảnh][ảnh] */}
+              {/* [OPT-01]: Hiển thị nút xem ảnh thanh lịch tương tự màn hình Y tế SCR-MED-02 */}
               {item.photoCount > 0 && (
-                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-start">
-                  {Array.from({ length: Math.min(item.photoCount, 5) }).map(
-                    (_, pIdx) => (
-                      <button
-                        key={pIdx}
-                        type="button"
-                        onClick={() => setSelectedIncident(item)}
-                        className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-slate-100 text-on-surface-variant hover:border-primary hover:text-primary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        title={`Xem ảnh sự cố (${item.photoCount} ảnh)`}
-                        aria-label={`Xem ảnh sự cố ${pIdx + 1}`}
-                      >
-                        <Icons.Camera />
-                      </button>
-                    )
-                  )}
+                <div className="shrink-0 self-end sm:self-start">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    icon={<Icons.Camera />}
+                    onClick={() => setSelectedIncident(item)}
+                    title={`Xem ảnh sự cố (${item.photoCount} ảnh)`}
+                  >
+                    Xem ảnh ({item.photoCount})
+                  </Button>
                 </div>
               )}
             </div>

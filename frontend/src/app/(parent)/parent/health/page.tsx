@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { EmptyState, ErrorAlert, LoadingSpinner } from "@/components";
 import { toApiError } from "@/lib/axios";
 import {
+  MY_CHILDREN_QUERY_KEY,
   useChildHealth,
   useChildIncidents,
   useMyChildren,
@@ -23,6 +25,7 @@ const TABS: { id: HealthTab; label: string }[] = [
 ];
 
 export default function ParentHealthPage() {
+  const queryClient = useQueryClient();
   const [selectedChildId, setSelectedChildId] = useState<string>("");
   const [activeTab, setActiveTab] = useState<HealthTab>("quickHealth");
 
@@ -50,7 +53,25 @@ export default function ParentHealthPage() {
     [incidentsQuery.data]
   );
 
-  // Thử lại / làm mới: làm mới danh sách con trước, nếu con bị gỡ liên kết thì chuyển con (ui-screens.md §10)
+  // [BUG-04]: Tự động làm mới danh sách con khi nhận lỗi 404 (trẻ vừa bị gỡ liên kết theo ui-screens.md §10)
+  const isHealth404 = healthQuery.error
+    ? toApiError(healthQuery.error).status === 404
+    : false;
+  const isIncident404 = incidentsQuery.error
+    ? toApiError(incidentsQuery.error).status === 404
+    : false;
+  const isChildNotFound = Boolean(activeChildId && (isHealth404 || isIncident404));
+
+  useEffect(() => {
+    if (isChildNotFound) {
+      void queryClient.invalidateQueries({
+        queryKey: MY_CHILDREN_QUERY_KEY,
+        exact: true,
+      });
+    }
+  }, [isChildNotFound, queryClient]);
+
+  // Thao tác làm mới thủ công / Thử lại trên ErrorAlert
   const handleRefresh = async () => {
     const childrenRes = await childrenQuery.refetch();
     if (childrenRes.isSuccess && childrenRes.data) {
@@ -123,12 +144,22 @@ export default function ParentHealthPage() {
 
   return (
     <div className="py-8 space-y-6">
+      {/* Vùng [1]: Tiêu đề trang và Chọn con */}
       <ChildSelectHeader
         childrenList={childrenList}
         selectedChildId={activeChildId}
         onSelectChild={setSelectedChildId}
-        isLoading={healthQuery.isPending}
+        isLoading={healthQuery.isPending || incidentsQuery.isPending}
       />
+
+      {/* [OPT-02]: Cảnh báo lỗi làm mới danh sách con ở chế độ nền */}
+      {!isChildrenInitialError && childrenErrorMessage && (
+        <ErrorAlert
+          title="Không thể làm mới danh sách con"
+          message={childrenErrorMessage}
+          onRetry={handleRefresh}
+        />
+      )}
 
       {/* Cảnh báo lỗi làm mới khi vẫn giữ dữ liệu cũ trong cache theo từng tab */}
       {activeTab !== "incidents" &&
@@ -153,73 +184,94 @@ export default function ParentHealthPage() {
           />
         )}
 
+      {/* Vùng [2]: Lưu ý sức khỏe */}
       {isHealthInitialLoading ? (
-        <LoadingSpinner label="Đang tải thông tin sức khỏe..." />
+        <LoadingSpinner label="Đang tải lưu ý sức khỏe..." />
       ) : isHealthInitialError ? (
         <ErrorAlert
-          title="Không thể tải thông tin sức khỏe"
+          title="Không thể tải lưu ý sức khỏe"
           message={healthErrorMessage ?? ""}
           onRetry={handleRefresh}
         />
       ) : (
-        <>
-          <HealthNotesCard healthNotes={healthData?.healthNotes} />
-
-          <div className="space-y-4">
-            <div
-              className="flex flex-wrap gap-2"
-              role="tablist"
-              aria-label="Các mục sức khỏe của con"
-            >
-              {TABS.map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                      isActive
-                        ? "bg-primary text-on-primary shadow-xs"
-                        : "border border-slate-200/90 bg-surface-container-lowest text-on-surface-variant hover:bg-slate-100 hover:text-on-surface"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {activeTab === "quickHealth" && (
-              <QuickHealthTab items={healthData?.quickHealthStatuses ?? []} />
-            )}
-
-            {activeTab === "growth" && (
-              <GrowthMeasurementTab
-                items={healthData?.growthMeasurements ?? []}
-              />
-            )}
-
-            {activeTab === "incidents" &&
-              (isIncidentInitialLoading ? (
-                <LoadingSpinner label="Đang tải dữ liệu sự cố..." />
-              ) : isIncidentInitialError ? (
-                <ErrorAlert
-                  title="Không thể tải dữ liệu sự cố"
-                  message={incidentErrorMessage ?? ""}
-                  onRetry={handleRefresh}
-                />
-              ) : (
-                <IncidentTab
-                  childId={activeChildId}
-                  items={incidentItems}
-                />
-              ))}
-          </div>
-        </>
+        <HealthNotesCard healthNotes={healthData?.healthNotes} />
       )}
+
+      {/* Vùng [3]: [BUG-02] Tách biệt thanh Tab độc lập để sự cố không bị che khuất khi API sức khỏe lỗi */}
+      <div className="space-y-4">
+        <div
+          className="flex flex-wrap gap-2"
+          role="tablist"
+          aria-label="Các mục sức khỏe của con"
+        >
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveTab(tab.id)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                  isActive
+                    ? "bg-primary text-on-primary shadow-xs"
+                    : "border border-slate-200/90 bg-surface-container-lowest text-on-surface-variant hover:bg-slate-100 hover:text-on-surface"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Tab 1: Sức khỏe hằng ngày */}
+        {activeTab === "quickHealth" &&
+          (isHealthInitialLoading ? (
+            <LoadingSpinner label="Đang tải thông tin sức khỏe..." />
+          ) : isHealthInitialError ? (
+            <ErrorAlert
+              title="Không thể tải thông tin sức khỏe"
+              message={healthErrorMessage ?? ""}
+              onRetry={handleRefresh}
+            />
+          ) : (
+            <QuickHealthTab items={healthData?.quickHealthStatuses ?? []} />
+          ))}
+
+        {/* Tab 2: Chiều cao, cân nặng */}
+        {activeTab === "growth" &&
+          (isHealthInitialLoading ? (
+            <LoadingSpinner label="Đang tải thông tin số đo..." />
+          ) : isHealthInitialError ? (
+            <ErrorAlert
+              title="Không thể tải thông tin số đo"
+              message={healthErrorMessage ?? ""}
+              onRetry={handleRefresh}
+            />
+          ) : (
+            <GrowthMeasurementTab
+              items={healthData?.growthMeasurements ?? []}
+            />
+          ))}
+
+        {/* Tab 3: Sự cố (độc lập hoàn toàn với healthQuery) */}
+        {activeTab === "incidents" &&
+          (isIncidentInitialLoading ? (
+            <LoadingSpinner label="Đang tải dữ liệu sự cố..." />
+          ) : isIncidentInitialError ? (
+            <ErrorAlert
+              title="Không thể tải dữ liệu sự cố"
+              message={incidentErrorMessage ?? ""}
+              onRetry={handleRefresh}
+            />
+          ) : (
+            <IncidentTab
+              childId={activeChildId}
+              items={incidentItems}
+            />
+          ))}
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button, Icons, LoadingSpinner, Modal } from "@/components";
+import { toApiError } from "@/lib/axios";
 import { formatMeasurementDateTime } from "@/lib/datetime";
 import { useChildIncidentDetail } from "../_lib/parent-health-api";
 
@@ -24,6 +25,7 @@ export function IncidentPhotosModal({
   description,
 }: IncidentPhotosModalProps) {
   const [failedPhotoIds, setFailedPhotoIds] = useState<Record<string, boolean>>({});
+  const [retryingPhotoId, setRetryingPhotoId] = useState<string | null>(null);
 
   const detailQuery = useChildIncidentDetail(childId, incidentId);
   const detail = detailQuery.data;
@@ -35,14 +37,26 @@ export function IncidentPhotosModal({
     setFailedPhotoIds((prev) => ({ ...prev, [photoId]: true }));
   };
 
-  const handleRetryPhoto = (photoId: string) => {
-    setFailedPhotoIds((prev) => {
-      const next = { ...prev };
-      delete next[photoId];
-      return next;
-    });
-    void detailQuery.refetch();
+  // [BUG-01]: Tránh Race Condition, chỉ xóa failedPhotoId sau khi refetch thành công URL ký mới
+  const handleRetryPhoto = async (photoId: string) => {
+    setRetryingPhotoId(photoId);
+    try {
+      const res = await detailQuery.refetch();
+      if (res.isSuccess) {
+        setFailedPhotoIds((prev) => {
+          const next = { ...prev };
+          delete next[photoId];
+          return next;
+        });
+      }
+    } finally {
+      setRetryingPhotoId(null);
+    }
   };
+
+  const errorMessage = detailQuery.error
+    ? toApiError(detailQuery.error).message
+    : null;
 
   return (
     <Modal
@@ -68,9 +82,10 @@ export function IncidentPhotosModal({
             <LoadingSpinner label="Đang tải ảnh sự cố..." />
           </div>
         ) : detailQuery.isError ? (
+          /* [BUG-03]: Đọc lỗi qua toApiError, không thay message backend bằng câu viết cứng */
           <div className="p-4 text-center space-y-2 bg-error-container/30 rounded-2xl">
             <p className="text-xs text-error font-medium">
-              Không thể tải chi tiết ảnh sự cố.
+              {errorMessage ?? "Không thể tải chi tiết ảnh sự cố."}
             </p>
             <Button
               type="button"
@@ -100,10 +115,17 @@ export function IncidentPhotosModal({
                       type="button"
                       variant="outline"
                       size="sm"
-                      icon={<Icons.Refresh />}
-                      onClick={() => handleRetryPhoto(photo.id)}
+                      disabled={retryingPhotoId === photo.id}
+                      icon={
+                        retryingPhotoId === photo.id ? (
+                          <Icons.Spinner />
+                        ) : (
+                          <Icons.Refresh />
+                        )
+                      }
+                      onClick={() => void handleRetryPhoto(photo.id)}
                     >
-                      Thử lại
+                      {retryingPhotoId === photo.id ? "Đang tải lại..." : "Thử lại"}
                     </Button>
                   </div>
                 ) : (
