@@ -18,6 +18,11 @@ export interface GrowthMeasurementRequest {
   weightKg: number | null;
 }
 
+// FR-HEALTH-06: Y tế ghi và cập nhật lưu ý sức khỏe của trẻ (UC-HEALTH-05, D39 mục 14)
+export interface UpdateHealthNotesRequest {
+  healthNotes: string | null;
+}
+
 // Tâm trạng: 4 giá trị theo D39 mục 1 & HealthMoods.cs
 export const HEALTH_MOODS = ["Happy", "Normal", "Tired", "Fussy"] as const;
 export type HealthMood = (typeof HEALTH_MOODS)[number];

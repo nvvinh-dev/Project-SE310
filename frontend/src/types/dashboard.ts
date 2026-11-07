@@ -12,3 +12,21 @@ export interface ChildStatisticsResponse {
   totalChildren: number;
   classes: ClassChildCountResponse[];
 }
+
+// presentRate = presentCount / recordCount, từ 0 tới 1; null khi lớp chưa có bản ghi điểm danh nào trong tháng
+export interface ClassAttendanceStatisticsResponse {
+  className: string;
+  presentCount: number;
+  recordCount: number;
+  presentRate: number | null;
+}
+
+// Tháng hiện tại theo giờ Việt Nam (year/month). Số toàn trường cộng từ ba lớp; chỉ bản ghi Present là có mặt (D23)
+export interface AttendanceStatisticsResponse {
+  year: number;
+  month: number;
+  presentCount: number;
+  recordCount: number;
+  presentRate: number | null;
+  classes: ClassAttendanceStatisticsResponse[];
+}
