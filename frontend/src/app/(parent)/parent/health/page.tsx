@@ -94,7 +94,7 @@ export default function ParentHealthPage() {
   if (isChildrenInitialLoading) {
     return (
       <div className="py-8">
-        <LoadingSpinner label="Đang tải danh sách con..." />
+        <LoadingSpinner label="Đang tải danh sách trẻ..." />
       </div>
     );
   }
@@ -103,7 +103,7 @@ export default function ParentHealthPage() {
     return (
       <div className="py-8">
         <ErrorAlert
-          title="Không thể tải danh sách con"
+          title="Không thể tải danh sách trẻ"
           message={childrenErrorMessage ?? ""}
           onRetry={handleRefresh}
         />
@@ -136,10 +136,10 @@ export default function ParentHealthPage() {
         }
       />
 
-      {/* Cảnh báo lỗi làm mới danh sách con ở chế độ nền */}
+      {/* Cảnh báo lỗi làm mới danh sách trẻ ở chế độ nền */}
       {!isChildrenInitialError && childrenErrorMessage && (
         <ErrorAlert
-          title="Không thể làm mới danh sách con"
+          title="Không thể làm mới danh sách trẻ"
           message={childrenErrorMessage}
           onRetry={handleRefresh}
         />
@@ -184,18 +184,20 @@ export default function ParentHealthPage() {
         <div
           className="flex flex-wrap gap-2"
           role="tablist"
-          aria-label="Các mục sức khỏe của con"
+          aria-label="Các mục sức khỏe của trẻ"
         >
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
+                id={`tab-${tab.id}`}
                 type="button"
                 role="tab"
                 aria-selected={isActive}
+                aria-controls={`panel-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                className={`min-h-[44px] inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   isActive
                     ? "bg-primary text-on-primary shadow-xs"
                     : "border border-slate-200/90 bg-surface-container-lowest text-on-surface-variant hover:bg-slate-100 hover:text-on-surface"
@@ -207,39 +209,45 @@ export default function ParentHealthPage() {
           })}
         </div>
 
-        {/* Tab 1: Sức khỏe hằng ngày */}
-        {activeTab === "quickHealth" &&
-          !isHealthInitialLoading &&
-          !isHealthInitialError && (
-            <QuickHealthTab items={healthData?.quickHealthStatuses ?? []} />
-          )}
+        <div
+          role="tabpanel"
+          id={`panel-${activeTab}`}
+          aria-labelledby={`tab-${activeTab}`}
+        >
+          {/* Tab 1: Sức khỏe hằng ngày */}
+          {activeTab === "quickHealth" &&
+            !isHealthInitialLoading &&
+            !isHealthInitialError && (
+              <QuickHealthTab items={healthData?.quickHealthStatuses ?? []} />
+            )}
 
-        {/* Tab 2: Chiều cao, cân nặng */}
-        {activeTab === "growth" &&
-          !isHealthInitialLoading &&
-          !isHealthInitialError && (
-            <GrowthMeasurementTab
-              items={healthData?.growthMeasurements ?? []}
-            />
-          )}
+          {/* Tab 2: Chiều cao, cân nặng */}
+          {activeTab === "growth" &&
+            !isHealthInitialLoading &&
+            !isHealthInitialError && (
+              <GrowthMeasurementTab
+                items={healthData?.growthMeasurements ?? []}
+              />
+            )}
 
-        {/* Tab 3: Sự cố (độc lập hoàn toàn với healthQuery, gắn key để reset modal khi đổi con) */}
-        {activeTab === "incidents" &&
-          (isIncidentInitialLoading ? (
-            <LoadingSpinner label="Đang tải dữ liệu sự cố..." />
-          ) : isIncidentInitialError ? (
-            <ErrorAlert
-              title="Không thể tải dữ liệu sự cố"
-              message={incidentErrorMessage ?? ""}
-              onRetry={handleRefresh}
-            />
-          ) : (
-            <IncidentTab
-              key={activeChildId}
-              childId={activeChildId}
-              items={incidentItems}
-            />
-          ))}
+          {/* Tab 3: Sự cố (độc lập hoàn toàn với healthQuery, gắn key để reset modal khi đổi con) */}
+          {activeTab === "incidents" &&
+            (isIncidentInitialLoading ? (
+              <LoadingSpinner label="Đang tải dữ liệu sự cố..." />
+            ) : isIncidentInitialError ? (
+              <ErrorAlert
+                title="Không thể tải dữ liệu sự cố"
+                message={incidentErrorMessage ?? ""}
+                onRetry={handleRefresh}
+              />
+            ) : (
+              <IncidentTab
+                key={activeChildId}
+                childId={activeChildId}
+                items={incidentItems}
+              />
+            ))}
+        </div>
       </div>
     </div>
   );

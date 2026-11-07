@@ -20,7 +20,7 @@ export function IncidentTab({ childId, items }: IncidentTabProps) {
     return (
       <EmptyState
         title="Chưa có sự cố"
-        message="Chưa có ghi nhận sự cố nào của con."
+        message="Chưa có ghi nhận sự cố nào của trẻ."
       />
     );
   }

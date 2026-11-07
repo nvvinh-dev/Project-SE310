@@ -18,7 +18,7 @@ export function QuickHealthTab({ items }: QuickHealthTabProps) {
     return (
       <EmptyState
         title="Chưa có bản ghi sức khỏe"
-        message="Chưa có bản ghi sức khỏe hằng ngày nào của con."
+        message="Chưa có bản ghi sức khỏe hằng ngày nào của trẻ."
       />
     );
   }

@@ -28,7 +28,7 @@ export function ChildSelectHeader({
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-on-surface">
-          Sức khỏe và sự cố của con
+          Sức khỏe và sự cố của trẻ
         </h1>
         {singleChild && (
           <p className="text-sm text-on-surface-variant">
@@ -40,11 +40,11 @@ export function ChildSelectHeader({
         )}
       </div>
 
-      {/* ui-screens.md §10: Một con thì chọn sẵn và không cần ô chọn; nhiều con thì ô chọn ở đầu màn hình */}
+      {/* ui-screens.md §10: Một trẻ thì chọn sẵn và không cần ô chọn; nhiều trẻ thì ô chọn ở đầu màn hình */}
       {childrenList.length > 1 && (
         <div className="w-full sm:w-64">
           <Select
-            label="Chọn con"
+            label="Chọn trẻ"
             value={selectedChildId}
             disabled={isLoading}
             onChange={(e) => onSelectChild(e.target.value)}

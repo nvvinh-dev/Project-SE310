@@ -20,7 +20,7 @@ export function GrowthMeasurementTab({ items }: GrowthMeasurementTabProps) {
     return (
       <EmptyState
         title="Chưa có số đo"
-        message="Chưa có dữ liệu số đo chiều cao, cân nặng nào của con."
+        message="Chưa có dữ liệu số đo chiều cao, cân nặng nào của trẻ."
       />
     );
   }
