@@ -97,13 +97,13 @@ export function ConfirmDialog({
           {message}
         </div>
 
-        {/* Nút hành động */}
+        {/* Nút hành động. Trên điện thoại cao ít nhất 44px để bấm bằng ngón tay (design-system.md §5, Button) */}
         <div className="flex w-full items-center justify-center gap-3">
           <Button
             variant="outline"
             onClick={handleClose}
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 min-h-11 sm:min-h-0"
           >
             {cancelText}
           </Button>
@@ -112,7 +112,7 @@ export function ConfirmDialog({
             variant={config.buttonVariant}
             onClick={handleConfirm}
             isLoading={isLoading}
-            className="flex-1"
+            className="flex-1 min-h-11 sm:min-h-0"
           >
             {confirmText}
           </Button>
