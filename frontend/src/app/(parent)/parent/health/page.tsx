@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { EmptyState, ErrorAlert, LoadingSpinner } from "@/components";
 import { toApiError } from "@/lib/axios";
-import { useChildHealth, useChildIncidents, useMyChildren } from "./_lib/parent-health-api";
+import {
+  useChildHealth,
+  useChildIncidents,
+  useMyChildren,
+} from "./_lib/parent-health-api";
 import { ChildSelectHeader } from "./_components/ChildSelectHeader";
 import { HealthNotesCard } from "./_components/HealthNotesCard";
 import { QuickHealthTab } from "./_components/QuickHealthTab";
@@ -24,7 +28,10 @@ export default function ParentHealthPage() {
 
   // 1. Tải danh sách con liên kết (FR-ATT-02, D45)
   const childrenQuery = useMyChildren();
-  const childrenList = useMemo(() => childrenQuery.data ?? [], [childrenQuery.data]);
+  const childrenList = useMemo(
+    () => childrenQuery.data ?? [],
+    [childrenQuery.data]
+  );
 
   const activeChildId = useMemo(() => {
     if (selectedChildId && childrenList.some((c) => c.id === selectedChildId)) {
@@ -38,20 +45,12 @@ export default function ParentHealthPage() {
   const incidentsQuery = useChildIncidents(activeChildId);
 
   const healthData = healthQuery.data;
-  const incidentItems = useMemo(() => incidentsQuery.data ?? [], [incidentsQuery.data]);
+  const incidentItems = useMemo(
+    () => incidentsQuery.data ?? [],
+    [incidentsQuery.data]
+  );
 
-  // Lỗi 2.3: Khi gặp lỗi 404 (trẻ bị gỡ liên kết) -> tự làm mới danh sách con
-  useEffect(() => {
-    if (healthQuery.isError) {
-      void childrenQuery.refetch().then((res) => {
-        if (res.data && activeChildId && !res.data.some((c) => c.id === activeChildId)) {
-          setSelectedChildId(res.data[0]?.id ?? "");
-        }
-      });
-    }
-  }, [healthQuery.isError, childrenQuery, activeChildId]);
-
-  // Lỗi 2.2: Không xóa con đang chọn nếu refetch thất bại do mất mạng
+  // Thử lại / làm mới: làm mới danh sách con trước, nếu con bị gỡ liên kết thì chuyển con (ui-screens.md §10)
   const handleRefresh = async () => {
     const childrenRes = await childrenQuery.refetch();
     if (childrenRes.isSuccess && childrenRes.data) {
@@ -67,8 +66,10 @@ export default function ParentHealthPage() {
     }
   };
 
-  const isChildrenInitialLoading = childrenQuery.isPending && childrenQuery.data === undefined;
-  const isChildrenInitialError = childrenQuery.isError && childrenQuery.data === undefined;
+  const isChildrenInitialLoading =
+    childrenQuery.isPending && childrenQuery.data === undefined;
+  const isChildrenInitialError =
+    childrenQuery.isError && childrenQuery.data === undefined;
   const childrenErrorMessage = childrenQuery.error
     ? toApiError(childrenQuery.error).message
     : null;
@@ -81,8 +82,10 @@ export default function ParentHealthPage() {
     : null;
 
   const hasIncidentData = incidentsQuery.data !== undefined;
-  const isIncidentInitialLoading = incidentsQuery.isPending && !hasIncidentData;
-  const isIncidentInitialError = incidentsQuery.isError && !hasIncidentData;
+  const isIncidentInitialLoading =
+    incidentsQuery.isPending && !hasIncidentData;
+  const isIncidentInitialError =
+    incidentsQuery.isError && !hasIncidentData;
   const incidentErrorMessage = incidentsQuery.error
     ? toApiError(incidentsQuery.error).message
     : null;
@@ -127,22 +130,28 @@ export default function ParentHealthPage() {
         isLoading={healthQuery.isPending}
       />
 
-      {/* Cảnh báo lỗi làm mới khi vẫn giữ dữ liệu cũ trong cache */}
-      {hasHealthData && healthQuery.isError && healthErrorMessage && (
-        <ErrorAlert
-          title="Không thể làm mới dữ liệu sức khỏe"
-          message={healthErrorMessage}
-          onRetry={handleRefresh}
-        />
-      )}
+      {/* Cảnh báo lỗi làm mới khi vẫn giữ dữ liệu cũ trong cache theo từng tab */}
+      {activeTab !== "incidents" &&
+        hasHealthData &&
+        healthQuery.isError &&
+        healthErrorMessage && (
+          <ErrorAlert
+            title="Không thể làm mới dữ liệu sức khỏe"
+            message={healthErrorMessage}
+            onRetry={handleRefresh}
+          />
+        )}
 
-      {hasIncidentData && incidentsQuery.isError && incidentErrorMessage && activeTab === "incidents" && (
-        <ErrorAlert
-          title="Không thể làm mới dữ liệu sự cố"
-          message={incidentErrorMessage}
-          onRetry={() => void incidentsQuery.refetch()}
-        />
-      )}
+      {activeTab === "incidents" &&
+        hasIncidentData &&
+        incidentsQuery.isError &&
+        incidentErrorMessage && (
+          <ErrorAlert
+            title="Không thể làm mới dữ liệu sự cố"
+            message={incidentErrorMessage}
+            onRetry={handleRefresh}
+          />
+        )}
 
       {isHealthInitialLoading ? (
         <LoadingSpinner label="Đang tải thông tin sức khỏe..." />
@@ -157,7 +166,11 @@ export default function ParentHealthPage() {
           <HealthNotesCard healthNotes={healthData?.healthNotes} />
 
           <div className="space-y-4">
-            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Các mục sức khỏe của con">
+            <div
+              className="flex flex-wrap gap-2"
+              role="tablist"
+              aria-label="Các mục sức khỏe của con"
+            >
               {TABS.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -184,25 +197,26 @@ export default function ParentHealthPage() {
             )}
 
             {activeTab === "growth" && (
-              <GrowthMeasurementTab items={healthData?.growthMeasurements ?? []} />
+              <GrowthMeasurementTab
+                items={healthData?.growthMeasurements ?? []}
+              />
             )}
 
-            {activeTab === "incidents" && (
-              isIncidentInitialLoading ? (
+            {activeTab === "incidents" &&
+              (isIncidentInitialLoading ? (
                 <LoadingSpinner label="Đang tải dữ liệu sự cố..." />
               ) : isIncidentInitialError ? (
                 <ErrorAlert
                   title="Không thể tải dữ liệu sự cố"
                   message={incidentErrorMessage ?? ""}
-                  onRetry={() => void incidentsQuery.refetch()}
+                  onRetry={handleRefresh}
                 />
               ) : (
                 <IncidentTab
+                  childId={activeChildId}
                   items={incidentItems}
-                  onRefreshPhotos={() => void incidentsQuery.refetch()}
                 />
-              )
-            )}
+              ))}
           </div>
         </>
       )}

@@ -1,22 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { EmptyState } from "@/components";
+import { EmptyState, Icons } from "@/components";
 import { formatMeasurementDateTime } from "@/lib/datetime";
-import type { IncidentResponse } from "@/types/incident";
+import type { ChildIncidentSummaryResponse } from "@/types/incident";
 import { IncidentPhotosModal } from "./IncidentPhotosModal";
 
 interface IncidentTabProps {
-  items: IncidentResponse[];
-  onRefreshPhotos?: () => void;
+  childId: string;
+  items: ChildIncidentSummaryResponse[];
 }
 
-// SCR-PAR-03 Vùng [3]: Tab Sự cố
-export function IncidentTab({ items, onRefreshPhotos }: IncidentTabProps) {
-  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
-
-  // Tìm sự cố đang xem từ items hiện tại để tự động nhận URL mới khi refetch (Lỗi 2.1)
-  const selectedIncident = items.find((i) => i.id === selectedIncidentId) ?? null;
+// SCR-PAR-03 Vùng [3]: Tab Sự cố (FR-INCIDENT-03, D39 mục 10)
+export function IncidentTab({ childId, items }: IncidentTabProps) {
+  const [selectedIncident, setSelectedIncident] =
+    useState<ChildIncidentSummaryResponse | null>(null);
 
   if (items.length === 0) {
     return (
@@ -50,24 +48,22 @@ export function IncidentTab({ items, onRefreshPhotos }: IncidentTabProps) {
               </div>
 
               {/* Wireframe: [ảnh][ảnh] */}
-              {item.photos.length > 0 && (
+              {item.photoCount > 0 && (
                 <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-start">
-                  {item.photos.map((photo, pIdx) => (
-                    <button
-                      key={photo.id}
-                      type="button"
-                      onClick={() => setSelectedIncidentId(item.id)}
-                      className="rounded-lg overflow-hidden border border-slate-200 hover:ring-2 hover:ring-primary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                      title="Xem ảnh sự cố"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photo.url}
-                        alt={`Ảnh sự cố ${pIdx + 1}`}
-                        className="h-10 w-10 object-cover bg-slate-100"
-                      />
-                    </button>
-                  ))}
+                  {Array.from({ length: Math.min(item.photoCount, 5) }).map(
+                    (_, pIdx) => (
+                      <button
+                        key={pIdx}
+                        type="button"
+                        onClick={() => setSelectedIncident(item)}
+                        className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-slate-100 text-on-surface-variant hover:border-primary hover:text-primary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        title={`Xem ảnh sự cố (${item.photoCount} ảnh)`}
+                        aria-label={`Xem ảnh sự cố ${pIdx + 1}`}
+                      >
+                        <Icons.Camera />
+                      </button>
+                    )
+                  )}
                 </div>
               )}
             </div>
@@ -76,11 +72,13 @@ export function IncidentTab({ items, onRefreshPhotos }: IncidentTabProps) {
       </div>
 
       <IncidentPhotosModal
-        key={selectedIncidentId ?? "none"}
+        key={selectedIncident?.id ?? "none"}
         isOpen={Boolean(selectedIncident)}
-        onClose={() => setSelectedIncidentId(null)}
-        incident={selectedIncident}
-        onRefreshPhotos={onRefreshPhotos}
+        onClose={() => setSelectedIncident(null)}
+        childId={childId}
+        incidentId={selectedIncident?.id ?? null}
+        occurredAtUtc={selectedIncident?.occurredAtUtc}
+        description={selectedIncident?.description}
       />
     </>
   );
