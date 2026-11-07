@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState, ErrorAlert, LoadingSpinner } from "@/components";
 import { toApiError } from "@/lib/axios";
 import { useMyChildren, useChildAttendances } from "./_lib/parent-attendance-api";
@@ -57,6 +57,17 @@ export default function ParentAttendancePage() {
     }
   };
 
+  // Khi trẻ đang xem bị gỡ liên kết (API trả 404), tự động tải lại danh sách con để đồng bộ dropdown
+  const handled404ChildIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const err = attendancesQuery.error ? toApiError(attendancesQuery.error) : null;
+    if (err?.status === 404 && activeChildId && handled404ChildIdRef.current !== activeChildId) {
+      handled404ChildIdRef.current = activeChildId;
+      void childrenQuery.refetch();
+    }
+  }, [attendancesQuery.error, activeChildId, childrenQuery]);
+
   // Phân trang phía client (frontend-conventions.md §3.4)
   const totalItems = rawAttendances.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
@@ -86,7 +97,6 @@ export default function ParentAttendancePage() {
         childrenList={childrenList}
         selectedChildId={activeChildId}
         onSelectChild={handleSelectChild}
-        isLoading={attendancesQuery.isPending}
       />
 
       {/* Cảnh báo lỗi tải lại danh sách con (khi đã có dữ liệu cũ trong cache) */}
