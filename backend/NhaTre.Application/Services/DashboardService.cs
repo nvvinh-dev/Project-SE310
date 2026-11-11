@@ -1,5 +1,6 @@
 using NhaTre.Application.Common;
 using NhaTre.Application.DTOs.Dashboard;
+using NhaTre.Application.DTOs.Tuition;
 using NhaTre.Application.Interfaces;
 
 namespace NhaTre.Application.Services;
@@ -9,10 +10,12 @@ namespace NhaTre.Application.Services;
 public class DashboardService : IDashboardService
 {
     private readonly IDashboardRepository _dashboardRepository;
+    private readonly ITuitionService _tuitionService;
 
-    public DashboardService(IDashboardRepository dashboardRepository)
+    public DashboardService(IDashboardRepository dashboardRepository, ITuitionService tuitionService)
     {
         _dashboardRepository = dashboardRepository;
+        _tuitionService = tuitionService;
     }
 
     // FR-DASH-02: số trẻ là số hiện tại, không có lịch sử phân lớp để tính theo tháng. Tổng lấy bằng
@@ -41,6 +44,11 @@ public class DashboardService : IDashboardService
         return new AttendanceStatisticsResponse(monthStart.Year, monthStart.Month, presentCount, recordCount,
             PresentRate(presentCount, recordCount), classes);
     }
+
+    // FR-DASH-04, D39 mục 12: lấy đúng báo cáo doanh thu của Kế toán (FR-TUITION-03), không tự tính lại,
+    // để số trên dashboard luôn khớp với GET /api/revenue-reports/current (BR-TUITION-08)
+    public Task<RevenueReportResponse> GetRevenueStatisticsAsync()
+        => _tuitionService.GetRevenueReportAsync();
 
     // Chưa có bản ghi thì không có tỷ lệ, để giao diện hiện "—" thay vì 0% (ui-screens.md SCR-ADM-01)
     private static double? PresentRate(int presentCount, int recordCount)

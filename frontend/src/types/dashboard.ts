@@ -30,3 +30,16 @@ export interface AttendanceStatisticsResponse {
   presentRate: number | null;
   classes: ClassAttendanceStatisticsResponse[];
 }
+
+// Cùng số liệu với báo cáo doanh thu của Kế toán (RevenueReportResponse ở backend). Kỳ là tháng hiện tại
+// theo giờ Việt Nam (year/month); periodEndUtc là 00:00 ngày 01 tháng sau, không dùng làm "đến ngày".
+// unpaidInvoiceCount đếm mọi hóa đơn còn chưa thanh toán, không lọc theo tháng (D39 mục 12)
+export interface RevenueStatisticsResponse {
+  year: number;
+  month: number;
+  periodStartUtc: string;
+  periodEndUtc: string;
+  generatedAtUtc: string;
+  totalCollected: number;
+  unpaidInvoiceCount: number;
+}
