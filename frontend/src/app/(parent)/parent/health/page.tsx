@@ -25,6 +25,7 @@ const TABS: { id: HealthTab; label: string }[] = [
 export default function ParentHealthPage() {
   const [selectedChildId, setSelectedChildId] = useState<string>("");
   const [activeTab, setActiveTab] = useState<HealthTab>("quickHealth");
+  const [childErrorMessage, setChildErrorMessage] = useState<string | null>(null);
 
   // 1. Tải danh sách con liên kết (FR-ATT-02, D45)
   const childrenQuery = useMyChildren();
@@ -53,6 +54,7 @@ export default function ParentHealthPage() {
   // Thao tác làm mới thủ công / Thử lại trên ErrorAlert: tải lại danh sách con trước,
   // nếu con bị gỡ liên kết (404) thì chuyển sang con hợp lệ khác (ui-screens.md §10, frontend-conventions.md §5)
   const handleRefresh = async () => {
+    setChildErrorMessage(null);
     const childrenRes = await childrenQuery.refetch();
     if (childrenRes.isSuccess && childrenRes.data) {
       const latestChildren = childrenRes.data;
@@ -67,19 +69,29 @@ export default function ParentHealthPage() {
     }
   };
 
-  // Khi trẻ đang chọn bị gỡ liên kết (API trả 404), tự động tải lại danh sách con để đồng bộ dropdown
-  const handled404ChildIdRef = useRef<string | null>(null);
+  // Khi query của trẻ gặp lỗi (ví dụ trẻ bị gỡ liên kết hoặc lỗi hệ thống),
+  // tự động tải lại danh sách con để đồng bộ và lưu thông báo lỗi để hiển thị kể cả sau khi chuyển trẻ
+  // (frontend-conventions.md §5: không rẽ nhánh theo mã HTTP, ui-screens.md §10: hiện message và tải lại danh sách con)
+  const handledErrorChildIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const healthErr = healthQuery.error ? toApiError(healthQuery.error) : null;
-    const incidentErr = incidentsQuery.error ? toApiError(incidentsQuery.error) : null;
-    const is404 = healthErr?.status === 404 || incidentErr?.status === 404;
+    const hasError = healthQuery.isError || incidentsQuery.isError;
 
-    if (is404 && activeChildId && handled404ChildIdRef.current !== activeChildId) {
-      handled404ChildIdRef.current = activeChildId;
-      void childrenQuery.refetch();
+    if (hasError && activeChildId && handledErrorChildIdRef.current !== activeChildId) {
+      handledErrorChildIdRef.current = activeChildId;
+      const err = healthQuery.error
+        ? toApiError(healthQuery.error)
+        : incidentsQuery.error
+        ? toApiError(incidentsQuery.error)
+        : null;
+      const msg = err?.message ?? null;
+      void childrenQuery.refetch().then(() => {
+        if (msg) {
+          setChildErrorMessage(msg);
+        }
+      });
     }
-  }, [healthQuery.error, incidentsQuery.error, activeChildId, childrenQuery]);
+  }, [healthQuery.isError, healthQuery.error, incidentsQuery.isError, incidentsQuery.error, activeChildId, childrenQuery]);
 
   const isChildrenInitialLoading =
     childrenQuery.isPending && childrenQuery.data === undefined;
@@ -127,7 +139,14 @@ export default function ParentHealthPage() {
 
   if (childrenList.length === 0) {
     return (
-      <div className="py-8">
+      <div className="py-8 space-y-6">
+        {childErrorMessage && (
+          <ErrorAlert
+            title="Thông báo"
+            message={childErrorMessage}
+            onRetry={handleRefresh}
+          />
+        )}
         <EmptyState
           title="Chưa liên kết trẻ"
           message="Tài khoản chưa được liên kết với trẻ nào. Liên hệ văn phòng nhà trường."
@@ -143,8 +162,20 @@ export default function ParentHealthPage() {
         title="Sức khỏe và sự cố của con"
         childrenList={childrenList}
         selectedChildId={activeChildId}
-        onSelectChild={setSelectedChildId}
+        onSelectChild={(childId) => {
+          setSelectedChildId(childId);
+          setChildErrorMessage(null);
+        }}
       />
+
+      {/* Thông báo lỗi khi tải dữ liệu của trẻ (kể cả sau khi tự động chuyển sang trẻ khác) */}
+      {childErrorMessage && (
+        <ErrorAlert
+          title="Thông báo"
+          message={childErrorMessage}
+          onRetry={handleRefresh}
+        />
+      )}
 
       {/* Cảnh báo lỗi làm mới danh sách trẻ ở chế độ nền */}
       {!isChildrenInitialError && childrenErrorMessage && (
