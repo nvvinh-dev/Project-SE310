@@ -28,6 +28,7 @@ import { useClassPlacements, useClasses } from "./_lib/classes-api";
 import { formatDateOnly } from "./_lib/class-rules";
 import { PlacementClassBadge } from "./_components/ClassBadges";
 import { ClassCards } from "./_components/ClassCards";
+import { AssistantTeachersModal } from "./_components/AssistantTeachersModal";
 import { AssignClassModal, RemoveFromClassDialog } from "./_components/ClassPlacementModal";
 import { HomeroomTeacherModal, RemoveHomeroomTeacherDialog } from "./_components/HomeroomTeacherModal";
 
@@ -48,6 +49,7 @@ const EMPTY_FILTERS: FilterValues = { search: "", classFilter: "" };
 type DialogState =
   | { type: "assignTeacher"; cls: ClassResponse }
   | { type: "removeTeacher"; cls: ClassResponse }
+  | { type: "assistantTeachers"; cls: ClassResponse }
   | { type: "assignClass"; placement: ClassPlacementResponse }
   | { type: "removeFromClass"; placement: ClassPlacementResponse }
   | null;
@@ -131,9 +133,9 @@ export default function ClassesPage() {
   return (
     <div className="py-8 space-y-6">
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-on-surface">Lớp và giáo viên chủ nhiệm</h1>
+        <h1 className="text-2xl font-bold text-on-surface">Lớp và giáo viên</h1>
         <p className="text-sm text-on-surface-variant">
-          Gán giáo viên chủ nhiệm cho ba lớp và xếp, chuyển, gỡ trẻ khỏi lớp theo nhóm tuổi.
+          Gán giáo viên chủ nhiệm và giáo viên phụ cho ba lớp, và xếp, chuyển, gỡ trẻ khỏi lớp theo nhóm tuổi.
         </p>
       </div>
 
@@ -166,6 +168,7 @@ export default function ClassesPage() {
         <ClassCards
           onAssignTeacher={(cls) => setDialog({ type: "assignTeacher", cls })}
           onRemoveTeacher={(cls) => setDialog({ type: "removeTeacher", cls })}
+          onEditAssistants={(cls) => setDialog({ type: "assistantTeachers", cls })}
         />
       </section>
 
@@ -311,6 +314,14 @@ export default function ClassesPage() {
           cls={dialog.cls}
           onClose={closeDialog}
           onSuccess={(cls) => finish(`Đã bỏ giáo viên chủ nhiệm của lớp ${cls.name}.`)}
+        />
+      )}
+
+      {dialog?.type === "assistantTeachers" && (
+        <AssistantTeachersModal
+          cls={dialog.cls}
+          onClose={closeDialog}
+          onSuccess={(cls) => finish(`Đã cập nhật giáo viên phụ lớp ${cls.name}.`)}
         />
       )}
 

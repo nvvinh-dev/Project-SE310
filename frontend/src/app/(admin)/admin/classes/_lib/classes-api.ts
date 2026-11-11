@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
 import type { ApiResponse } from "@/types/auth";
 import type {
+  AssignAssistantTeachersRequest,
   AssignClassRequest,
   AssignHomeroomTeacherRequest,
   ClassPlacementResponse,
@@ -52,6 +53,25 @@ export function useAssignHomeroomTeacher() {
   return useMutation({
     mutationFn: async ({ classId, body }: { classId: string; body: AssignHomeroomTeacherRequest }) =>
       unwrap(await apiClient.put<ApiResponse<ClassResponse>>(`/api/classes/${classId}/homeroom-teacher`, body)),
+    onSuccess: (updated) =>
+      queryClient.setQueryData<ClassResponse[]>(CLASSES_QUERY_KEY, (classes) =>
+        classes?.map((cls) => (cls.id === updated.id ? updated : cls))
+      ),
+    onError: () => queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: CLASSES_QUERY_KEY }),
+  });
+}
+
+// Thay toàn bộ danh sách giáo viên phụ của một lớp (FR-CLASS-02). Thành công thì thay ngay lớp đó bằng
+// bản ghi API trả về. Xong thì tải lại danh sách lớp, kể cả khi lỗi: 409 thường do Admin khác vừa gán
+// một người trong danh sách làm giáo viên chủ nhiệm của lớp. Lỗi thì tải lại cả danh sách tài khoản, vì
+// tài khoản được chọn có thể vừa bị vô hiệu hóa hay đổi vai trò
+export function useAssignAssistantTeachers() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ classId, body }: { classId: string; body: AssignAssistantTeachersRequest }) =>
+      unwrap(await apiClient.put<ApiResponse<ClassResponse>>(`/api/classes/${classId}/assistant-teachers`, body)),
     onSuccess: (updated) =>
       queryClient.setQueryData<ClassResponse[]>(CLASSES_QUERY_KEY, (classes) =>
         classes?.map((cls) => (cls.id === updated.id ? updated : cls))

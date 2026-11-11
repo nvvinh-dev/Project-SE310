@@ -40,14 +40,17 @@ export function HomeroomTeacherModal({ cls, onClose, onSuccess }: HomeroomTeache
 
   const teachers = (usersQuery.data ?? []).filter((user) => user.role === "Teacher" && user.isActive);
 
-  // Giáo viên chủ nhiệm hiện tại bị khóa trong danh sách: chọn lại đúng người đó backend trả 409.
-  // Kèm email để phân biệt hai giáo viên trùng họ tên
+  // Giáo viên chủ nhiệm hiện tại và giáo viên phụ của chính lớp này bị khóa trong danh sách: chọn một
+  // trong hai backend đều trả 409 (BR-CLASS-04). Kèm email để phân biệt hai giáo viên trùng họ tên
   const teacherOptions = teachers.map((teacher) => {
-    const isCurrent = currentTeacher?.userId.toLowerCase() === teacher.id.toLowerCase();
+    const teacherId = teacher.id.toLowerCase();
+    const isCurrent = currentTeacher?.userId.toLowerCase() === teacherId;
+    const isAssistant = cls.assistantTeachers.some((assistant) => assistant.userId.toLowerCase() === teacherId);
+    const note = isCurrent ? " (hiện tại)" : isAssistant ? " (giáo viên phụ của lớp này)" : "";
     return {
       value: teacher.id,
-      label: `${teacher.fullName} · ${teacher.email}${isCurrent ? " (hiện tại)" : ""}`,
-      disabled: isCurrent,
+      label: `${teacher.fullName} · ${teacher.email}${note}`,
+      disabled: isCurrent || isAssistant,
     };
   });
 
@@ -111,7 +114,7 @@ export function HomeroomTeacherModal({ cls, onClose, onSuccess }: HomeroomTeache
               autoFocus
               placeholder="Chọn giáo viên"
               options={teacherOptions}
-              helperText="Giáo viên phải có hồ sơ do Kế toán lập trước khi được phân công lớp."
+              helperText="Giáo viên phải có hồ sơ do Kế toán lập trước khi được phân công lớp. Giáo viên phụ của lớp này phải được gỡ khỏi giáo viên phụ trước khi làm chủ nhiệm."
               error={errors.teacherUserId?.message}
               {...register("teacherUserId", teacherUserIdRules)}
             />

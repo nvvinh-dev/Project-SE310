@@ -10,10 +10,11 @@ import { MissingBadge } from "./ClassBadges";
 interface ClassCardsProps {
   onAssignTeacher: (cls: ClassResponse) => void;
   onRemoveTeacher: (cls: ClassResponse) => void;
+  onEditAssistants: (cls: ClassResponse) => void;
 }
 
-// Vùng 1: ba lớp cố định kèm giáo viên chủ nhiệm. Không có nút tạo hay xóa lớp (D39 mục 3)
-export function ClassCards({ onAssignTeacher, onRemoveTeacher }: ClassCardsProps) {
+// Vùng 1: ba lớp cố định kèm giáo viên chủ nhiệm và giáo viên phụ. Không có nút tạo hay xóa lớp (D39 mục 3)
+export function ClassCards({ onAssignTeacher, onRemoveTeacher, onEditAssistants }: ClassCardsProps) {
   const classesQuery = useClasses();
   const classes = classesQuery.data;
   const loadError = classesQuery.isError ? toApiError(classesQuery.error).message : null;
@@ -33,7 +34,7 @@ export function ClassCards({ onAssignTeacher, onRemoveTeacher }: ClassCardsProps
       {loadError && <ErrorAlert title="Không tải lại được danh sách lớp" message={loadError} onRetry={retry} />}
 
       {classes.length === 0 ? (
-        <EmptyState title="Chưa có lớp nào" message="Hệ thống chưa có lớp học nào để gán giáo viên chủ nhiệm." />
+        <EmptyState title="Chưa có lớp nào" message="Hệ thống chưa có lớp học nào để phân công giáo viên." />
       ) : (
         <ul className="grid gap-3 md:grid-cols-3">
           {classes.map((cls) => (
@@ -42,6 +43,7 @@ export function ClassCards({ onAssignTeacher, onRemoveTeacher }: ClassCardsProps
               cls={cls}
               onAssignTeacher={onAssignTeacher}
               onRemoveTeacher={onRemoveTeacher}
+              onEditAssistants={onEditAssistants}
             />
           ))}
         </ul>
@@ -50,7 +52,12 @@ export function ClassCards({ onAssignTeacher, onRemoveTeacher }: ClassCardsProps
   );
 }
 
-function ClassCard({ cls, onAssignTeacher, onRemoveTeacher }: { cls: ClassResponse } & ClassCardsProps) {
+function ClassCard({
+  cls,
+  onAssignTeacher,
+  onRemoveTeacher,
+  onEditAssistants,
+}: { cls: ClassResponse } & ClassCardsProps) {
   const ageRange = formatAgeRange(cls);
   const teacher = cls.homeroomTeacher;
 
@@ -65,6 +72,22 @@ function ClassCard({ cls, onAssignTeacher, onRemoveTeacher }: { cls: ClassRespon
         <p className="text-xs text-on-surface-variant">Giáo viên chủ nhiệm</p>
         {teacher ? (
           <p className="text-sm font-semibold text-on-surface break-words">{teacher.fullName}</p>
+        ) : (
+          <MissingBadge label="Chưa có" />
+        )}
+      </div>
+
+      {/* Theo thứ tự backend trả (SCR-ADM-03 vùng 1) */}
+      <div className="space-y-1">
+        <p className="text-xs text-on-surface-variant">Giáo viên phụ</p>
+        {cls.assistantTeachers.length > 0 ? (
+          <ul className="space-y-0.5">
+            {cls.assistantTeachers.map((assistant) => (
+              <li key={assistant.userId} className="text-sm font-semibold text-on-surface break-words">
+                {assistant.fullName}
+              </li>
+            ))}
+          </ul>
         ) : (
           <MissingBadge label="Chưa có" />
         )}
@@ -86,6 +109,9 @@ function ClassCard({ cls, onAssignTeacher, onRemoveTeacher }: { cls: ClassRespon
             Gán GVCN<span className="sr-only"> lớp {cls.name}</span>
           </Button>
         )}
+        <Button size="sm" variant="outline" onClick={() => onEditAssistants(cls)} className="min-h-11 sm:min-h-0">
+          Sửa giáo viên phụ<span className="sr-only"> lớp {cls.name}</span>
+        </Button>
       </div>
     </li>
   );
