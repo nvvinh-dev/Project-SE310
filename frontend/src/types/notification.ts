@@ -13,3 +13,14 @@ export interface NotificationPageResponse {
   pageSize: number;
   totalCount: number;
 }
+
+// FR-NOTI-03: Kế toán phát thông báo nghỉ học. Chỉ gửi phần nội dung; backend ghép tiền tố
+// "Nhà trường thông báo nghỉ học: " và gửi tới mọi phụ huynh đang hoạt động (D25, D39 mục 6)
+export interface SchoolClosureRequest {
+  content: string;
+}
+
+// Số phụ huynh đã nhận thông báo
+export interface SchoolClosureResponse {
+  recipientCount: number;
+}
