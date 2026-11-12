@@ -85,8 +85,10 @@ export default function ParentHealthPage() {
         ? toApiError(incidentsQuery.error)
         : null;
       const msg = err?.message ?? null;
-      void childrenQuery.refetch().then(() => {
-        if (msg) {
+      void childrenQuery.refetch().then((res) => {
+        const latestChildren = res.data ?? [];
+        // Chỉ lưu message khi trẻ đang xem không còn trong danh sách sau khi tải lại (ví dụ bị gỡ liên kết theo ui-screens.md §10)
+        if (msg && !latestChildren.some((c) => c.id === activeChildId)) {
           setChildErrorMessage(msg);
         }
       });
