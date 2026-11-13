@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState, ErrorAlert, LoadingSpinner } from "@/components";
 import { toApiError } from "@/lib/axios";
 import { useMyChildren, useChildAttendances } from "./_lib/parent-attendance-api";
@@ -13,6 +13,7 @@ const PAGE_SIZE = 20;
 export default function ParentAttendancePage() {
   const [selectedChildId, setSelectedChildId] = useState<string>("");
   const [page, setPage] = useState<number>(1);
+  const [childErrorMessage, setChildErrorMessage] = useState<string | null>(null);
 
   // 1. Tải danh sách con của phụ huynh đang đăng nhập (FR-ATT-02, D45)
   const childrenQuery = useMyChildren();
@@ -28,6 +29,7 @@ export default function ParentAttendancePage() {
 
   const handleSelectChild = (childId: string) => {
     setSelectedChildId(childId);
+    setChildErrorMessage(null);
     setPage(1);
   };
 
@@ -42,6 +44,7 @@ export default function ParentAttendancePage() {
   // Trẻ đang xem vừa bị gỡ liên kết thì chuyển sang trẻ khác hoặc về rỗng, thay vì gửi lại đúng request sẽ lại 404.
   // Không rẽ nhánh theo mã lỗi.
   const handleRefresh = async () => {
+    setChildErrorMessage(null);
     const childrenResult = await childrenQuery.refetch();
     const latestChildren = childrenResult.data ?? [];
     if (
@@ -56,6 +59,26 @@ export default function ParentAttendancePage() {
       void attendancesQuery.refetch();
     }
   };
+
+  // Khi query điểm danh của trẻ gặp lỗi (ví dụ trẻ bị gỡ liên kết hoặc lỗi hệ thống),
+  // tự động tải lại danh sách con để đồng bộ và lưu thông báo lỗi để hiển thị kể cả sau khi chuyển trẻ
+  // (frontend-conventions.md §5: không rẽ nhánh theo mã HTTP, ui-screens.md §10: hiện message và tải lại danh sách con)
+  const handledErrorChildIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (attendancesQuery.isError && activeChildId && handledErrorChildIdRef.current !== activeChildId) {
+      handledErrorChildIdRef.current = activeChildId;
+      const err = toApiError(attendancesQuery.error);
+      const msg = err.message ?? null;
+      void childrenQuery.refetch().then((res) => {
+        const latestChildren = res.data ?? [];
+        // Chỉ lưu message khi trẻ đang xem không còn trong danh sách sau khi tải lại (ví dụ bị gỡ liên kết theo ui-screens.md §10)
+        if (msg && !latestChildren.some((c) => c.id === activeChildId)) {
+          setChildErrorMessage(msg);
+        }
+      });
+    }
+  }, [attendancesQuery.isError, attendancesQuery.error, activeChildId, childrenQuery]);
 
   // Phân trang phía client (frontend-conventions.md §3.4)
   const totalItems = rawAttendances.length;
@@ -83,11 +106,21 @@ export default function ParentAttendancePage() {
     <div className="py-8 space-y-6">
       {/* Tiêu đề trang và ô chọn con (nếu có nhiều hơn 1 con) */}
       <ChildSelectHeader
+        title="Điểm danh của con"
+        subtitle="Theo dõi con có mặt hay vắng ở trường qua các ngày"
         childrenList={childrenList}
         selectedChildId={activeChildId}
         onSelectChild={handleSelectChild}
-        isLoading={attendancesQuery.isPending}
       />
+
+      {/* Thông báo lỗi khi tải dữ liệu của trẻ (kể cả sau khi tự động chuyển sang trẻ khác) */}
+      {childErrorMessage && (
+        <ErrorAlert
+          title="Thông báo"
+          message={childErrorMessage}
+          onRetry={handleRefresh}
+        />
+      )}
 
       {/* Cảnh báo lỗi tải lại danh sách con (khi đã có dữ liệu cũ trong cache) */}
       {!isChildrenInitialError && childrenErrorMessage && (
