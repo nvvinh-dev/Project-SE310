@@ -28,6 +28,7 @@ import { useClassPlacements, useClasses } from "./_lib/classes-api";
 import { formatDateOnly } from "./_lib/class-rules";
 import { PlacementClassBadge } from "./_components/ClassBadges";
 import { ClassCards } from "./_components/ClassCards";
+import { AssistantTeachersModal } from "./_components/AssistantTeachersModal";
 import { AssignClassModal, RemoveFromClassDialog } from "./_components/ClassPlacementModal";
 import { HomeroomTeacherModal, RemoveHomeroomTeacherDialog } from "./_components/HomeroomTeacherModal";
 
@@ -48,6 +49,7 @@ const EMPTY_FILTERS: FilterValues = { search: "", classFilter: "" };
 type DialogState =
   | { type: "assignTeacher"; cls: ClassResponse }
   | { type: "removeTeacher"; cls: ClassResponse }
+  | { type: "assistantTeachers"; cls: ClassResponse }
   | { type: "assignClass"; placement: ClassPlacementResponse }
   | { type: "removeFromClass"; placement: ClassPlacementResponse }
   | null;
@@ -131,9 +133,9 @@ export default function ClassesPage() {
   return (
     <div className="py-8 space-y-6">
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-on-surface">Lớp và giáo viên chủ nhiệm</h1>
+        <h1 className="text-2xl font-bold text-on-surface">Lớp và giáo viên</h1>
         <p className="text-sm text-on-surface-variant">
-          Gán giáo viên chủ nhiệm cho ba lớp và xếp, chuyển, gỡ trẻ khỏi lớp theo nhóm tuổi.
+          Gán giáo viên chủ nhiệm và giáo viên phụ cho ba lớp, và xếp, chuyển, gỡ trẻ khỏi lớp theo nhóm tuổi.
         </p>
       </div>
 
@@ -166,6 +168,7 @@ export default function ClassesPage() {
         <ClassCards
           onAssignTeacher={(cls) => setDialog({ type: "assignTeacher", cls })}
           onRemoveTeacher={(cls) => setDialog({ type: "removeTeacher", cls })}
+          onEditAssistants={(cls) => setDialog({ type: "assistantTeachers", cls })}
         />
       </section>
 
@@ -299,8 +302,8 @@ export default function ClassesPage() {
           onSuccess={(cls) =>
             finish(
               cls.homeroomTeacher
-                ? `Đã phân công ${cls.homeroomTeacher.fullName} làm giáo viên chủ nhiệm lớp ${cls.name}.`
-                : `Đã cập nhật giáo viên chủ nhiệm lớp ${cls.name}.`
+                ? `Đã phân công ${cls.homeroomTeacher.fullName} làm giáo viên chủ nhiệm ${cls.name}.`
+                : `Đã cập nhật giáo viên chủ nhiệm ${cls.name}.`
             )
           }
         />
@@ -310,7 +313,15 @@ export default function ClassesPage() {
         <RemoveHomeroomTeacherDialog
           cls={dialog.cls}
           onClose={closeDialog}
-          onSuccess={(cls) => finish(`Đã bỏ giáo viên chủ nhiệm của lớp ${cls.name}.`)}
+          onSuccess={(cls) => finish(`Đã bỏ giáo viên chủ nhiệm của ${cls.name}.`)}
+        />
+      )}
+
+      {dialog?.type === "assistantTeachers" && (
+        <AssistantTeachersModal
+          cls={dialog.cls}
+          onClose={closeDialog}
+          onSuccess={(cls) => finish(`Đã cập nhật giáo viên phụ ${cls.name}.`)}
         />
       )}
 
@@ -321,8 +332,8 @@ export default function ClassesPage() {
           onSuccess={(placement) =>
             finish(
               dialog.placement.classId === null
-                ? `Đã xếp ${placement.fullName} vào lớp ${placement.className}.`
-                : `Đã chuyển ${placement.fullName} sang lớp ${placement.className}.`
+                ? `Đã xếp ${placement.fullName} vào ${placement.className}.`
+                : `Đã chuyển ${placement.fullName} sang ${placement.className}.`
             )
           }
         />
@@ -333,7 +344,7 @@ export default function ClassesPage() {
           placement={dialog.placement}
           onClose={closeDialog}
           onSuccess={(placement) =>
-            finish(`Đã gỡ ${placement.fullName} khỏi lớp ${dialog.placement.className}.`)
+            finish(`Đã gỡ ${placement.fullName} khỏi ${dialog.placement.className}.`)
           }
         />
       )}

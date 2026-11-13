@@ -1,10 +1,18 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { Button, ConfirmDialog, EmptyState, ErrorAlert, LoadingSpinner, Modal, Select } from "@/components";
+import {
+  ApiErrorAlert,
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  ErrorAlert,
+  LoadingSpinner,
+  Modal,
+  Select,
+} from "@/components";
 import { toApiError } from "@/lib/axios";
 import type { ClassPlacementResponse } from "@/types/class";
-import { ApiErrorAlert } from "../../users/_components/ApiErrorAlert";
 import { useAssignClass, useClasses } from "../_lib/classes-api";
 import { classIdRules, formatAgeRange, formatDateOnly } from "../_lib/class-rules";
 import { PlacementClassBadge } from "./ClassBadges";
@@ -113,7 +121,7 @@ export function AssignClassModal({ placement, onClose, onSuccess }: AssignClassM
           {/* Xếp, chuyển lớp làm trẻ hiện hoặc mất ngay ở màn hình của giáo viên (AUTH-RULE-06) */}
           <p className="text-xs text-on-surface-variant leading-relaxed">
             {isMove
-              ? `Sau khi lưu, ${placement.fullName} mất khỏi màn hình của giáo viên chủ nhiệm lớp ${placement.className} và hiện ngay ở màn hình của giáo viên chủ nhiệm lớp mới.`
+              ? `Sau khi lưu, ${placement.fullName} mất khỏi màn hình của giáo viên chủ nhiệm ${placement.className} và hiện ngay ở màn hình của giáo viên chủ nhiệm lớp mới.`
               : `Sau khi lưu, ${placement.fullName} hiện ngay ở màn hình của giáo viên chủ nhiệm lớp được chọn.`}
           </p>
 
@@ -168,7 +176,7 @@ export function RemoveFromClassDialog({ placement, onClose, onSuccess }: RemoveF
       message={
         <div className="space-y-3">
           <p>
-            Gỡ <strong className="text-on-surface break-words">{placement.fullName}</strong> khỏi lớp{" "}
+            Gỡ <strong className="text-on-surface break-words">{placement.fullName}</strong> khỏi{" "}
             <strong className="text-on-surface">{placement.className}</strong>?
           </p>
           <p className="text-xs">
