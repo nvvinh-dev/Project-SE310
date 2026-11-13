@@ -37,7 +37,17 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=...;Port=543
 dotnet user-secrets set "Jwt:Key" "<chuỗi ngẫu nhiên tối thiểu 32 ký tự>"
 ```
 
-Xin chuỗi kết nối từ nhóm trưởng. Không đưa hai giá trị này vào bất kỳ file nào trong repo.
+Chức năng ảnh (ảnh sự cố, ảnh hoạt động, ảnh người đón) cần thêm hai giá trị của Supabase Storage:
+
+```
+dotnet user-secrets set "Supabase:Url" "https://<mã-project>.supabase.co"
+dotnet user-secrets set "Supabase:ServiceKey" "<service key>"
+```
+
+Thiếu hai giá trị này thì backend vẫn chạy, chỉ những request đụng tới ảnh trả lỗi 500.
+
+Xin chuỗi kết nối và service key từ nhóm trưởng. Không đưa các giá trị này vào bất kỳ file nào
+trong repo.
 
 Phía frontend, sao chép `frontend/.env.example` thành `frontend/.env.local`. Giá trị mặc
 định đã trỏ về `http://localhost:5015`, chỉ sửa nếu bạn đổi cổng backend.
@@ -82,25 +92,21 @@ backend/
   NhaTre.Infrastructure/  DbContext, cấu hình Fluent API, migration, repository.
   NhaTre.API/             Controller, middleware, cấu hình khởi động.
 frontend/
-  src/app/                Route theo App Router.
+  src/app/                Route theo App Router, chia nhóm theo vai trò.
+  src/components/         Component dùng chung: bảng, form, phân trang, hộp thoại.
   src/context/            AuthContext, quản lý phiên đăng nhập.
-  src/lib/                Axios instance đã gắn sẵn interceptor.
+  src/lib/                Axios instance đã gắn sẵn interceptor, hàm định dạng dùng chung.
   src/types/              Kiểu dữ liệu dùng chung.
 ```
 
 Phụ thuộc đi một chiều: API phụ thuộc Application, Infrastructure phụ thuộc Application,
 Application phụ thuộc Domain. Domain không tham chiếu ngược lên lớp nào.
 
-## API hiện có
+## API
 
-| Phương thức | Đường dẫn | Vai trò | Mô tả |
-| --- | --- | --- | --- |
-| POST | `/api/auth/login` | Không cần đăng nhập | Đăng nhập, trả về token JWT |
-| GET | `/api/auth/me` | Mọi vai trò | Thông tin người đang đăng nhập |
-| GET | `/api/children` | Kế toán | Danh sách hồ sơ trẻ |
-| GET | `/api/children/{id}` | Kế toán | Chi tiết một hồ sơ trẻ |
-| POST | `/api/children` | Kế toán | Tạo hồ sơ nhập học |
-| PUT | `/api/children/{id}` | Kế toán | Sửa hồ sơ nhập học |
+Danh sách endpoint, tham số và schema xem ở Swagger khi backend đang chạy:
+`http://localhost:5015/swagger`. Mỗi endpoint chỉ cho một số vai trò gọi; `POST /api/auth/login` là
+endpoint duy nhất không cần đăng nhập.
 
 Mọi response đều theo chung một khuôn, kể cả khi lỗi:
 
