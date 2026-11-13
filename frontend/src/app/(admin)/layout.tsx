@@ -8,6 +8,8 @@ const ADMIN_MENU_ITEMS: NavItem[] = [
   { label: "Tổng quan", href: "/admin/dashboard", icon: "Activity", iconColorClass: "text-primary" },
   { label: "Tài khoản và vai trò", href: "/admin/users", icon: "User" },
   { label: "Lớp và giáo viên", href: "/admin/classes", icon: "School" },
+  { label: "Phản ánh của phụ huynh", href: "/admin/complaints", icon: "Clipboard" },
+  { label: "Thông báo", href: "/admin/notifications", icon: "Info" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
