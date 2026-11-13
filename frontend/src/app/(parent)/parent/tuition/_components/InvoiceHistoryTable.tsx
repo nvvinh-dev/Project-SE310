@@ -102,7 +102,7 @@ export function InvoiceHistoryTable({
             {items.map((item) => (
               <div
                 key={item.id}
-                className="rounded-2xl border border-slate-200/90 bg-surface-container-lowest p-4 shadow-xs space-y-3 min-w-0"
+                className="rounded-2xl border border-slate-200/90 bg-surface-container-lowest p-3 shadow-xs space-y-2 min-w-0"
               >
                 <div className="flex items-center justify-between gap-2 min-w-0">
                   <span className="text-xs text-on-surface-variant font-medium">

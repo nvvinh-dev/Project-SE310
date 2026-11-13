@@ -26,6 +26,7 @@ export default function ParentTuitionPage() {
   const handleSelectChild = (childId: string) => {
     setSelectedChildId(childId);
     setChildErrorMessage(null);
+    handledErrorChildIdRef.current = null;
   };
 
   // 2. Tải danh sách hóa đơn học phí của con đang chọn (FR-TUITION-05, UC-TUITION-04, AC-TUITION-05)
@@ -38,6 +39,7 @@ export default function ParentTuitionPage() {
   // Dùng cho "Thử lại": tải lại danh sách trẻ trước (ui-screens.md §4.2, §10: 404 thì tải lại danh sách con)
   const handleRefresh = async () => {
     setChildErrorMessage(null);
+    handledErrorChildIdRef.current = null;
     const childrenResult = await childrenQuery.refetch();
     const latestChildren = childrenResult.data ?? [];
     if (
@@ -58,6 +60,11 @@ export default function ParentTuitionPage() {
   const handledErrorChildIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (invoicesQuery.isSuccess) {
+      handledErrorChildIdRef.current = null;
+      return;
+    }
+
     if (invoicesQuery.isError && activeChildId && handledErrorChildIdRef.current !== activeChildId) {
       handledErrorChildIdRef.current = activeChildId;
       const err = toApiError(invoicesQuery.error);
@@ -70,7 +77,7 @@ export default function ParentTuitionPage() {
         }
       });
     }
-  }, [invoicesQuery.isError, invoicesQuery.error, activeChildId, childrenQuery]);
+  }, [invoicesQuery.isSuccess, invoicesQuery.isError, invoicesQuery.error, activeChildId, childrenQuery]);
 
   // Xử lý lỗi theo ui-screens.md §4.2 & frontend-conventions.md §3.3:
   // - Chỉ hiện lỗi thay cả màn hình khi chưa có dữ liệu (data === undefined).
@@ -148,7 +155,7 @@ export default function ParentTuitionPage() {
           />
 
           {/* Vùng 3: Hướng dẫn nộp tiền cố định (ui-screens.md SCR-PAR-06) */}
-          <div className="rounded-2xl border border-slate-200/90 bg-surface-container-low p-4 sm:p-5 text-sm text-on-surface-variant min-w-0">
+          <div className="rounded-3xl border border-slate-200/90 bg-surface-container-low p-4 shadow-sm text-sm text-on-surface-variant min-w-0">
             <div className="flex items-start gap-3">
               <span className="text-primary mt-0.5 shrink-0" aria-hidden="true">
                 <Icons.Info />
