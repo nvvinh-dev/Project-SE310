@@ -3,6 +3,7 @@
 import {
   EmptyState,
   ErrorAlert,
+  InvoiceStatusBadge,
   LoadingSpinner,
   Table,
   TableBody,
@@ -17,7 +18,6 @@ import {
 import { formatVietnamDateFromUtc } from "@/lib/datetime";
 import { formatMoney } from "@/lib/format";
 import type { ChildInvoiceResponse } from "@/types/tuition";
-import { InvoiceStatusBadge } from "./InvoiceStatusBadge";
 
 const TABLE_COLUMNS = 4;
 const EMPTY_MESSAGE = "Chưa có hóa đơn học phí nào của con.";

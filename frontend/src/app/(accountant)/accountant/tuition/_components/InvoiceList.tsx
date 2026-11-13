@@ -4,6 +4,7 @@ import {
   Button,
   EmptyState,
   ErrorAlert,
+  InvoiceStatusBadge,
   LoadingSpinner,
   Pagination,
   Table,
@@ -20,7 +21,6 @@ import {
 import { formatMeasurementDateTime } from "@/lib/datetime";
 import { formatMoney } from "@/lib/format";
 import type { InvoiceResponse } from "@/types/tuition";
-import { InvoiceStatusBadge } from "./InvoiceStatusBadge";
 
 // Cỡ trang mặc định của frontend-conventions.md §3.4; SCR-ACC-02 không ghi cỡ riêng
 export const INVOICE_PAGE_SIZE = 20;

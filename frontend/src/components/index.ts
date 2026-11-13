@@ -8,6 +8,7 @@ export * from "./StateFeedback";
 export * from "./Icons";
 export * from "./ApiErrorAlert";
 export * from "./NoticeBanner";
+export * from "./InvoiceStatusBadge";
 export { default as DashboardLayout } from "./DashboardLayout";
 export { default as RoleGuard } from "./RoleGuard";
 export { default as UnderConstruction } from "./UnderConstruction";
