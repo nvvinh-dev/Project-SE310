@@ -2,11 +2,20 @@
 
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { Button, Checkbox, ConfirmDialog, EmptyState, ErrorAlert, Input, LoadingSpinner, Modal } from "@/components";
+import {
+  ApiErrorAlert,
+  Button,
+  Checkbox,
+  ConfirmDialog,
+  EmptyState,
+  ErrorAlert,
+  Input,
+  LoadingSpinner,
+  Modal,
+} from "@/components";
 import { toApiError } from "@/lib/axios";
 import { normalizeForSearch } from "@/lib/text";
 import type { ClassResponse } from "@/types/class";
-import { ApiErrorAlert } from "../../users/_components/ApiErrorAlert";
 import { useUsers } from "../../users/_lib/users-api";
 import { useAssignAssistantTeachers, useClasses } from "../_lib/classes-api";
 
@@ -115,6 +124,13 @@ export function AssistantTeachersModal({ cls: openedClass, onClose, onSuccess }:
 
   const retryUsers = () => void usersQuery.refetch();
 
+  // Sau 409 danh sách lớp tải lại có thể làm hết thay đổi (người được thêm vừa thành GVCN, người bị gỡ
+  // vừa bị Admin khác gỡ): quay về bước chọn, giữ message lỗi ở đó, thay vì để nút Lưu gửi lại y nguyên.
+  // Đặt lại ngay trong lúc render như bộ lọc của page.tsx
+  if (isConfirming && !hasChanges && !isPending) {
+    setIsConfirming(false);
+  }
+
   if (isConfirming) {
     return (
       <ConfirmDialog
@@ -125,7 +141,7 @@ export function AssistantTeachersModal({ cls: openedClass, onClose, onSuccess }:
         }
         isLoading={isPending}
         variant={removedNames.length > 0 ? "warning" : "primary"}
-        title={`Cập nhật giáo viên phụ lớp ${cls.name}`}
+        title={`Cập nhật giáo viên phụ ${cls.name}`}
         confirmText="Lưu"
         cancelText="Quay lại"
         message={
@@ -143,9 +159,9 @@ export function AssistantTeachersModal({ cls: openedClass, onClose, onSuccess }:
             {/* Thêm hay gỡ giáo viên phụ quyết định giáo viên đó thấy những trẻ nào (AUTH-RULE-06) */}
             <p className="text-xs">
               {addedNames.length > 0 &&
-                `Người được thêm thấy và thao tác được với trẻ lớp ${cls.name} như giáo viên chủ nhiệm. `}
+                `Người được thêm thấy và thao tác được với trẻ ${cls.name} như giáo viên chủ nhiệm. `}
               {removedNames.length > 0 &&
-                `Người bị gỡ không còn thấy trẻ lớp ${cls.name} ngay ở lần thao tác kế tiếp; bản ghi họ đã tạo vẫn giữ người ghi nhận.`}
+                `Người bị gỡ không còn thấy trẻ ${cls.name} ngay ở lần thao tác kế tiếp; bản ghi họ đã tạo vẫn giữ người ghi nhận.`}
             </p>
             <ApiErrorAlert error={assignAssistants.error} />
           </div>
@@ -159,7 +175,7 @@ export function AssistantTeachersModal({ cls: openedClass, onClose, onSuccess }:
       isOpen
       onClose={handleClose}
       size="lg"
-      title={`Giáo viên phụ lớp ${cls.name}`}
+      title={`Giáo viên phụ ${cls.name}`}
       description="Đánh dấu các tài khoản Giáo viên đang hoạt động làm giáo viên phụ của lớp."
     >
       {usersQuery.isPending ? (
@@ -190,16 +206,23 @@ export function AssistantTeachersModal({ cls: openedClass, onClose, onSuccess }:
             />
           )}
 
+          {/* Lỗi 409 còn lại khi bước xác nhận tự quay về vì không còn thay đổi nào */}
+          <ApiErrorAlert error={assignAssistants.error} />
+
+          {/* Enter trong ô tìm không được gửi form: chỉ nút Lưu mới mở bước xác nhận */}
           <Input
             type="search"
             aria-label="Tìm theo họ tên"
             placeholder="Tìm theo họ tên"
             autoComplete="off"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.preventDefault();
+            }}
             {...register("search")}
           />
 
           <fieldset className="min-w-0">
-            <legend className="sr-only">Giáo viên phụ của lớp {cls.name}</legend>
+            <legend className="sr-only">Giáo viên phụ của {cls.name}</legend>
             {visibleOptions.length === 0 ? (
               <p className="rounded-2xl border border-slate-200/90 p-4 text-center text-sm text-on-surface-variant">
                 Không có giáo viên nào khớp với họ tên đang tìm.

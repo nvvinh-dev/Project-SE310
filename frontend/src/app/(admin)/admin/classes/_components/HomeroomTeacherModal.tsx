@@ -1,10 +1,18 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { Button, ConfirmDialog, EmptyState, ErrorAlert, LoadingSpinner, Modal, Select } from "@/components";
+import {
+  ApiErrorAlert,
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  ErrorAlert,
+  LoadingSpinner,
+  Modal,
+  Select,
+} from "@/components";
 import { toApiError } from "@/lib/axios";
 import type { ClassResponse } from "@/types/class";
-import { ApiErrorAlert } from "../../users/_components/ApiErrorAlert";
 import { useUsers } from "../../users/_lib/users-api";
 import { useAssignHomeroomTeacher } from "../_lib/classes-api";
 import { formatAgeRange, teacherUserIdRules } from "../_lib/class-rules";
@@ -123,8 +131,8 @@ export function HomeroomTeacherModal({ cls, onClose, onSuccess }: HomeroomTeache
           {/* Gán giáo viên chủ nhiệm quyết định giáo viên đó thấy những trẻ nào (AUTH-RULE-06) */}
           <p className="text-xs text-on-surface-variant leading-relaxed">
             {currentTeacher
-              ? `Sau khi lưu, giáo viên mới thấy và thao tác được trên trẻ của lớp ${cls.name} ngay; ${currentTeacher.fullName} không còn thấy trẻ của lớp này.`
-              : `Sau khi lưu, giáo viên được chọn thấy và thao tác được trên trẻ của lớp ${cls.name} ngay ở các màn hình điểm danh, sức khỏe và đón về.`}
+              ? `Sau khi lưu, giáo viên mới thấy và thao tác được trên trẻ của ${cls.name} ngay; ${currentTeacher.fullName} không còn thấy trẻ của lớp này.`
+              : `Sau khi lưu, giáo viên được chọn thấy và thao tác được trên trẻ của ${cls.name} ngay ở các màn hình điểm danh, sức khỏe và đón về.`}
           </p>
 
           <div className="flex items-center gap-3 pt-2">
@@ -147,7 +155,7 @@ function ClassSummary({ cls }: { cls: ClassResponse }) {
   return (
     <div className="rounded-2xl border border-slate-200/90 bg-surface-container-lowest p-4 space-y-2">
       <p className="font-semibold text-on-surface">
-        Lớp {cls.name}
+        {cls.name}
         {ageRange && <span className="font-normal text-on-surface-variant"> · {ageRange}</span>}
       </p>
       <div className="flex flex-wrap items-center gap-2 text-xs text-on-surface-variant">
@@ -186,10 +194,10 @@ export function RemoveHomeroomTeacherDialog({ cls, onClose, onSuccess }: RemoveH
         <div className="space-y-3">
           <p>
             Bỏ <strong className="text-on-surface break-words">{teacherName}</strong> khỏi vai trò giáo viên chủ
-            nhiệm lớp <strong className="text-on-surface">{cls.name}</strong>?
+            nhiệm <strong className="text-on-surface">{cls.name}</strong>?
           </p>
           <p className="text-xs">
-            Giáo viên này không còn thấy trẻ của lớp {cls.name} ngay ở lần thao tác kế tiếp. Đến khi gán giáo viên
+            Giáo viên này không còn thấy trẻ của {cls.name} ngay ở lần thao tác kế tiếp. Đến khi gán giáo viên
             chủ nhiệm mới, trẻ của lớp không hiện ở màn hình của giáo viên nào.
           </p>
           <ApiErrorAlert error={assignTeacher.error} />

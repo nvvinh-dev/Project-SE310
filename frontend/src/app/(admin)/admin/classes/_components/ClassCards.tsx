@@ -98,19 +98,19 @@ function ClassCard({
         {teacher ? (
           <>
             <Button size="sm" variant="outline" onClick={() => onAssignTeacher(cls)} className="min-h-11 sm:min-h-0">
-              Đổi GVCN<span className="sr-only"> lớp {cls.name}</span>
+              Đổi GVCN<span className="sr-only"> {cls.name}</span>
             </Button>
             <Button size="sm" variant="ghost" onClick={() => onRemoveTeacher(cls)} className="min-h-11 sm:min-h-0">
-              Bỏ GVCN<span className="sr-only"> lớp {cls.name}</span>
+              Bỏ GVCN<span className="sr-only"> {cls.name}</span>
             </Button>
           </>
         ) : (
           <Button size="sm" variant="outline" onClick={() => onAssignTeacher(cls)} className="min-h-11 sm:min-h-0">
-            Gán GVCN<span className="sr-only"> lớp {cls.name}</span>
+            Gán GVCN<span className="sr-only"> {cls.name}</span>
           </Button>
         )}
         <Button size="sm" variant="outline" onClick={() => onEditAssistants(cls)} className="min-h-11 sm:min-h-0">
-          Sửa giáo viên phụ<span className="sr-only"> lớp {cls.name}</span>
+          Sửa giáo viên phụ<span className="sr-only"> {cls.name}</span>
         </Button>
       </div>
     </li>

@@ -302,8 +302,8 @@ export default function ClassesPage() {
           onSuccess={(cls) =>
             finish(
               cls.homeroomTeacher
-                ? `Đã phân công ${cls.homeroomTeacher.fullName} làm giáo viên chủ nhiệm lớp ${cls.name}.`
-                : `Đã cập nhật giáo viên chủ nhiệm lớp ${cls.name}.`
+                ? `Đã phân công ${cls.homeroomTeacher.fullName} làm giáo viên chủ nhiệm ${cls.name}.`
+                : `Đã cập nhật giáo viên chủ nhiệm ${cls.name}.`
             )
           }
         />
@@ -313,7 +313,7 @@ export default function ClassesPage() {
         <RemoveHomeroomTeacherDialog
           cls={dialog.cls}
           onClose={closeDialog}
-          onSuccess={(cls) => finish(`Đã bỏ giáo viên chủ nhiệm của lớp ${cls.name}.`)}
+          onSuccess={(cls) => finish(`Đã bỏ giáo viên chủ nhiệm của ${cls.name}.`)}
         />
       )}
 
@@ -321,7 +321,7 @@ export default function ClassesPage() {
         <AssistantTeachersModal
           cls={dialog.cls}
           onClose={closeDialog}
-          onSuccess={(cls) => finish(`Đã cập nhật giáo viên phụ lớp ${cls.name}.`)}
+          onSuccess={(cls) => finish(`Đã cập nhật giáo viên phụ ${cls.name}.`)}
         />
       )}
 
@@ -332,8 +332,8 @@ export default function ClassesPage() {
           onSuccess={(placement) =>
             finish(
               dialog.placement.classId === null
-                ? `Đã xếp ${placement.fullName} vào lớp ${placement.className}.`
-                : `Đã chuyển ${placement.fullName} sang lớp ${placement.className}.`
+                ? `Đã xếp ${placement.fullName} vào ${placement.className}.`
+                : `Đã chuyển ${placement.fullName} sang ${placement.className}.`
             )
           }
         />
@@ -344,7 +344,7 @@ export default function ClassesPage() {
           placement={dialog.placement}
           onClose={closeDialog}
           onSuccess={(placement) =>
-            finish(`Đã gỡ ${placement.fullName} khỏi lớp ${dialog.placement.className}.`)
+            finish(`Đã gỡ ${placement.fullName} khỏi ${dialog.placement.className}.`)
           }
         />
       )}
