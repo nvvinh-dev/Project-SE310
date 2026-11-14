@@ -1,23 +1,24 @@
 "use client";
 
 import React from "react";
+import { Controller, type Control } from "react-hook-form";
 import { Select, Icons } from "@/components";
 import type { HomeroomClassResponse } from "@/types/media";
+import {
+  classIdRules,
+  type ShareActivityPhotosFormValues,
+} from "../_lib/class-activities-rules";
 
 interface ClassSelectorProps {
   classes: HomeroomClassResponse[];
-  selectedClassId: string;
-  onSelectClass: (classId: string) => void;
+  control: Control<ShareActivityPhotosFormValues>;
   disabled?: boolean;
-  error?: string;
 }
 
 export function ClassSelector({
   classes,
-  selectedClassId,
-  onSelectClass,
+  control,
   disabled = false,
-  error,
 }: ClassSelectorProps) {
   // Chỉ một lớp thì chọn sẵn, hiện tên lớp thay ô chọn (ui-screens SCR-TCH-06)
   if (classes.length === 1) {
@@ -47,6 +48,7 @@ export function ClassSelector({
     );
   }
 
+  const classIds = classes.map((c) => c.id);
   const options = classes.map((c) => ({
     value: c.id,
     label: c.name,
@@ -55,17 +57,29 @@ export function ClassSelector({
   return (
     <div className="rounded-3xl border border-slate-200/90 bg-surface-container-lowest p-4 shadow-sm">
       <div className="w-full sm:max-w-md">
-        <Select
-          id="teacher-class-activities-select"
-          label="Lớp phụ trách"
-          required
-          placeholder="Chọn lớp"
-          options={options}
-          value={selectedClassId}
-          onChange={(e) => onSelectClass(e.target.value)}
-          disabled={disabled}
-          error={error}
-          helperText="Chọn lớp bạn muốn chia sẻ ảnh hoạt động"
+        {/* Giữ ô chọn ở dạng controlled: lớp đang chọn bị gỡ khỏi danh sách thì quay về "Chọn lớp",
+            không để trình duyệt tự nhảy sang lớp đầu tiên */}
+        <Controller
+          name="classId"
+          control={control}
+          rules={classIdRules(classIds)}
+          render={({ field, fieldState }) => (
+            <Select
+              id="teacher-class-activities-select"
+              label="Lớp phụ trách"
+              required
+              placeholder="Chọn lớp"
+              options={options}
+              ref={field.ref}
+              name={field.name}
+              value={classIds.includes(field.value) ? field.value : ""}
+              onChange={(e) => field.onChange(e.target.value)}
+              onBlur={field.onBlur}
+              disabled={disabled}
+              error={fieldState.error?.message}
+              helperText="Chọn lớp bạn muốn chia sẻ ảnh hoạt động"
+            />
+          )}
         />
       </div>
     </div>

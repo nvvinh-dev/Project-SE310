@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import {
   ApiErrorAlert,
   Button,
@@ -15,16 +16,24 @@ import {
   useHomeroomClasses,
   useShareActivityPhotos,
 } from "./_lib/class-activities-api";
-import { validateActivityPhotos } from "./_lib/class-activities-rules";
+import {
+  validateActivityPhotos,
+  type ShareActivityPhotosFormValues,
+} from "./_lib/class-activities-rules";
 import { ClassSelector } from "./_components/ClassSelector";
 import { PhotoUploader } from "./_components/PhotoUploader";
 
 // SCR-TCH-06: giáo viên chia sẻ ảnh hoạt động cho lớp mình phụ trách (FR-MEDIA-01)
 export default function ClassActivitiesPage() {
-  const [userSelectedClassId, setUserSelectedClassId] = useState("");
-  const [classSelectError, setClassSelectError] = useState<string>();
+  // Form dùng React Hook Form (D12, ui-screens §4.3); ảnh giữ ngoài form như IncidentForm
+  const { control, handleSubmit } = useForm<ShareActivityPhotosFormValues>({
+    defaultValues: { classId: "" },
+    mode: "onTouched",
+  });
+  const watchedClassId = useWatch({ control, name: "classId" });
 
   const [photos, setPhotos] = useState<File[]>([]);
+  // Lỗi của lần chọn ảnh bị từ chối; ảnh đang có vẫn hợp lệ nên lỗi này không khóa nút Chia sẻ
   const [photoValidationError, setPhotoValidationError] = useState<
     string | null
   >(null);
@@ -49,19 +58,17 @@ export default function ClassActivitiesPage() {
   const selectedClassId =
     classes?.length === 1
       ? classes[0].id
-      : classes?.some((c) => c.id === userSelectedClassId)
-        ? userSelectedClassId
+      : classes?.some((c) => c.id === watchedClassId)
+        ? watchedClassId
         : "";
 
   // Lỗi thay cả trang chỉ khi chưa có dữ liệu; đã có thì giữ dữ liệu cũ và cảnh báo (conventions §3.3)
   const showFullError = classesQuery.isError && classes === undefined;
   const showRefetchError = classesQuery.isError && classes !== undefined;
 
+  // Lớp đã qua classIdRules (nhiều lớp) hoặc được chọn sẵn (một lớp)
   const handleSharePhotos = async () => {
-    if (!selectedClassId) {
-      setClassSelectError("Vui lòng chọn lớp.");
-      return;
-    }
+    if (!selectedClassId) return;
 
     const validationErr = validateActivityPhotos(photos);
     if (validationErr) {
@@ -92,10 +99,10 @@ export default function ClassActivitiesPage() {
     }
   };
 
+  // Tắt nút theo ảnh đang chọn (ui-screens SCR-TCH-06 Hành vi 1), không theo lỗi của lần chọn bị từ chối
   const isSubmitDisabled =
     !selectedClassId ||
-    photos.length === 0 ||
-    Boolean(photoValidationError) ||
+    validateActivityPhotos(photos) !== null ||
     sharePhotosMutation.isPending;
 
   return (
@@ -158,16 +165,15 @@ export default function ClassActivitiesPage() {
           onAction={() => classesQuery.refetch()}
         />
       ) : (
-        <div className="space-y-4 sm:space-y-6">
+        <form
+          noValidate
+          onSubmit={handleSubmit(handleSharePhotos)}
+          className="space-y-4 sm:space-y-6"
+        >
           <ClassSelector
             classes={classes}
-            selectedClassId={selectedClassId}
-            onSelectClass={(id) => {
-              setUserSelectedClassId(id);
-              setClassSelectError(undefined);
-            }}
+            control={control}
             disabled={sharePhotosMutation.isPending}
-            error={classSelectError}
           />
 
           <PhotoUploader
@@ -180,18 +186,17 @@ export default function ClassActivitiesPage() {
 
           <div className="flex justify-end">
             <Button
-              type="button"
+              type="submit"
               variant="primary"
               icon={<Icons.Camera />}
               disabled={isSubmitDisabled}
               isLoading={sharePhotosMutation.isPending}
-              onClick={handleSharePhotos}
               className="min-h-11 w-full sm:w-auto"
             >
               Chia sẻ
             </Button>
           </div>
-        </div>
+        </form>
       )}
     </div>
   );

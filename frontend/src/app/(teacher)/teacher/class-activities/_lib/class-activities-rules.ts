@@ -50,3 +50,19 @@ export function validateActivityPhotos(files: File[]): string | null {
 
   return null;
 }
+
+// Giá trị của form chia sẻ ảnh. Ảnh giữ ngoài form vì File[] không đi qua ô nhập của React Hook Form
+export interface ShareActivityPhotosFormValues {
+  classId: string;
+}
+
+type FieldRules = { validate: Record<string, (value: string) => true | string> };
+
+// Lớp phải nằm trong danh sách lớp đang phụ trách: lớp vừa bị gỡ phân công coi như chưa chọn
+export function classIdRules(classIds: string[]): FieldRules {
+  return {
+    validate: {
+      selected: (value) => classIds.includes(value) || "Vui lòng chọn lớp.",
+    },
+  };
+}
