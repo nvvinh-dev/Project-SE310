@@ -78,6 +78,7 @@ export function ClassSelector({
               disabled={disabled}
               error={fieldState.error?.message}
               helperText="Chọn lớp bạn muốn chia sẻ ảnh hoạt động"
+              className="min-h-11"
             />
           )}
         />
