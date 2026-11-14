@@ -135,6 +135,11 @@ export function formatVietnamDateFromUtc(utcIso: string): string {
 
 // Định dạng thời điểm đo theo giờ Việt Nam: dd/MM/yyyy HH:mm (ui-screens.md §4.4, frontend-conventions.md §6)
 export function formatMeasurementDateTime(utcDateStr: string): string {
+  return formatVietnamDateTime(utcDateStr);
+}
+
+// Định dạng thời điểm chung theo giờ Việt Nam: dd/MM/yyyy HH:mm (ui-screens.md §4.4, frontend-conventions.md §6)
+export function formatVietnamDateTime(utcDateStr: string): string {
   try {
     const date = new Date(utcDateStr);
     const parts = new Intl.DateTimeFormat("vi-VN", {
