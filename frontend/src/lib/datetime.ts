@@ -119,6 +119,20 @@ export function formatVietnamTime(utcIso: string): string {
   }).format(new Date(utcIso));
 }
 
+// Trường kết thúc bằng Utc → dd/MM/yyyy theo giờ Việt Nam, ví dụ "01/10/2026" (ui-screens.md §4.4, frontend-conventions.md §6)
+export function formatVietnamDateFromUtc(utcIso: string): string {
+  try {
+    return new Intl.DateTimeFormat("vi-VN", {
+      timeZone: VIETNAM_TIME_ZONE,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(new Date(utcIso));
+  } catch {
+    return utcIso;
+  }
+}
+
 // Định dạng thời điểm đo theo giờ Việt Nam: dd/MM/yyyy HH:mm (ui-screens.md §4.4, frontend-conventions.md §6)
 export function formatMeasurementDateTime(utcDateStr: string): string {
   try {

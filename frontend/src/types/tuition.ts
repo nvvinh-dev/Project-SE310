@@ -40,6 +40,16 @@ export interface InvoiceResponse {
   issuedAtUtc: string;
 }
 
+// Hóa đơn phía Phụ huynh: FR-TUITION-05, UC-TUITION-04, D45
+// Chỉ trả số tiền, mô tả (kỳ thu), trạng thái và thời điểm lập; không kèm họ tên trẻ hay biểu phí
+export interface ChildInvoiceResponse {
+  id: string;
+  amount: number;
+  description: string;
+  status: InvoiceStatus;
+  issuedAtUtc: string;
+}
+
 // Dùng cho cả lập và sửa. Không có trạng thái: hóa đơn mới luôn unpaid do server đặt (BR-TUITION-09)
 export interface InvoiceRequest {
   childId: string;
