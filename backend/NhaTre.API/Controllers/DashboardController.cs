@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NhaTre.Application.Common;
 using NhaTre.Application.DTOs.Dashboard;
+using NhaTre.Application.DTOs.Tuition;
 using NhaTre.Application.Interfaces;
 using NhaTre.Domain.Constants;
 
@@ -35,5 +36,14 @@ public class DashboardController : ControllerBase
     {
         var result = await _dashboardService.GetAttendanceStatisticsAsync();
         return Ok(ApiResponse<AttendanceStatisticsResponse>.Ok(result));
+    }
+
+    // FR-DASH-04: tổng thu của tháng hiện tại và số hóa đơn chưa thanh toán, cùng số liệu với báo cáo
+    // doanh thu của Kế toán (AC-DASH-04). Chỉ số tổng hợp, không có hóa đơn riêng lẻ (AC-DASH-06)
+    [HttpGet("revenue-statistics")]
+    public async Task<ActionResult<ApiResponse<RevenueReportResponse>>> GetRevenueStatistics()
+    {
+        var result = await _dashboardService.GetRevenueStatisticsAsync();
+        return Ok(ApiResponse<RevenueReportResponse>.Ok(result));
     }
 }
