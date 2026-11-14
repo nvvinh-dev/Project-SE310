@@ -152,7 +152,7 @@ export default function ClassActivitiesPage() {
       ) : !classes || classes.length === 0 ? (
         <EmptyState
           title="Chưa có lớp phụ trách"
-          message="Bạn chưa được phân công lớp nào. Liên hệ Ban giám hiệu."
+          message="Chưa có trẻ nào trong lớp bạn phụ trách. Nếu bạn chưa được phân công lớp, liên hệ Ban giám hiệu."
           icon={<Icons.School />}
           actionText="Làm mới"
           onAction={() => classesQuery.refetch()}
