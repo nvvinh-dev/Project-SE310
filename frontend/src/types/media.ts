@@ -13,11 +13,3 @@ export interface ActivityPhotoResponse {
   uploadedAtUtc: string;
   url: string;
 }
-
-// GET /api/children/{childId}/activity-photos (FR-MEDIA-02). Số trang tính từ totalCount
-export interface ActivityPhotoPageResponse {
-  items: ActivityPhotoResponse[];
-  page: number;
-  pageSize: number;
-  totalCount: number;
-}
