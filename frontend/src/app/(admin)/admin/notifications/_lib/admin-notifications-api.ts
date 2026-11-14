@@ -5,11 +5,13 @@ import { apiClient } from "@/lib/axios";
 import type { ApiResponse } from "@/types/auth";
 import type { NotificationPageResponse } from "@/types/notification";
 
+export const ADMIN_NOTIFICATIONS_QUERY_KEY = ["admin-notifications"] as const;
+
 // Cùng API xem thông báo của Phụ huynh và Y tế; backend chỉ trả thông báo gửi cho chính người gọi,
 // với Admin là thông báo phản ánh mới (FR-NOTI-04, D39 mục 6). Phân trang ở server
 export function useAdminNotifications(page: number, pageSize: number) {
   return useQuery({
-    queryKey: ["admin-notifications", { page, pageSize }],
+    queryKey: [...ADMIN_NOTIFICATIONS_QUERY_KEY, { page, pageSize }],
     queryFn: async () => {
       const res = await apiClient.get<ApiResponse<NotificationPageResponse>>("/api/notifications", {
         params: { page, pageSize },

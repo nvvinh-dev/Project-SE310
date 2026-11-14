@@ -3,6 +3,13 @@
 // Ba trạng thái khớp hằng số ComplaintStatuses của backend. Phản ánh mới luôn New do server đặt
 export type ComplaintStatus = "New" | "InProgress" | "Resolved";
 
+// Nhãn tiếng Việt dùng chung cho màn hình Admin (SCR-ADM-04) và Phụ huynh (SCR-PAR-09)
+export const COMPLAINT_STATUS_LABELS: Record<ComplaintStatus, string> = {
+  New: "Mới",
+  InProgress: "Đang xử lý",
+  Resolved: "Đã xử lý",
+};
+
 // Admin chỉ chuyển được sang hai trạng thái này; New không gửi lên được
 export type ComplaintHandlingStatus = Exclude<ComplaintStatus, "New">;
 

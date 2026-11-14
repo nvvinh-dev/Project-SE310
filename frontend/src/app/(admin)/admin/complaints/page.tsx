@@ -127,13 +127,16 @@ export default function ComplaintsPage() {
             ))}
           </ul>
 
-          <Pagination
-            currentPage={Math.min(page, totalPages)}
-            totalPages={totalPages}
-            totalItems={data.totalCount}
-            pageSize={PAGE_SIZE}
-            onPageChange={setPage}
-          />
+          {/* Chỉ hiện khi có hơn một trang (frontend-conventions.md §3.4) */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={Math.min(page, totalPages)}
+              totalPages={totalPages}
+              totalItems={data.totalCount}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          )}
         </div>
       )}
 

@@ -1,10 +1,4 @@
-import type { ComplaintStatus } from "@/types/complaint";
-
-export const COMPLAINT_STATUS_LABELS: Record<ComplaintStatus, string> = {
-  New: "Mới",
-  InProgress: "Đang xử lý",
-  Resolved: "Đã xử lý",
-};
+import { COMPLAINT_STATUS_LABELS, type ComplaintStatus } from "@/types/complaint";
 
 // Thứ tự nút lọc ở SCR-ADM-04 vùng 1; "" là Tất cả, không gửi tham số status
 export const COMPLAINT_STATUS_FILTERS: { value: ComplaintStatus | ""; label: string }[] = [

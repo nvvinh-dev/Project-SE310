@@ -18,6 +18,11 @@ export default function AdminNotificationsPage() {
   const data = notificationsQuery.data;
 
   const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1;
+  // Tổng số giảm làm trang đang xem không còn: lùi về trang cuối, đặt lại ngay trong lúc render như
+  // trang phản ánh
+  if (data && !notificationsQuery.isPlaceholderData && page > totalPages) {
+    setPage(totalPages);
+  }
   const loadError = notificationsQuery.isError ? toApiError(notificationsQuery.error).message : null;
   const retry = () => void notificationsQuery.refetch();
   const items = data?.items ?? [];
@@ -64,20 +69,23 @@ export default function AdminNotificationsPage() {
                     {formatMeasurementDateTime(notification.createdAtUtc)}
                   </time>
                 </div>
-                <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-on-surface">
+                <p className="whitespace-pre-wrap break-words wrap-anywhere text-sm leading-relaxed text-on-surface">
                   {notification.message}
                 </p>
               </li>
             ))}
           </ul>
 
-          <Pagination
-            currentPage={Math.min(page, totalPages)}
-            totalPages={totalPages}
-            totalItems={data.totalCount}
-            pageSize={PAGE_SIZE}
-            onPageChange={setPage}
-          />
+          {/* Chỉ hiện khi có hơn một trang (frontend-conventions.md §3.4) */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={Math.min(page, totalPages)}
+              totalPages={totalPages}
+              totalItems={data.totalCount}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          )}
         </div>
       )}
     </div>

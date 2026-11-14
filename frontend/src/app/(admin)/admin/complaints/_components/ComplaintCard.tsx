@@ -2,20 +2,23 @@
 
 import { Button, Icons } from "@/components";
 import { formatMeasurementDateTime } from "@/lib/datetime";
-import type { ComplaintResponse, ComplaintStatus } from "@/types/complaint";
-import { COMPLAINT_STATUS_LABELS } from "../_lib/complaint-rules";
+import { COMPLAINT_STATUS_LABELS, type ComplaintResponse, type ComplaintStatus } from "@/types/complaint";
 
-const STATUS_BADGE_CLASSES: Record<ComplaintStatus, string> = {
-  New: "bg-amber-100 text-amber-800",
-  InProgress: "bg-primary-fixed/40 text-primary",
-  Resolved: "bg-slate-100 text-outline",
+// Tông theo design-system.md §3.2: đã xử lý là việc đã xong (Tích cực); phản ánh mới cần Ban giám hiệu
+// để ý (Cảnh báo); đang xử lý là chưa xong (Trung tính). Bảng gán tông §3.2 chưa có phản ánh
+const STATUS_TONES: Record<ComplaintStatus, { badge: string; dot: string }> = {
+  New: { badge: "bg-amber-100 text-amber-800", dot: "bg-amber-600" },
+  InProgress: { badge: "bg-slate-100 text-outline", dot: "bg-outline" },
+  Resolved: { badge: "bg-primary-fixed/40 text-primary", dot: "bg-primary" },
 };
 
 export function ComplaintStatusBadge({ status }: { status: ComplaintStatus }) {
+  const tone = STATUS_TONES[status];
   return (
     <span
-      className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_BADGE_CLASSES[status]}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${tone.badge}`}
     >
+      <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} aria-hidden="true"></span>
       {COMPLAINT_STATUS_LABELS[status]}
     </span>
   );
@@ -66,12 +69,12 @@ export function ComplaintCard({ complaint, isStarting, isBusy, onStartProgress, 
       </dl>
 
       {/* Nội dung chỉ là chữ, hiện nguyên văn và giữ xuống dòng */}
-      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-on-surface">{complaint.content}</p>
+      <p className="whitespace-pre-wrap break-words wrap-anywhere text-sm leading-relaxed text-on-surface">{complaint.content}</p>
 
       {isResolved && complaint.resolution && (
         <div className="rounded-2xl bg-surface-container-low p-3">
           <p className="text-xs font-bold text-on-surface-variant">Kết quả</p>
-          <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-on-surface">
+          <p className="mt-1 whitespace-pre-wrap break-words wrap-anywhere text-sm leading-relaxed text-on-surface">
             {complaint.resolution}
           </p>
         </div>

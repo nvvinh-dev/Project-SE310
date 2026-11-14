@@ -66,7 +66,7 @@ export function ResolveComplaintModal({ complaint, onClose, onSuccess, onStale }
         onClose={() => setIsConfirming(false)}
         onConfirm={submit}
         isLoading={isPending}
-        variant="warning"
+        variant="primary"
         title="Đánh dấu đã xử lý?"
         confirmText="Đánh dấu đã xử lý"
         cancelText="Quay lại"
