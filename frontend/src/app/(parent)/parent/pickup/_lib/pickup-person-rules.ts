@@ -1,95 +1,97 @@
-// Quy chuẩn và hằng số kiểm tra thông tin người đón theo SCR-PAR-04, FR-PICKUP-03, D24, D39 mục 5
-// và AC-PICKUP-03, AC-PICKUP-10, AC-PICKUP-11, AC-PICKUP-15.
+// Quy tắc kiểm tra form người đón (SCR-PAR-04, FR-PICKUP-03, D24, D39 mục 5).
+// Cùng giới hạn và cùng câu thông báo với PickupPersonRequestValidator, FacePhotoValidator và
+// PickupController.ValidatePickupPersonAsync của backend (frontend-conventions.md §4, khuôn user-rules.ts).
+// Họ tên và mối liên hệ đo sau khi trim vì backend lưu bản đã trim (ui-screens.md §4.3)
 
-export const MAX_FULL_NAME_LENGTH = 100;
-export const MAX_RELATIONSHIP_LENGTH = 50;
-export const PHONE_REGEX = /^0\d{9}$/;
-export const CITIZEN_ID_REGEX = /^\d{12}$/;
+type FieldRules<T> = { validate: Record<string, (value: T) => true | string> };
 
-// Ảnh khuôn mặt đúng 1 ảnh JPEG/PNG dung lượng ≤ 5 MB (AC-PICKUP-10, D39 mục 5)
-export const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
-export const ALLOWED_PHOTO_MIME_TYPES = ["image/jpeg", "image/png"];
+const PHONE_NUMBER_REGEX = /^0[0-9]{9}$/;
+const CITIZEN_ID_REGEX = /^[0-9]{12}$/;
 
-// Văn bản cam kết đồng ý cố định theo D24 và ui-screens.md SCR-PAR-04
+// D39 mục 5: ảnh khuôn mặt đúng 1 ảnh JPEG/PNG, tối đa 5 MB
+const MAX_FACE_PHOTO_BYTES = 5 * 1024 * 1024;
+const FACE_PHOTO_CONTENT_TYPES = ["image/jpeg", "image/png"];
+const FACE_PHOTO_EXTENSION_REGEX = /\.(jpe?g|png)$/i;
+export const FACE_PHOTO_ACCEPT = "image/jpeg,image/png";
+
+// Câu xác nhận đồng ý giữ nguyên văn D24 (ui-screens.md SCR-PAR-04 Hành vi 2)
 export const CONSENT_CONFIRMATION_TEXT =
   "Tôi xác nhận người được đăng ký (hoặc chính tôi, nếu tôi tự đăng ký) đồng ý cung cấp họ tên, số điện thoại, số CCCD và ảnh khuôn mặt để nhà trường xác minh khi đón trẻ. Thông tin chỉ phụ huynh của trẻ và giáo viên phụ trách lớp của trẻ xem được, và bị xóa khi người này không còn được đăng ký.";
 
-export interface PickupPersonFormValues {
-  fullName: string;
-  relationship: string;
-  phoneNumber: string;
-  citizenIdNumber: string;
-  photoFile: File | null;
-  consentConfirmed: boolean;
-}
+export const pickupFullNameRules: FieldRules<string> = {
+  validate: {
+    notEmpty: (value) => value.trim().length > 0 || "Họ tên người đón không được để trống.",
+    maxLength: (value) =>
+      value.trim().length <= 100 || "Họ tên người đón không được dài quá 100 ký tự.",
+  },
+};
 
-export interface PickupPersonFormErrors {
-  fullName?: string;
-  relationship?: string;
-  phoneNumber?: string;
-  citizenIdNumber?: string;
-  photoFile?: string;
-  consentConfirmed?: string;
-}
+export const relationshipRules: FieldRules<string> = {
+  validate: {
+    notEmpty: (value) => value.trim().length > 0 || "Mối liên hệ với trẻ không được để trống.",
+    maxLength: (value) =>
+      value.trim().length <= 50 || "Mối liên hệ với trẻ không được dài quá 50 ký tự.",
+  },
+};
 
-/**
- * Kiểm tra tính hợp lệ của form thông tin người đón ở client.
- * @param values Dữ liệu form nhập vào.
- * @param isEditing Đang sửa (không bắt buộc chọn lại ảnh) hay thêm mới (ảnh bắt buộc).
- * @param existingOtherCitizenId Số CCCD của người còn lại (để cảnh báo trùng CCCD sớm nếu có).
- */
-export function validatePickupPersonForm(
-  values: PickupPersonFormValues,
-  isEditing: boolean,
-  existingOtherCitizenId?: string
-): PickupPersonFormErrors {
-  const errors: PickupPersonFormErrors = {};
+export const phoneNumberRules: FieldRules<string> = {
+  validate: {
+    notEmpty: (value) => value.trim().length > 0 || "Số điện thoại không được để trống.",
+    format: (value) =>
+      PHONE_NUMBER_REGEX.test(value.trim()) ||
+      "Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng 0.",
+  },
+};
 
-  const trimmedName = values.fullName.trim();
-  if (!trimmedName) {
-    errors.fullName = "Vui lòng nhập họ tên người đón.";
-  } else if (trimmedName.length > MAX_FULL_NAME_LENGTH) {
-    errors.fullName = `Họ tên không được vượt quá ${MAX_FULL_NAME_LENGTH} ký tự.`;
-  }
+export const citizenIdNumberRules: FieldRules<string> = {
+  validate: {
+    notEmpty: (value) => value.trim().length > 0 || "Số CCCD không được để trống.",
+    format: (value) =>
+      CITIZEN_ID_REGEX.test(value.trim()) || "Số CCCD phải gồm đúng 12 chữ số.",
+  },
+};
 
-  const trimmedRelationship = values.relationship.trim();
-  if (!trimmedRelationship) {
-    errors.relationship = "Vui lòng nhập mối liên hệ với trẻ (ví dụ: Mẹ, Bố, Ông, Bà...).";
-  } else if (trimmedRelationship.length > MAX_RELATIONSHIP_LENGTH) {
-    errors.relationship = `Mối liên hệ không được vượt quá ${MAX_RELATIONSHIP_LENGTH} ký tự.`;
-  }
+// BR-PICKUP-10, AC-PICKUP-15: mỗi lần lưu đều phải đánh dấu
+export const consentConfirmedRules: FieldRules<boolean> = {
+  validate: {
+    confirmed: (value) =>
+      value === true ||
+      "Cần xác nhận người được đăng ký đồng ý cung cấp thông tin để nhà trường xác minh khi đón trẻ.",
+  },
+};
 
-  const trimmedPhone = values.phoneNumber.trim();
-  if (!trimmedPhone) {
-    errors.phoneNumber = "Vui lòng nhập số điện thoại.";
-  } else if (!PHONE_REGEX.test(trimmedPhone)) {
-    errors.phoneNumber = "Số điện thoại phải đúng 10 chữ số và bắt đầu bằng số 0.";
-  }
-
-  const trimmedCitizenId = values.citizenIdNumber.trim();
-  if (!trimmedCitizenId) {
-    errors.citizenIdNumber = "Vui lòng nhập số CCCD.";
-  } else if (!CITIZEN_ID_REGEX.test(trimmedCitizenId)) {
-    errors.citizenIdNumber = "Số CCCD phải đúng 12 chữ số.";
-  } else if (existingOtherCitizenId && trimmedCitizenId === existingOtherCitizenId.trim()) {
-    errors.citizenIdNumber = "Người đón chính và người đón dự phòng không được trùng số CCCD.";
-  }
-
-  // Ảnh khuôn mặt
-  if (!isEditing && !values.photoFile) {
-    errors.photoFile = "Vui lòng chọn 1 ảnh khuôn mặt của người đón.";
-  } else if (values.photoFile) {
-    if (!ALLOWED_PHOTO_MIME_TYPES.includes(values.photoFile.type)) {
-      errors.photoFile = "Chỉ chấp nhận ảnh định dạng JPEG hoặc PNG.";
-    } else if (values.photoFile.size > MAX_PHOTO_SIZE_BYTES) {
-      errors.photoFile = "Dung lượng ảnh không được vượt quá 5 MB.";
-    }
-  }
-
-  // Ô xác nhận đồng ý (AC-PICKUP-15, D24)
-  if (!values.consentConfirmed) {
-    errors.consentConfirmed = "Vui lòng đọc và đánh dấu xác nhận đồng ý để tiếp tục.";
-  }
-
-  return errors;
+// Thêm mới: bắt buộc đúng 1 ảnh. Sửa: không chọn ảnh nghĩa là giữ ảnh cũ (SCR-PAR-04 Hành vi 1)
+export function facePhotoRules(isRequired: boolean): FieldRules<FileList | null | undefined> {
+  return {
+    validate: {
+      count: (files) => {
+        const count = files?.length ?? 0;
+        if (count > 1) return "Chỉ gửi đúng 1 ảnh khuôn mặt cho mỗi người đón.";
+        if (count === 0 && isRequired) return "Cần 1 ảnh khuôn mặt của người đón.";
+        return true;
+      },
+      contentType: (files) => {
+        const file = files?.[0];
+        return (
+          !file ||
+          FACE_PHOTO_CONTENT_TYPES.includes(file.type) ||
+          "Ảnh khuôn mặt chỉ nhận định dạng JPEG hoặc PNG."
+        );
+      },
+      extension: (files) => {
+        const file = files?.[0];
+        return (
+          !file ||
+          FACE_PHOTO_EXTENSION_REGEX.test(file.name) ||
+          "Tên file ảnh khuôn mặt phải có đuôi .jpg, .jpeg hoặc .png."
+        );
+      },
+      size: (files) => {
+        const file = files?.[0];
+        if (!file) return true;
+        if (file.size <= 0) return "Ảnh khuôn mặt không được rỗng.";
+        return file.size <= MAX_FACE_PHOTO_BYTES || "Ảnh khuôn mặt không được lớn hơn 5 MB.";
+      },
+    },
+  };
 }

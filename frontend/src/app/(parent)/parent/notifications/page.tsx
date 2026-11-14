@@ -6,7 +6,6 @@ import {
   ErrorAlert,
   Icons,
   LoadingSpinner,
-  NoticeBanner,
   Pagination,
 } from "@/components";
 import { toApiError } from "@/lib/axios";
@@ -28,6 +27,11 @@ export default function ParentNotificationsPage() {
   const notificationsList = pageData?.items ?? [];
   const totalCount = pageData?.totalCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  // Trang đang xem lớn hơn số trang thì chuyển về trang cuối, đặt lại ngay trong lúc render
+  // (frontend-conventions.md §3.4). Phân trang ở server nên phải tải lại đúng trang cuối
+  if (pageData && totalCount > 0 && currentPage > totalPages) {
+    setCurrentPage(totalPages);
+  }
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
@@ -35,13 +39,14 @@ export default function ParentNotificationsPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // 4 Trạng thái giao diện
+  // Lỗi thay cả danh sách chỉ khi chưa có dữ liệu; đã có thì giữ dữ liệu cũ (frontend-conventions.md §3.3)
   const hasData = pageData !== undefined;
   const isInitialLoading = notificationsQuery.isPending && !hasData;
   const isInitialError = notificationsQuery.isError && !hasData;
   const isBackgroundError = notificationsQuery.isError && hasData;
+  // toApiError đã có câu dự phòng khi backend không trả message (frontend-conventions.md §5)
   const errorMessage = notificationsQuery.error
-    ? toApiError(notificationsQuery.error).message ?? "Không thể tải danh sách thông báo."
+    ? toApiError(notificationsQuery.error).message
     : null;
 
   return (
@@ -58,10 +63,10 @@ export default function ParentNotificationsPage() {
 
       {/* Dải báo lỗi tải lại nền */}
       {isBackgroundError && errorMessage && (
-        <NoticeBanner
+        <ErrorAlert
+          title="Không tải lại được dữ liệu mới nhất"
           message={errorMessage}
-          onClose={() => void notificationsQuery.refetch()}
-          role="alert"
+          onRetry={() => void notificationsQuery.refetch()}
         />
       )}
 
@@ -72,13 +77,13 @@ export default function ParentNotificationsPage() {
         </div>
       ) : isInitialError ? (
         <ErrorAlert
-          message={errorMessage || "Không thể tải danh sách thông báo."}
+          message={errorMessage ?? ""}
           onRetry={() => void notificationsQuery.refetch()}
         />
-      ) : notificationsList.length === 0 ? (
+      ) : totalCount === 0 ? (
         <EmptyState
-          title="Chưa có thông báo nào"
-          message="Bạn chưa có thông báo nào từ nhà trường."
+          title="Chưa có thông báo nào."
+          message="Thông báo về học phí, sự cố, sức khỏe, ảnh hoạt động, nghỉ học và kết quả phản ánh sẽ hiện ở đây."
           icon={<Icons.Clipboard />}
         />
       ) : (

@@ -33,7 +33,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
         </div>
 
         {/* Nội dung nguyên văn do backend soạn (AC-NOTI-01) */}
-        <p className="text-sm sm:text-base text-on-surface leading-relaxed wrap-anywhere select-text">
+        <p className="text-sm sm:text-base text-on-surface leading-relaxed wrap-anywhere whitespace-pre-wrap">
           {notification.message}
         </p>
       </div>

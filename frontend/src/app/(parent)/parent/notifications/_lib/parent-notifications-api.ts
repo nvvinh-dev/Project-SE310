@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
 import type { ApiResponse } from "@/types/auth";
 import type { NotificationPageResponse } from "@/types/notification";
@@ -35,5 +35,7 @@ export function useMyNotifications({
       );
       return res.data.data;
     },
+    // Trang cũ còn hiện trong lúc tải trang mới (frontend-conventions.md §3.4)
+    placeholderData: keepPreviousData,
   });
 }
