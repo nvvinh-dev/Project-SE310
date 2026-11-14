@@ -133,7 +133,7 @@ export default function ClassActivitiesPage() {
             type="button"
             onClick={() => setShareError(null)}
             aria-label="Đóng thông báo"
-            className="shrink-0 mt-2 p-1 rounded-full text-outline hover:bg-surface-container-low hover:text-on-surface transition-colors cursor-pointer"
+            className="shrink-0 min-h-11 min-w-11 flex items-center justify-center rounded-full text-outline hover:bg-surface-container-low hover:text-on-surface transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Icons.Close />
           </button>
