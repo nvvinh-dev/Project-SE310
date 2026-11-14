@@ -119,7 +119,9 @@ export default function ClassActivitiesPage() {
 
       {Boolean(shareError) && (
         <div className="flex items-start gap-2">
-          <ApiErrorAlert error={shareError} className="flex-1" />
+          <div className="flex-1 min-w-0">
+            <ApiErrorAlert error={shareError} />
+          </div>
           <button
             type="button"
             onClick={() => setShareError(null)}

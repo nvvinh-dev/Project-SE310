@@ -41,9 +41,12 @@ export function useShareActivityPhotos() {
         formData.append("photos", file);
       }
 
+      // apiClient mặc định Content-Type JSON, axios sẽ đổi FormData thành JSON và backend trả 415.
+      // Ghi multipart để axios giữ FormData; trình duyệt tự gắn boundary
       const res = await apiClient.post<ApiResponse<ActivityPhotoResponse[]>>(
         `/api/classes/${classId}/activity-photos`,
-        formData
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
       return res.data.data ?? [];
     },
