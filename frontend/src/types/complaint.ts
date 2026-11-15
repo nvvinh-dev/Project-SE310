@@ -1,4 +1,4 @@
-// FR-COMPLAINT-02: Ban giám hiệu (Admin) xem và xử lý phản ánh của phụ huynh (D39 mục 18)
+// FR-COMPLAINT-01, FR-COMPLAINT-02: phụ huynh gửi phản ánh, Ban giám hiệu (Admin) xem và xử lý (D39 mục 18)
 
 // Ba trạng thái khớp hằng số ComplaintStatuses của backend. Phản ánh mới luôn New do server đặt
 export type ComplaintStatus = "New" | "InProgress" | "Resolved";
@@ -40,4 +40,20 @@ export interface ComplaintPageResponse {
 export interface HandleComplaintRequest {
   status: ComplaintHandlingStatus;
   resolution: string | null;
+}
+
+// FR-COMPLAINT-01: phản ánh phụ huynh xem ở SCR-PAR-09. Gồm cả phản ánh do phụ huynh khác của trẻ gửi;
+// không kèm người gửi hay người xử lý (D45). resolution và resolvedAtUtc chỉ có khi đã xử lý xong
+export interface ChildComplaintResponse {
+  id: string;
+  content: string;
+  status: ComplaintStatus;
+  resolution: string | null;
+  createdAtUtc: string;
+  resolvedAtUtc: string | null;
+}
+
+// Chỉ gửi nội dung; trạng thái và người gửi do server đặt (D44)
+export interface CreateComplaintRequest {
+  content: string;
 }

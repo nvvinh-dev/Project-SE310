@@ -1,28 +1,8 @@
 "use client";
 
-import { Button, Icons } from "@/components";
+import { Button, ComplaintStatusBadge, Icons } from "@/components";
 import { formatMeasurementDateTime } from "@/lib/datetime";
-import { COMPLAINT_STATUS_LABELS, type ComplaintResponse, type ComplaintStatus } from "@/types/complaint";
-
-// Tông theo design-system.md §3.2: đã xử lý là việc đã xong (Tích cực); phản ánh mới cần Ban giám hiệu
-// để ý (Cảnh báo); đang xử lý là chưa xong (Trung tính). Bảng gán tông §3.2 chưa có phản ánh
-const STATUS_TONES: Record<ComplaintStatus, { badge: string; dot: string }> = {
-  New: { badge: "bg-amber-100 text-amber-800", dot: "bg-amber-600" },
-  InProgress: { badge: "bg-slate-100 text-outline", dot: "bg-outline" },
-  Resolved: { badge: "bg-primary-fixed/40 text-primary", dot: "bg-primary" },
-};
-
-export function ComplaintStatusBadge({ status }: { status: ComplaintStatus }) {
-  const tone = STATUS_TONES[status];
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${tone.badge}`}
-    >
-      <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} aria-hidden="true"></span>
-      {COMPLAINT_STATUS_LABELS[status]}
-    </span>
-  );
-}
+import type { ComplaintResponse } from "@/types/complaint";
 
 interface ComplaintCardProps {
   complaint: ComplaintResponse;
