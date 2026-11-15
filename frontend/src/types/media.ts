@@ -13,3 +13,12 @@ export interface ActivityPhotoResponse {
   uploadedAtUtc: string;
   url: string;
 }
+
+// Một trang ảnh hoạt động của lớp con đang học, mới nhất trước. totalCount là tổng số ảnh để tính số trang.
+// GET /api/children/{childId}/activity-photos?page=&pageSize=
+export interface ActivityPhotoPageResponse {
+  items: ActivityPhotoResponse[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}

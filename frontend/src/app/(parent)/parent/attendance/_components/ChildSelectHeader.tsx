@@ -55,6 +55,7 @@ export function ChildSelectHeader({
             value={selectedChildId}
             onChange={(e) => onSelectChild(e.target.value)}
             options={options}
+            className="min-h-11"
           />
         </div>
       )}
