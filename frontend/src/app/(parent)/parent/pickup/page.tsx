@@ -169,7 +169,9 @@ export default function ParentPickupPage() {
       ) : (
         <div className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-2">
+            {/* key theo con: đổi con thì thẻ khởi tạo lại state ảnh lỗi/tự tải lại (D53) */}
             <PickupPersonCard
+              key={`${activeChildId}-primary`}
               priority={1}
               person={primaryPerson}
               hasPrimary={primaryPerson !== null}
@@ -179,6 +181,7 @@ export default function ParentPickupPage() {
               onRefreshPhoto={handleRefreshPhoto}
             />
             <PickupPersonCard
+              key={`${activeChildId}-backup`}
               priority={2}
               person={backupPerson}
               hasPrimary={primaryPerson !== null}

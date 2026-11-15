@@ -12,7 +12,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
   const formattedTime = formatVietnamDateTime(notification.createdAtUtc);
 
   return (
-    <div className="flex items-start gap-3.5 sm:gap-4 p-4 sm:p-5 rounded-2xl border border-slate-200/80 bg-surface-container-lowest shadow-xs hover:border-slate-300 transition-colors min-w-0">
+    <div className="flex items-start gap-3 p-3 rounded-2xl border border-slate-200/90 bg-surface-container-lowest shadow-xs min-w-0">
       {/* Icon thông báo */}
       <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
         <Icons.Clipboard />
