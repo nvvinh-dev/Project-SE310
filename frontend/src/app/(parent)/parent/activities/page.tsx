@@ -16,6 +16,7 @@ import {
 import { ChildSelectHeader } from "../attendance/_components/ChildSelectHeader";
 import { ActivityPhotoGrid } from "./_components/ActivityPhotoGrid";
 import { ActivityPhotoViewerModal } from "./_components/ActivityPhotoViewerModal";
+import { ExpiredPhotosBanner } from "./_components/ExpiredPhotosBanner";
 
 // Mặc định 20 ảnh mỗi trang (ui-screens.md SCR-PAR-05 Vùng 3, frontend-conventions.md §3.4)
 const PAGE_SIZE = 20;
@@ -58,8 +59,11 @@ export default function ParentActivitiesPage() {
   const photos = useMemo(() => pageData?.items ?? [], [pageData]);
   const totalCount = pageData?.totalCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  // Trang đang xem lớn hơn số trang (ảnh bị bớt giữa chừng) thì về trang cuối, đặt lại trong lúc render
-  // (frontend-conventions.md §3.4). Phân trang ở server nên phải tải lại đúng trang cuối
+  // Trang đang xem lớn hơn số trang (ảnh bị bớt giữa chừng) thì hiện trang cuối (frontend-conventions.md §3.4).
+  // Không dùng Math.min(page, totalPages) như danh sách phân trang ở client: ở đây `page` nằm trong query key
+  // và totalPages lại tính từ chính kết quả của query đó, nên chỉ kẹp số khi hiển thị thì query vẫn giữ trang
+  // cũ (items rỗng) mà Pagination lại báo trang cuối. Đặt lại state ngay trong lúc render để query tải đúng
+  // trang cuối; React render lại ngay, không qua effect nên không nháy giao diện
   if (pageData && totalCount > 0 && page > totalPages) {
     setPage(totalPages);
   }
@@ -89,8 +93,15 @@ export default function ParentActivitiesPage() {
     setFailedPhotoUrls((prev) => ({ ...prev, [url]: true }));
   };
 
+  // Số ảnh của trang đang xem tải lỗi; > 0 thì hiện một dải thông báo có nút "Thử lại" chung cho cả trang
+  const failedPhotoCount = photos.filter((p) => failedPhotoUrls[p.url]).length;
+
   // URL ký hết hạn 60 phút: gọi lại API của trang đang xem để nhận URL mới, không lưu URL lâu dài (D53)
+  // Ref chặn bấm "Thử lại" liên tiếp: state chưa kịp cập nhật giữa hai lần bấm nhanh nên không dùng được để chặn
+  const isReloadingUrlsRef = useRef(false);
   const handleReloadUrls = async () => {
+    if (isReloadingUrlsRef.current) return;
+    isReloadingUrlsRef.current = true;
     setIsReloadingUrls(true);
     try {
       const res = await photosQuery.refetch();
@@ -98,6 +109,7 @@ export default function ParentActivitiesPage() {
         setFailedPhotoUrls({});
       }
     } finally {
+      isReloadingUrlsRef.current = false;
       setIsReloadingUrls(false);
     }
   };
@@ -126,15 +138,16 @@ export default function ParentActivitiesPage() {
 
   // Ảnh của con gặp lỗi (ví dụ con bị gỡ liên kết → 404, AC-MEDIA-04): tự tải lại danh sách con và giữ message
   // của backend để hiện cả sau khi đã chuyển sang con khác (ui-screens.md §10, frontend-conventions.md §5).
-  // Ref chặn vòng lặp refetch cho cùng một con
+  // Ref chặn vòng lặp refetch cho cùng một lần lỗi của một con. Query hết lỗi (Thử lại thành công, đổi con, đổi
+  // trang) thì đặt lại, để lần lỗi sau của cùng con đó (ví dụ vừa bị gỡ liên kết → 404) vẫn tải lại danh sách con
   const handledErrorChildIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (
-      photosQuery.isError &&
-      activeChildId &&
-      handledErrorChildIdRef.current !== activeChildId
-    ) {
+    if (!photosQuery.isError) {
+      handledErrorChildIdRef.current = null;
+      return;
+    }
+    if (activeChildId && handledErrorChildIdRef.current !== activeChildId) {
       handledErrorChildIdRef.current = activeChildId;
       const msg = toApiError(photosQuery.error).message ?? null;
       void childrenQuery.refetch().then((res) => {
@@ -236,13 +249,20 @@ export default function ParentActivitiesPage() {
         />
       ) : (
         <div className="space-y-4 min-w-0">
+          {/* Ảnh hết hạn hiển thị: một dải chung thay cho nút Thử lại ở từng ô (D53) */}
+          {failedPhotoCount > 0 && (
+            <ExpiredPhotosBanner
+              failedCount={failedPhotoCount}
+              isReloading={isReloadingUrls}
+              onReload={() => void handleReloadUrls()}
+            />
+          )}
+
           {/* Vùng [2]: Ảnh theo ngày */}
           <ActivityPhotoGrid
             photos={photos}
             failedPhotoUrls={failedPhotoUrls}
-            isReloadingUrls={isReloadingUrls}
             onPhotoError={handlePhotoError}
-            onReloadUrls={() => void handleReloadUrls()}
             onOpenPhoto={handleOpenPhoto}
           />
 

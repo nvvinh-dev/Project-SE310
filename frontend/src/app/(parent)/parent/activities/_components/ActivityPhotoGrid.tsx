@@ -1,16 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { Button, Icons } from "@/components";
+import { Icons } from "@/components";
 import { formatVietnamDateFromUtc } from "@/lib/datetime";
 import type { ActivityPhotoResponse } from "@/types/media";
 
 interface ActivityPhotoGridProps {
   photos: ActivityPhotoResponse[];
   failedPhotoUrls: Record<string, boolean>;
-  isReloadingUrls: boolean;
   onPhotoError: (url: string) => void;
-  onReloadUrls: () => void;
   onOpenPhoto: (photoId: string) => void;
 }
 
@@ -39,9 +37,7 @@ function groupPhotosByDate(photos: ActivityPhotoResponse[]): PhotoDateGroup[] {
 export function ActivityPhotoGrid({
   photos,
   failedPhotoUrls,
-  isReloadingUrls,
   onPhotoError,
-  onReloadUrls,
   onOpenPhoto,
 }: ActivityPhotoGridProps) {
   const groups = useMemo(() => groupPhotosByDate(photos), [photos]);
@@ -73,22 +69,15 @@ export function ActivityPhotoGrid({
               return (
                 <li key={photo.id} className="min-w-0">
                   {failedPhotoUrls[photo.url] ? (
-                    // URL ký hết hạn hoặc ảnh tải lỗi: gọi lại API trang đang xem để nhận URL mới (D53)
+                    // URL ký hết hạn hoặc ảnh tải lỗi: chỉ đánh dấu ô này; nút "Thử lại" gom một chỗ ở dải
+                    // thông báo phía trên lưới (page.tsx), gọi lại API trang đang xem để nhận URL mới (D53)
                     <div className="aspect-square rounded-2xl border border-slate-200 bg-slate-100 flex flex-col items-center justify-center gap-2 p-3 text-center">
+                      <span className="text-error" aria-hidden="true">
+                        <Icons.Alert />
+                      </span>
                       <p className="text-xs text-error font-medium wrap-anywhere">
-                        Không tải được ảnh (ảnh có thể đã hết hạn hiển thị).
+                        Không tải được ảnh.
                       </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="min-h-11"
-                        isLoading={isReloadingUrls}
-                        icon={<Icons.Refresh />}
-                        onClick={onReloadUrls}
-                      >
-                        {isReloadingUrls ? "Đang tải lại..." : "Thử lại"}
-                      </Button>
                     </div>
                   ) : (
                     <button
