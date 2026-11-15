@@ -12,6 +12,7 @@ const PARENT_MENU_ITEMS: NavItem[] = [
   { label: "Học phí và hóa đơn", href: "/parent/tuition", icon: "FileText" },
   { label: "Thực đơn tuần", href: "/parent/menu", icon: "Clipboard" },
   { label: "Thông báo", href: "/parent/notifications", icon: "Alert" },
+  { label: "Phản ánh tới Ban giám hiệu", href: "/parent/complaints", icon: "Info" },
 ];
 
 export default function ParentLayout({ children }: { children: React.ReactNode }) {
