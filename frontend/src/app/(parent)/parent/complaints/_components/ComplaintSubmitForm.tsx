@@ -95,9 +95,14 @@ export function ComplaintSubmitForm({ child, onSuccess, onSubmitError }: Complai
             className={`text-right text-xs font-medium ${
               trimmedLength > MAX_COMPLAINT_CONTENT_LENGTH ? "text-error font-bold" : "text-on-surface-variant"
             }`}
-            aria-live="polite"
           >
             {trimmedLength}/{MAX_COMPLAINT_CONTENT_LENGTH}
+          </p>
+          {/* Bộ đếm không đọc theo từng phím gõ; trình đọc màn hình chỉ được báo khi vượt giới hạn */}
+          <p className="sr-only" aria-live="polite">
+            {trimmedLength > MAX_COMPLAINT_CONTENT_LENGTH
+              ? `Nội dung đang vượt quá ${MAX_COMPLAINT_CONTENT_LENGTH} ký tự`
+              : ""}
           </p>
         </div>
 

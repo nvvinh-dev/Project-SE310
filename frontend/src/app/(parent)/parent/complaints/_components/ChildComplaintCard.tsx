@@ -1,5 +1,5 @@
 import { ComplaintStatusBadge, Icons } from "@/components";
-import { formatMeasurementDateTime } from "@/lib/datetime";
+import { formatVietnamDateTime } from "@/lib/datetime";
 import type { ChildComplaintResponse } from "@/types/complaint";
 
 // Một phản ánh ở SCR-PAR-09 vùng 3. Chỉ để xem: không có nút sửa hay xóa (Hành vi 4). Không có người
@@ -13,14 +13,14 @@ export function ChildComplaintCard({ complaint }: { complaint: ChildComplaintRes
             <Icons.Clock />
           </span>
           <time dateTime={complaint.createdAtUtc} className="font-semibold text-on-surface">
-            {formatMeasurementDateTime(complaint.createdAtUtc)}
+            {formatVietnamDateTime(complaint.createdAtUtc)}
           </time>
         </span>
         <ComplaintStatusBadge status={complaint.status} />
         {complaint.resolvedAtUtc && (
           <span>
             Đã xử lý lúc{" "}
-            <time dateTime={complaint.resolvedAtUtc}>{formatMeasurementDateTime(complaint.resolvedAtUtc)}</time>
+            <time dateTime={complaint.resolvedAtUtc}>{formatVietnamDateTime(complaint.resolvedAtUtc)}</time>
           </span>
         )}
       </div>
