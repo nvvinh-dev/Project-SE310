@@ -28,6 +28,21 @@ export interface PickupPersonResponse {
   facePhotoUrl: string;
 }
 
+// FR-PICKUP-03, D24: phụ huynh sửa người đón, gửi multipart kèm ảnh ở trường facePhoto (không bắt buộc
+// khi sửa). Không đổi được priority. consentConfirmed phải true ở mỗi lần lưu (BR-PICKUP-10)
+export interface PickupPersonRequest {
+  fullName: string;
+  relationship: string;
+  phoneNumber: string;
+  citizenIdNumber: string;
+  consentConfirmed: boolean;
+}
+
+// Thêm mới có thêm priority: 1 = người đón chính, 2 = người đón dự phòng; ảnh bắt buộc
+export interface CreatePickupPersonRequest extends PickupPersonRequest {
+  priority: 1 | 2;
+}
+
 // Request ghi nhận đón về (FR-PICKUP-01, AC-PICKUP-01, AC-PICKUP-04)
 export interface CreatePickupRequest {
   childId: string;
