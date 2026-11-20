@@ -22,8 +22,8 @@ import {
   TableRow,
 } from "@/components";
 import { toApiError } from "@/lib/axios";
+import { normalizeForSearch } from "@/lib/text";
 import type { ClassPlacementResponse, ClassResponse } from "@/types/class";
-import { normalizeForSearch } from "../users/_lib/user-rules";
 import { useClassPlacements, useClasses } from "./_lib/classes-api";
 import { formatDateOnly } from "./_lib/class-rules";
 import { PlacementClassBadge } from "./_components/ClassBadges";

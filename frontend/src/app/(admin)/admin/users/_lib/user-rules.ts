@@ -40,14 +40,3 @@ export const roleRules: FieldRules = {
     required: (value) => isRole(value) || "Vai trò không được để trống.",
   },
 };
-
-// So sánh không phân biệt hoa thường và dấu tiếng Việt, để gõ "nguyen" vẫn tìm ra "Nguyễn"
-export function normalizeForSearch(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .toLowerCase()
-    .trim();
-}

@@ -24,10 +24,11 @@ import {
 import { ROLE_VIETNAMESE_LABELS } from "@/components/DashboardLayout";
 import { useAuth } from "@/context/AuthContext";
 import { toApiError } from "@/lib/axios";
+import { normalizeForSearch } from "@/lib/text";
 import type { Role } from "@/types/auth";
 import type { UserResponse } from "@/types/user";
 import { useUsers } from "./_lib/users-api";
-import { ROLES, normalizeForSearch } from "./_lib/user-rules";
+import { ROLES } from "./_lib/user-rules";
 import { AccountStatusDialog } from "./_components/AccountStatusDialog";
 import { ChangeRoleModal, ConfirmChangeRoleDialog } from "./_components/ChangeRoleModal";
 import { ConfirmResetPasswordDialog, ResetPasswordModal } from "./_components/ResetPasswordModal";
