@@ -20,6 +20,18 @@ export default function TeacherClassHealthNotesPage() {
 
   return (
     <div className="py-8 space-y-4 sm:space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-on-surface">
+            Lưu ý sức khỏe của lớp
+          </h1>
+          <p className="text-sm text-on-surface-variant mt-1">
+            Dị ứng và bệnh nền của trẻ trong lớp, để đọc trước giờ ăn và giờ hoạt động.
+          </p>
+        </div>
+      </div>
+
       {/* Đã có dữ liệu mà tải lại lỗi: giữ danh sách cũ, báo ở trên (ui-screens.md §4.2) */}
       {hasData && errorMessage && (
         <ErrorAlert
