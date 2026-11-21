@@ -40,6 +40,8 @@ using NhaTre.Application.Validators.Menu;
 using NhaTre.Application.DTOs.Menu;
 using NhaTre.Application.Validators.Complaints;
 using NhaTre.Application.DTOs.Complaints;
+using NhaTre.Application.Validators.AbsenceFollowUps;
+using NhaTre.Application.DTOs.AbsenceFollowUps;
 using NhaTre.Application.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -166,6 +168,13 @@ builder.Services.AddScoped<ISecurityEventRepository, SecurityEventRepository>();
 builder.Services.AddScoped<ISecurityEventService, SecurityEventService>(); // D50
 builder.Services.AddScoped<ITuitionRepository, TuitionRepository>();
 builder.Services.AddScoped<ITuitionService, TuitionService>();
+// D21 mục 1: tài khoản nhận học phí của trường, thiếu trường nào thì dừng lúc khởi động như Jwt:Key
+var paymentAccount = builder.Configuration.GetSection("PaymentAccount").Get<PaymentAccountSettings>();
+if (paymentAccount is null
+    || new[] { paymentAccount.BankBin, paymentAccount.BankName, paymentAccount.AccountNumber, paymentAccount.AccountName }
+        .Any(string.IsNullOrWhiteSpace))
+    throw new InvalidOperationException("Thiếu cấu hình PaymentAccount (BankBin, BankName, AccountNumber, AccountName).");
+builder.Services.AddSingleton(paymentAccount);
 builder.Services.AddScoped<IValidator<TuitionFeeRequest>, TuitionFeeRequestValidator>();
 builder.Services.AddScoped<IValidator<InvoiceRequest>, InvoiceRequestValidator>();
 builder.Services.AddScoped<IValidator<RecordPaymentRequest>, RecordPaymentRequestValidator>();
@@ -216,6 +225,9 @@ builder.Services.AddScoped<IComplaintService, ComplaintService>();
 builder.Services.AddScoped<IValidator<CreateComplaintRequest>, CreateComplaintRequestValidator>();
 builder.Services.AddScoped<IValidator<ComplaintListQuery>, ComplaintListQueryValidator>();
 builder.Services.AddScoped<IValidator<HandleComplaintRequest>, HandleComplaintRequestValidator>();
+builder.Services.AddScoped<IAbsenceFollowUpRepository, AbsenceFollowUpRepository>();
+builder.Services.AddScoped<IAbsenceFollowUpService, AbsenceFollowUpService>();
+builder.Services.AddScoped<IValidator<CreateAbsenceFollowUpRequest>, CreateAbsenceFollowUpRequestValidator>();
 builder.Services.AddHttpClient<IFileStorageService, SupabaseFileStorageService>(); // D22, D53: Supabase:Url và Supabase:ServiceKey đọc lúc gọi, không chặn khởi động
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
