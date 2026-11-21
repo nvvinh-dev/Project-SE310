@@ -64,9 +64,15 @@ export default function DashboardLayout({
         <div className="flex flex-col gap-6">
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center">
-                <Icons.School />
-              </div>
+              {/* Logo dự án dùng chung cho trang đăng nhập và header mọi cổng (SCR-AUTH-01 vùng 5) */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- logo SVG tĩnh trong public/, không cần tối ưu ảnh */}
+              <img
+                src="/logo.svg"
+                alt=""
+                width={40}
+                height={40}
+                className="w-10 h-10 shrink-0 rounded-xl"
+              />
               <div className="flex flex-col">
                 <span className="text-xl text-primary leading-tight font-bold">
                   Hệ thống Mầm non
