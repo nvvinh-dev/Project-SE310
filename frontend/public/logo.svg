@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Logo Hệ thống Quản lý Nhà trẻ">
+  <rect width="64" height="64" rx="16" fill="#006c4c"/>
+  <g stroke="#8cf7c7" stroke-width="2.5" stroke-linecap="round">
+    <line x1="46" y1="5.5" x2="46" y2="8"/>
+    <line x1="46" y1="26" x2="46" y2="28.5"/>
+    <line x1="34.5" y1="17" x2="37" y2="17"/>
+    <line x1="55" y1="17" x2="57.5" y2="17"/>
+    <line x1="37.9" y1="8.9" x2="39.6" y2="10.6"/>
+    <line x1="52.4" y1="23.4" x2="54.1" y2="25.1"/>
+    <line x1="37.9" y1="25.1" x2="39.6" y2="23.4"/>
+    <line x1="52.4" y1="10.6" x2="54.1" y2="8.9"/>
+  </g>
+  <circle cx="46" cy="17" r="6" fill="#8cf7c7"/>
+  <path d="M16 35 28 24.5 40 35v16a2 2 0 0 1-2 2H18a2 2 0 0 1-2-2z" fill="#ffffff"/>
+  <path d="M11 37.5 28 22.5 45 37.5" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 53v-8a4 4 0 0 1 8 0v8z" fill="#4eba8e"/>
+</svg>
