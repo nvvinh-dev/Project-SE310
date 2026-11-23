@@ -12,6 +12,10 @@ export interface NavItem {
   href: string;
   icon: keyof typeof Icons;
   iconColorClass?: string;
+  // Số việc cần chú ý, hiện thành huy hiệu bên phải mục menu (ví dụ SCR-ADM-06). Bỏ trống hoặc 0 thì không hiện
+  count?: number;
+  // Câu cho trình đọc màn hình thay cho con số, ví dụ "3 trẻ cần xử lý"
+  countLabel?: string;
 }
 
 export interface DashboardLayoutProps {
@@ -125,6 +129,17 @@ export default function DashboardLayout({
                     </span>
                     <span className="text-base">{item.label}</span>
                   </div>
+                  {/* Số đếm chỉ hiện khi lớn hơn 0; trình đọc màn hình đọc countLabel thay cho con số */}
+                  {item.count !== undefined && item.count > 0 && (
+                    <span
+                      className={`ml-2 inline-flex min-w-6 shrink-0 items-center justify-center rounded-full px-2 py-0.5 text-xs font-bold ${
+                        isActive ? "bg-on-primary text-primary" : "bg-error text-white"
+                      }`}
+                    >
+                      <span aria-hidden="true">{item.count > 99 ? "99+" : item.count}</span>
+                      <span className="sr-only">{item.countLabel ?? `${item.count} mục`}</span>
+                    </span>
+                  )}
                 </Link>
               );
             })}
