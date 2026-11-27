@@ -23,7 +23,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const count = escalationsQuery.data?.length;
 
   const menuItems = ADMIN_MENU_ITEMS.map((item) =>
-    item.href === ABSENCES_HREF && count ? { ...item, count, countLabel: `${count} trẻ cần xử lý` } : item
+    item.href === ABSENCES_HREF && count ? { ...item, count, countLabel: `${count} trẻ` } : item
   );
 
   return (

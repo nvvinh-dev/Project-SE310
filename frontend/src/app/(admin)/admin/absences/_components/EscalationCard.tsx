@@ -4,7 +4,8 @@ import { ABSENCE_FOLLOW_UP_OUTCOME_LABELS, type AbsenceEscalationResponse } from
 import { ESCALATION_STATUS_LABELS, getEscalationStatus, type EscalationStatus } from "../_lib/absence-rules";
 
 // Tông theo design-system.md §3.2: không liên lạc được là việc cần Ban giám hiệu xử lý ngay (Lỗi);
-// chưa liên hệ là cần để ý (Cảnh báo); liên lạc được chỉ xuất hiện ở các lần liên hệ trước (Tích cực)
+// chưa liên hệ là cần để ý (Cảnh báo). Badge chỉ hiện trạng thái sau cùng, mà backend không trả trẻ có
+// lần sau cùng là liên lạc được, nên tông Reached không hiện ra; chỉ giữ cho đủ khóa của EscalationStatus
 const STATUS_TONES: Record<EscalationStatus, { badge: string; dot: string }> = {
   Unreachable: { badge: "bg-error-container text-on-error-container", dot: "bg-error" },
   NotContacted: { badge: "bg-amber-100 text-amber-800", dot: "bg-amber-600" },

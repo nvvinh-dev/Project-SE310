@@ -2,7 +2,7 @@
 
 import { EmptyState, ErrorAlert, LoadingSpinner } from "@/components";
 import { toApiError } from "@/lib/axios";
-import { formatVietnamShortDate, getTodayVietnamDateString } from "@/lib/datetime";
+import { formatVietnamDateFromUtc } from "@/lib/datetime";
 import { EscalationCard } from "./_components/EscalationCard";
 import { useAbsenceEscalations } from "./_lib/absences-api";
 
@@ -14,14 +14,16 @@ export default function AbsenceEscalationsPage() {
   const data = escalationsQuery.data;
   const loadError = escalationsQuery.isError ? toApiError(escalationsQuery.error).message : null;
   const retry = () => void escalationsQuery.refetch();
-  const today = formatVietnamShortDate(getTodayVietnamDateString());
+  // Server tính "hôm nay" lúc trả danh sách và không trả kèm ngày, nên lấy ngày theo lúc tải xong dữ liệu
+  // thay vì lúc vẽ: trang để mở qua nửa đêm thì tiêu đề vẫn khớp danh sách đang hiện cho tới lần tải sau
+  const today = data ? formatVietnamDateFromUtc(new Date(escalationsQuery.dataUpdatedAt).toISOString()) : null;
 
   return (
     <div className="py-8 space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-on-surface">
           Vắng không phép cần xử lý
-          <span className="font-medium text-on-surface-variant"> · hôm nay {today}</span>
+          {today && <span className="font-medium text-on-surface-variant"> · hôm nay {today}</span>}
         </h1>
         <p className="text-sm text-on-surface-variant">
           Trẻ vắng không phép mà giáo viên không liên lạc được với người đón. Từ 10:00, danh sách có thêm trẻ
