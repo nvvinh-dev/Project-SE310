@@ -19,6 +19,8 @@ using NhaTre.Application.Validators.Children;
 using NhaTre.Application.DTOs.Children;
 using NhaTre.Application.Validators.Tuition;
 using NhaTre.Application.DTOs.Tuition;
+using NhaTre.Application.Validators.MockBank;
+using NhaTre.Application.DTOs.MockBank;
 using NhaTre.Application.Validators.Users;
 using NhaTre.Application.DTOs.Users;
 using NhaTre.Application.Validators.Classes;
@@ -178,14 +180,35 @@ if (paymentAccount is null
 builder.Services.AddSingleton(paymentAccount);
 builder.Services.AddScoped<IValidator<TuitionFeeRequest>, TuitionFeeRequestValidator>();
 builder.Services.AddScoped<IValidator<InvoiceRequest>, InvoiceRequestValidator>();
+builder.Services.AddScoped<IValidator<BulkInvoiceRequest>, BulkInvoiceRequestValidator>();
 builder.Services.AddScoped<IValidator<RecordPaymentRequest>, RecordPaymentRequestValidator>();
 builder.Services.AddScoped<IValidator<BankTransactionNotification>, BankTransactionNotificationValidator>();
+builder.Services.AddScoped<IValidator<MatchBankTransactionRequest>, MatchBankTransactionRequestValidator>();
+builder.Services.AddScoped<IValidator<DismissBankTransactionRequest>, DismissBankTransactionRequestValidator>();
 // D21 mục 2, D46: khóa ký webhook ngân hàng (FR-TUITION-08), thiếu hoặc ngắn hơn 32 byte thì dừng lúc khởi
 // động như Jwt:Key. Bộ lọc BankWebhookSignatureFilter nhận khóa qua DI
 var bankWebhookKey = builder.Configuration["BankWebhook:SecretKey"];
 if (string.IsNullOrWhiteSpace(bankWebhookKey) || Encoding.UTF8.GetByteCount(bankWebhookKey) < 32)
     throw new InvalidOperationException("Thiếu cấu hình BankWebhook:SecretKey trong user-secrets (tối thiểu 32 byte).");
 builder.Services.AddSingleton(new BankWebhookSettings(Encoding.UTF8.GetBytes(bankWebhookKey)));
+// D57: Ngân hàng giả lập chỉ tồn tại khi chạy Development VÀ bật MockBank:Enabled. Thiếu một trong hai thì gỡ
+// MockBankController khỏi danh sách controller: POST /api/mock-bank/transfers trả 404 như đường dẫn lạ (AC-SEC-04)
+if (builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("MockBank:Enabled"))
+{
+    // Bật thì phải có địa chỉ webhook đầy đủ, thiếu thì dừng lúc khởi động như PaymentAccount
+    if (!Uri.TryCreate(builder.Configuration["MockBank:WebhookUrl"], UriKind.Absolute, out var mockBankWebhookUrl)
+        || (mockBankWebhookUrl.Scheme != Uri.UriSchemeHttp && mockBankWebhookUrl.Scheme != Uri.UriSchemeHttps))
+        throw new InvalidOperationException("Bật MockBank:Enabled thì MockBank:WebhookUrl phải là địa chỉ http(s) đầy đủ của webhook ngân hàng.");
+    builder.Services.AddSingleton(new MockBankSettings(mockBankWebhookUrl, Encoding.UTF8.GetBytes(bankWebhookKey)));
+    builder.Services.AddHttpClient<IMockBankWebhookClient, MockBankWebhookClient>(client => client.Timeout = TimeSpan.FromSeconds(10));
+    builder.Services.AddScoped<IMockBankService, MockBankService>();
+    builder.Services.AddScoped<IValidator<MockBankTransferRequest>, MockBankTransferRequestValidator>();
+}
+else
+{
+    builder.Services.AddControllers().ConfigureApplicationPartManager(manager =>
+        manager.FeatureProviders.Add(new MockBankControllerRemover()));
+}
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IValidator<CreateUserRequest>, CreateUserRequestValidator>();
@@ -194,6 +217,7 @@ builder.Services.AddScoped<IValidator<ResetPasswordRequest>, ResetPasswordReques
 builder.Services.AddScoped<IValidator<ChangeRoleRequest>, ChangeRoleRequestValidator>();
 builder.Services.AddScoped<IClassRepository, ClassRepository>();
 builder.Services.AddScoped<IClassService, ClassService>();
+builder.Services.AddScoped<IValidator<SaveClassRequest>, SaveClassRequestValidator>();
 builder.Services.AddScoped<IValidator<AssignClassRequest>, AssignClassRequestValidator>();
 builder.Services.AddScoped<IValidator<AssignHomeroomTeacherRequest>, AssignHomeroomTeacherRequestValidator>();
 builder.Services.AddScoped<IValidator<AssignAssistantTeachersRequest>, AssignAssistantTeachersRequestValidator>();
@@ -203,6 +227,7 @@ builder.Services.AddScoped<IValidator<CreateTeacherRequest>, CreateTeacherReques
 builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 builder.Services.AddScoped<IValidator<CheckInRequest>, CheckInRequestValidator>();
+builder.Services.AddScoped<IValidator<BatchCheckInRequest>, BatchCheckInRequestValidator>();
 builder.Services.AddScoped<IPickupRepository, PickupRepository>();
 builder.Services.AddScoped<IPickupService, PickupService>();
 builder.Services.AddScoped<IValidator<CreatePickupRequest>, CreatePickupRequestValidator>();
@@ -212,6 +237,7 @@ builder.Services.AddScoped<IValidator<UploadedPhoto>, FacePhotoValidator>();
 builder.Services.AddScoped<IHealthRepository, HealthRepository>();
 builder.Services.AddScoped<IHealthService, HealthService>();
 builder.Services.AddScoped<IValidator<QuickHealthStatusRequest>, QuickHealthStatusRequestValidator>();
+builder.Services.AddScoped<IValidator<BatchQuickHealthStatusRequest>, BatchQuickHealthStatusRequestValidator>();
 builder.Services.AddScoped<IValidator<GrowthMeasurementRequest>, GrowthMeasurementRequestValidator>();
 builder.Services.AddScoped<IValidator<UpdateHealthNotesRequest>, UpdateHealthNotesRequestValidator>();
 builder.Services.AddScoped<IIncidentRepository, IncidentRepository>();
