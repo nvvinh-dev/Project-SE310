@@ -9,9 +9,13 @@ import { useAdminNotifications } from "./_lib/admin-notifications-api";
 
 const PAGE_SIZE = 20;
 
-// SCR-ADM-05 — Thông báo (FR-NOTI-04). Admin chỉ nhận thông báo phản ánh mới, nội dung do backend soạn
-// (họ tên phụ huynh, họ tên trẻ), hiện nguyên văn. Không có đã đọc/chưa đọc, không xóa (D25). Thông báo
-// không có id phản ánh nên nút chỉ mở danh sách phản ánh (ui-screens.md §11 mục 2)
+const LINK_BUTTON_CLASS =
+  "inline-flex min-h-11 sm:min-h-0 items-center justify-center gap-1 rounded-full border border-slate-300 bg-surface-container-lowest px-4 py-2 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
+
+// SCR-ADM-05 — Thông báo (FR-NOTI-04, FR-ATT-04). Admin nhận thông báo phản ánh mới và thông báo giáo viên
+// không liên lạc được với người đón của trẻ vắng không phép (D39 mục 6, 20); nội dung do backend soạn, hiện
+// nguyên văn. Không có đã đọc/chưa đọc, không xóa (D25). Thông báo không có loại hay id tham chiếu nên
+// không mở thẳng từng thông báo; hai nút mở SCR-ADM-04 và SCR-ADM-06 (ui-screens.md §11 mục 2)
 export default function AdminNotificationsPage() {
   const [page, setPage] = useState(1);
   const notificationsQuery = useAdminNotifications(page, PAGE_SIZE);
@@ -29,18 +33,24 @@ export default function AdminNotificationsPage() {
 
   return (
     <div className="py-8 space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-on-surface">Thông báo</h1>
-          <p className="text-sm text-on-surface-variant">Thông báo khi phụ huynh gửi phản ánh mới tới Ban giám hiệu.</p>
+          <p className="text-sm text-on-surface-variant">
+            Thông báo khi phụ huynh gửi phản ánh mới tới Ban giám hiệu, hoặc giáo viên không liên lạc được với
+            người đón của trẻ vắng không phép.
+          </p>
         </div>
-        <Link
-          href="/admin/complaints"
-          className="inline-flex min-h-11 sm:min-h-0 items-center justify-center gap-1 self-start sm:self-auto shrink-0 rounded-full border border-slate-300 bg-surface-container-lowest px-4 py-2 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-        >
-          Mở danh sách phản ánh
-          <Icons.ChevronRight />
-        </Link>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap xl:justify-end shrink-0">
+          <Link href="/admin/complaints" className={LINK_BUTTON_CLASS}>
+            Mở danh sách phản ánh
+            <Icons.ChevronRight />
+          </Link>
+          <Link href="/admin/absences" className={LINK_BUTTON_CLASS}>
+            Mở danh sách vắng không phép
+            <Icons.ChevronRight />
+          </Link>
+        </div>
       </div>
 
       {loadError && data && (
